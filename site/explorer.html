@@ -102,6 +102,31 @@ a:hover { text-decoration: underline; }
   flex-wrap: wrap;
 }
 
+.quadrant-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 12px;
+}
+.ql-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.ql-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.ql-desc {
+  font-weight: 400;
+  color: var(--fg2);
+}
+
 #tree-search {
   flex: 1;
   min-width: 200px;
@@ -603,6 +628,12 @@ a:hover { text-decoration: underline; }
         <option value="evo-desc">Evolution (High-Low)</option>
       </select>
     </div>
+    <div class="quadrant-legend">
+      <span class="ql-item"><span class="ql-dot" style="background:var(--gold)"></span>TRANSFORM <span class="ql-desc">— high auto + high amp</span></span>
+      <span class="ql-item"><span class="ql-dot" style="background:var(--red)"></span>SHRINK <span class="ql-desc">— high auto + low amp</span></span>
+      <span class="ql-item"><span class="ql-dot" style="background:var(--blue)"></span>EVOLVE <span class="ql-desc">— low auto + high amp</span></span>
+      <span class="ql-item"><span class="ql-dot" style="background:var(--green)"></span>STABLE <span class="ql-desc">— low auto + low amp</span></span>
+    </div>
   </div>
 
   <div id="explorer-panels">
@@ -879,8 +910,8 @@ a:hover { text-decoration: underline; }
       skillRows +=
         '<tr>' +
         '<td>' + escapeHtml(sk.title) + '</td>' +
-        '<td class="skill-auto">' + sk.auto.toFixed(1) + '</td>' +
-        '<td class="skill-amp">' + sk.amp.toFixed(1) + '</td>' +
+        '<td class="skill-auto">' + (sk.auto != null ? sk.auto.toFixed(1) : '\u2014') + '</td>' +
+        '<td class="skill-amp">' + (sk.amp != null ? sk.amp.toFixed(1) : '\u2014') + '</td>' +
         '</tr>';
     }
 
