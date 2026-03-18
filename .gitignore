@@ -19,5 +19,16 @@ pages/
 embed.py
 embeddings.json
 
+# Large generated files (reproducible via pipeline)
+data/esco_occupations.json
+data/esco_skills.json
+data/site_data.json
+data/skill_scores.json
+data/occupation_scores.json
+data/esco/*.zip
+
+# Scoring log
+scoring.log
+
 # macOS
 .DS_Store
