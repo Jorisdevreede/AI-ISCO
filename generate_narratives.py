@@ -305,6 +305,7 @@ def generate_batch(client, occupation_contexts, model):
                         {"role": "user", "content": user_prompt},
                     ],
                     "temperature": 0.2,
+                    "max_tokens": 4096,
                 },
                 timeout=180,
             )
@@ -332,8 +333,8 @@ def generate_batch(client, occupation_contexts, model):
         except httpx.HTTPStatusError as e:
             last_error = e
             status = e.response.status_code
-            # Retry on rate limit (429) or server errors (5xx)
-            if status == 429 or status >= 500:
+            # Retry on payment/rate limit (402, 429) or server errors (5xx)
+            if status in (402, 429) or status >= 500:
                 backoff = INITIAL_BACKOFF * (2 ** attempt)
                 print(
                     f"\n    Rate limited/server error ({status}), "
@@ -377,7 +378,14 @@ def main():
                         help="Number of occupations per LLM call")
     parser.add_argument("--force", action="store_true",
                         help="Re-generate even if already cached")
+    parser.add_argument("--output", default=None,
+                        help="Output file path (default: data/occupation_narratives.json)")
     args = parser.parse_args()
+
+    # Allow per-shard output files for parallel execution
+    if args.output:
+        global OUTPUT_FILE
+        OUTPUT_FILE = args.output
 
     # ------------------------------------------------------------------
     # 1. Load input data
