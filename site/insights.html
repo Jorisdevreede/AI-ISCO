@@ -194,8 +194,8 @@ a:hover { text-decoration: underline; }
 }
 .rank-narrative {
   font-size: 13px;
-  color: var(--fg2);
-  line-height: 1.5;
+  color: #aaaab4;
+  line-height: 1.6;
   margin-top: 6px;
   max-width: 600px;
 }
@@ -336,34 +336,33 @@ a:hover { text-decoration: underline; }
   font-style: italic;
 }
 .article-body {
-  column-count: 2;
-  column-gap: 40px;
-  font-size: 15px;
-  line-height: 1.75;
+  font-size: 16px;
+  line-height: 1.8;
   color: var(--fg);
+  max-width: 720px;
 }
 .article-body p {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 .article-body .dropcap::first-letter {
-  font-size: 3.2em;
+  font-size: 3.4em;
   font-weight: 800;
   float: left;
   line-height: 0.85;
   margin-right: 8px;
-  margin-top: 4px;
+  margin-top: 5px;
   color: var(--gold);
 }
 .article-body .pullquote {
-  column-span: all;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.5;
   color: var(--gold);
   border-left: 3px solid var(--gold);
   padding: 16px 0 16px 24px;
-  margin: 28px 0;
+  margin: 32px 0;
   font-style: italic;
+  max-width: 100%;
 }
 
 /* --- Loading --- */
@@ -381,7 +380,7 @@ a:hover { text-decoration: underline; }
   .hero-stat-val { font-size: 22px; }
   .section h2 { font-size: 22px; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
-  .article-body { column-count: 1; }
+  .article-body { max-width: 100%; }
   .article h2 { font-size: 24px; }
   .rank-table { font-size: 13px; }
   .rank-narrative { display: none; }
@@ -650,7 +649,7 @@ function rankTable(items, narrativeMap, quadrant) {
   items.forEach((d, i) => {
     const nm = narrativeMap[d.slug];
     const story = nm && nm.n && nm.n.story ? nm.n.story : '';
-    const excerpt = story ? truncate(story, 160) : '';
+    const excerpt = story ? truncate(story, 300) : '';
     rows += `<tr>
       <td class="rank-num">${i + 1}</td>
       <td>
