@@ -42,6 +42,13 @@ body {
 }
 .intro h1 a { font-size: 13px; font-weight: 400; color: var(--fg2); text-decoration: none; }
 .intro h1 a:hover { text-decoration: underline; }
+.intro h1 a.analyze-link {
+  font-size: 12px; font-weight: 600; color: #d4a017;
+  background: rgba(212,160,23,0.1); border: 1px solid rgba(212,160,23,0.25);
+  padding: 5px 14px; border-radius: 6px; text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.intro h1 a.analyze-link:hover { background: rgba(212,160,23,0.18); border-color: rgba(212,160,23,0.4); text-decoration: none; }
 .intro p { font-size: 15px; line-height: 1.6; color: var(--fg2); margin-bottom: 8px; }
 .intro a { color: var(--fg2); }
 .intro strong, .intro b { color: var(--fg); font-weight: 600; }
@@ -138,7 +145,7 @@ canvas#canvas { display: block; cursor: default; }
 <div id="wrapper">
 <div id="header">
   <div class="intro">
-    <h1>AI-ISCO: Job Evolution Explorer <a href="https://github.com/Jorisdevreede/AI-ISCO">GitHub</a></h1>
+    <h1>AI-ISCO: Job Evolution Explorer <a href="https://github.com/Jorisdevreede/AI-ISCO">GitHub</a> <a href="portfolio.html" class="analyze-link">Analyze Your Job</a></h1>
     <p>An interactive visualization of <b>3,000+ ESCO occupations</b> mapped to ISCO-08, scored by AI along two axes: <b>Automation Risk</b> and <b>Amplification Potential</b>. Click any block to drill down through the ISCO hierarchy. Each rectangle's <b>area</b> reflects the number of occupations (or skills) in that group.</p>
     <div class="quadrant-grid">
       <div class="q-item"><div class="q-dot" style="background:#d4a017"></div><span class="q-label">TRANSFORM</span> <span class="q-desc">&mdash; high auto + high amp: job evolves</span></div>

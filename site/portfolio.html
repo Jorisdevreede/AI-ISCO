@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Portfolio Analyzer — AI-ISCO</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --bg3: #1a1a26;
+  --fg: #e0e0e8;
+  --fg2: #888894;
+  --fg3: #555560;
+  --gold: #d4a017;
+  --red: #e04040;
+  --blue: #4a90d9;
+  --green: #3ca55c;
+  --border: rgba(255,255,255,0.08);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+#wrapper {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* --- Header --- */
+#page-header {
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+#page-header .back-link {
+  font-size: 13px;
+  color: var(--fg2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+#page-header .back-link:hover { color: var(--fg); text-decoration: none; }
+#page-header .back-link svg { width: 14px; height: 14px; }
+#page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+#page-header .subtitle {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fg2);
+  max-width: 680px;
+}
+
+/* --- Search --- */
+#search-section {
+  text-align: center;
+  padding: 48px 0 40px;
+}
+#search-section.compact {
+  padding: 20px 0 24px;
+}
+#search-intro {
+  max-width: 560px;
+  margin: 0 auto 28px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--fg2);
+}
+#search-intro b { color: var(--fg); font-weight: 600; }
+.search-wrap {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto;
+}
+#search-input {
+  width: 100%;
+  padding: 16px 20px 16px 48px;
+  font-size: 17px;
+  font-family: inherit;
+  background: var(--bg2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: var(--fg);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+#search-input::placeholder { color: var(--fg3); }
+#search-input:focus {
+  border-color: rgba(74,144,217,0.5);
+  box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
+}
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg3);
+  pointer-events: none;
+}
+.search-icon svg { width: 20px; height: 20px; display: block; }
+
+/* Autocomplete dropdown */
+#autocomplete {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--bg2);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+  z-index: 50;
+  display: none;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+}
+#autocomplete.open { display: block; }
+.ac-item {
+  padding: 12px 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.1s;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.active { background: rgba(255,255,255,0.05); }
+.ac-item .ac-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+}
+.ac-item .ac-title mark {
+  background: none;
+  color: var(--gold);
+  font-weight: 700;
+}
+.ac-item .ac-meta {
+  font-size: 11px;
+  color: var(--fg2);
+  white-space: nowrap;
+}
+.ac-item .ac-code {
+  font-size: 11px;
+  color: var(--fg3);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: rgba(255,255,255,0.05);
+  padding: 2px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.ac-empty {
+  padding: 20px 18px;
+  text-align: center;
+  color: var(--fg3);
+  font-size: 13px;
+}
+
+/* --- Analysis Section (hidden until occupation selected) --- */
+#analysis {
+  display: none;
+  animation: fadeIn 0.35s ease;
+}
+#analysis.visible { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Portfolio Overview --- */
+#overview {
+  margin-bottom: 36px;
+}
+.occ-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.occ-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: capitalize;
+}
+.occ-isco {
+  font-size: 12px;
+  color: var(--fg3);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: rgba(255,255,255,0.05);
+  padding: 4px 10px;
+  border-radius: 5px;
+  margin-top: 5px;
+}
+.occ-category {
+  font-size: 13px;
+  color: var(--fg2);
+  margin-top: 4px;
+}
+.quadrant-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+.scores-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.score-card {
+  flex: 1;
+  min-width: 160px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+.score-card .score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg2);
+  margin-bottom: 8px;
+}
+.score-card .score-value {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.score-card .score-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.score-card .score-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.health-bar {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 0;
+}
+.health-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.health-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.health-desc {
+  font-size: 13px;
+  color: var(--fg2);
+}
+
+/* --- Scatter Plot --- */
+#scatter-section {
+  margin-bottom: 40px;
+}
+#scatter-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+.scatter-wrap {
+  position: relative;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+canvas#scatterCanvas {
+  display: block;
+  cursor: crosshair;
+  width: 100%;
+}
+#scatter-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: var(--bg2);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 30;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  max-width: 260px;
+}
+#scatter-tooltip.visible { opacity: 1; }
+#scatter-tooltip .stt-name { font-weight: 600; color: #fff; margin-bottom: 4px; }
+#scatter-tooltip .stt-type { font-size: 11px; color: var(--fg2); margin-bottom: 6px; }
+#scatter-tooltip .stt-scores { font-size: 12px; }
+#scatter-tooltip .stt-scores span { margin-right: 12px; }
+
+.scatter-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--fg2);
+  border-top: 1px solid var(--border);
+}
+.scatter-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot-filled {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fg2);
+}
+.legend-dot-hollow {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--fg2);
+  background: transparent;
+}
+
+/* --- Skill Breakdown --- */
+#skill-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+.skill-column {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.skill-col-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.skill-col-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.skill-col-header .skill-count {
+  font-size: 12px;
+  color: var(--fg2);
+}
+.skill-list {
+  padding: 8px 0;
+  max-height: 380px;
+  overflow-y: auto;
+}
+.skill-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+.skill-row:hover { background: rgba(255,255,255,0.03); }
+.skill-row .sk-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg);
+}
+.skill-row .sk-score {
+  font-weight: 600;
+  font-size: 13px;
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.skill-row .sk-score-secondary {
+  font-size: 11px;
+  color: var(--fg3);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.skill-empty {
+  padding: 24px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--fg3);
+}
+
+/* --- Recommendations --- */
+#recommendations {
+  margin-bottom: 40px;
+}
+#recommendations h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+#recommendations .rec-subtitle {
+  font-size: 13px;
+  color: var(--fg2);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.rec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.rec-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.rec-card:hover {
+  border-color: rgba(74,144,217,0.25);
+  background: rgba(74,144,217,0.04);
+}
+.rec-amp {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: rgba(74,144,217,0.12);
+  color: var(--blue);
+}
+.rec-info { flex: 1; min-width: 0; }
+.rec-info .rec-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rec-info .rec-from {
+  font-size: 11px;
+  color: var(--fg2);
+}
+.rec-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--fg3);
+  font-size: 13px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+/* --- Evolution Paths --- */
+#evolution-paths {
+  margin-bottom: 40px;
+}
+#evolution-paths h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+.path-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.path-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.path-card:hover {
+  border-color: rgba(255,255,255,0.15);
+  background: var(--bg3);
+  transform: translateY(-1px);
+}
+.path-card .pc-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.path-card .pc-title {
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.path-card .pc-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.path-card .pc-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--fg2);
+}
+.path-card .pc-stat { display: flex; flex-direction: column; gap: 2px; }
+.path-card .pc-stat-val { font-size: 16px; font-weight: 600; color: var(--fg); }
+.path-card .pc-stat-label { font-size: 11px; color: var(--fg3); }
+.path-card .pc-arrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--blue);
+  font-weight: 500;
+}
+
+/* --- Scrollbar --- */
+.skill-list::-webkit-scrollbar { width: 6px; }
+.skill-list::-webkit-scrollbar-track { background: transparent; }
+.skill-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+#autocomplete::-webkit-scrollbar { width: 6px; }
+#autocomplete::-webkit-scrollbar-track { background: transparent; }
+#autocomplete::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* --- Mobile --- */
+@media (max-width: 700px) {
+  #wrapper { padding: 0 14px 60px; }
+  #page-header h1 { font-size: 22px; }
+  #search-input { font-size: 15px; padding: 14px 16px 14px 42px; }
+  .scores-row { flex-direction: column; }
+  .score-card { min-width: unset; }
+  #skill-breakdown { grid-template-columns: 1fr; }
+  .rec-grid { grid-template-columns: 1fr; }
+  .path-grid { grid-template-columns: 1fr; }
+  .occ-title { font-size: 20px; }
+  .score-card .score-value { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div id="wrapper">
+
+  <!-- Header -->
+  <div id="page-header">
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Back to Job Explorer
+    </a>
+    <h1>Skill Portfolio Analyzer</h1>
+    <p class="subtitle">Treat your career like an investment portfolio. See which skills are appreciating, which are depreciating, and how to rebalance.</p>
+  </div>
+
+  <!-- Search -->
+  <div id="search-section">
+    <div id="search-intro">
+      <p>Every occupation is a <b>portfolio of skills</b>. Some skills are gaining value as AI amplifies them. Others are losing value as AI automates them. Search for your occupation to see the full picture.</p>
+    </div>
+    <div class="search-wrap">
+      <div class="search-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </div>
+      <input type="text" id="search-input" placeholder="Search for your occupation..." autocomplete="off" spellcheck="false">
+      <div id="autocomplete"></div>
+    </div>
+  </div>
+
+  <!-- Analysis (hidden until selection) -->
+  <div id="analysis">
+
+    <!-- Portfolio Overview -->
+    <div id="overview">
+      <div class="occ-header">
+        <div>
+          <div class="occ-title" id="occ-title"></div>
+          <div class="occ-category" id="occ-category"></div>
+        </div>
+        <span class="occ-isco" id="occ-isco"></span>
+        <span class="quadrant-badge" id="occ-quadrant"></span>
+      </div>
+
+      <div class="scores-row" id="scores-row"></div>
+
+      <div class="health-bar" id="health-bar"></div>
+    </div>
+
+    <!-- Scatter Plot -->
+    <div id="scatter-section">
+      <h2>Skill Map</h2>
+      <div class="scatter-wrap">
+        <canvas id="scatterCanvas"></canvas>
+        <div class="scatter-legend">
+          <div class="scatter-legend-item"><div class="legend-dot-filled"></div> Essential skill</div>
+          <div class="scatter-legend-item"><div class="legend-dot-hollow"></div> Optional skill</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skill Breakdown -->
+    <div id="skill-breakdown">
+      <div class="skill-column" id="depreciating-col">
+        <div class="skill-col-header">
+          <h3 style="color: var(--red);">Depreciating Skills</h3>
+          <div class="skill-count" id="dep-count"></div>
+        </div>
+        <div class="skill-list" id="dep-list"></div>
+      </div>
+      <div class="skill-column" id="appreciating-col">
+        <div class="skill-col-header">
+          <h3 style="color: var(--blue);">Appreciating Skills</h3>
+          <div class="skill-count" id="app-count"></div>
+        </div>
+        <div class="skill-list" id="app-list"></div>
+      </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div id="recommendations">
+      <h2>Recommended Skills to Acquire</h2>
+      <p class="rec-subtitle">Skills from adjacent career paths that would strengthen your portfolio. These are high-leverage skills you could learn to future-proof your career.</p>
+      <div class="rec-grid" id="rec-grid"></div>
+    </div>
+
+    <!-- Evolution Paths -->
+    <div id="evolution-paths">
+      <h2>Adjacent Career Paths</h2>
+      <div class="path-grid" id="path-grid"></div>
+    </div>
+
+  </div><!-- /analysis -->
+
+</div><!-- /wrapper -->
+
+<div id="scatter-tooltip">
+  <div class="stt-name"></div>
+  <div class="stt-type"></div>
+  <div class="stt-scores"></div>
+</div>
+
+<script>
+
+// ============================================================
+// Constants
+// ============================================================
+const Q_COLORS = {
+  TRANSFORM: '#d4a017',
+  SHRINK:    '#e04040',
+  EVOLVE:    '#4a90d9',
+  STABLE:    '#3ca55c',
+};
+
+function getQuadrant(autoRisk, ampPotential) {
+  if (autoRisk == null || ampPotential == null) return null;
+  if (autoRisk >= 5.5 && ampPotential >= 5.5) return 'TRANSFORM';
+  if (autoRisk >= 5.5 && ampPotential < 5.5) return 'SHRINK';
+  if (autoRisk < 5.5 && ampPotential >= 5.5) return 'EVOLVE';
+  return 'STABLE';
+}
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// ============================================================
+// State
+// ============================================================
+let portfolioData = null;      // raw loaded JSON
+let skillMap = {};             // id -> {t, a, m}
+let occupations = [];          // array of occupation objects
+let occIndex = [];             // search index: [{lower, occ}]
+let selectedOcc = null;        // currently selected occupation
+
+// ============================================================
+// Load data
+// ============================================================
+fetch('portfolio_data.json')
+  .then(r => {
+    if (!r.ok) throw new Error('Failed to load portfolio_data.json');
+    return r.json();
+  })
+  .then(data => {
+    portfolioData = data;
+    skillMap = data.skills || {};
+    occupations = data.occupations || [];
+    buildIndex();
+    handleHashChange();
+  })
+  .catch(err => {
+    console.error('Data load error:', err);
+    document.getElementById('search-intro').innerHTML =
+      '<p style="color:var(--red)">Could not load portfolio_data.json. Make sure the file exists in the same directory.</p>';
+  });
+
+function buildIndex() {
+  occIndex = occupations.map(o => ({
+    lower: (o.t || '').toLowerCase(),
+    code: (o.c || ''),
+    mg: (o.mg || '').toLowerCase(),
+    occ: o,
+  }));
+}
+
+// ============================================================
+// URL hash deep-linking
+// ============================================================
+window.addEventListener('hashchange', handleHashChange);
+
+function handleHashChange() {
+  const slug = (location.hash || '').replace('#', '');
+  if (!slug || !occupations.length) return;
+  const match = occupations.find(o => o.s === slug);
+  if (match) selectOccupation(match);
+}
+
+// ============================================================
+// Search / Autocomplete
+// ============================================================
+const searchInput = document.getElementById('search-input');
+const autocomplete = document.getElementById('autocomplete');
+let acItems = [];
+let acActive = -1;
+
+searchInput.addEventListener('input', onSearchInput);
+searchInput.addEventListener('keydown', onSearchKey);
+searchInput.addEventListener('focus', () => { if (searchInput.value.trim()) onSearchInput(); });
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-wrap')) closeAC();
+});
+
+function onSearchInput() {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q || q.length < 1) { closeAC(); return; }
+  // Search: match title or code
+  const results = [];
+  for (const entry of occIndex) {
+    const titleIdx = entry.lower.indexOf(q);
+    const codeMatch = entry.code.startsWith(q);
+    if (titleIdx >= 0 || codeMatch) {
+      // score: prefer starts-with in title, then code match, then contains
+      let score = 0;
+      if (titleIdx === 0) score = 3;
+      else if (codeMatch) score = 2;
+      else score = 1;
+      results.push({ entry, score, titleIdx });
+    }
+    if (results.length >= 80) break;
+  }
+  results.sort((a, b) => b.score - a.score);
+  acItems = results.slice(0, 12).map(r => r.entry.occ);
+  acActive = -1;
+  renderAC(q);
+}
+
+function renderAC(query) {
+  if (!acItems.length) {
+    autocomplete.innerHTML = '<div class="ac-empty">No occupations found</div>';
+    autocomplete.classList.add('open');
+    return;
+  }
+  let html = '';
+  for (let i = 0; i < acItems.length; i++) {
+    const o = acItems[i];
+    const title = highlightMatch(o.t, query);
+    html += `<div class="ac-item${i === acActive ? ' active' : ''}" data-idx="${i}">
+      <span class="ac-code">${escHtml(o.c)}</span>
+      <span class="ac-title">${title}</span>
+      <span class="ac-meta">${escHtml(o.mg || '')}</span>
+    </div>`;
+  }
+  autocomplete.innerHTML = html;
+  autocomplete.classList.add('open');
+
+  // Bind clicks
+  autocomplete.querySelectorAll('.ac-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.idx);
+      if (acItems[idx]) {
+        selectOccupation(acItems[idx]);
+        closeAC();
+      }
+    });
+  });
+}
+
+function highlightMatch(title, query) {
+  const lower = title.toLowerCase();
+  const idx = lower.indexOf(query);
+  if (idx < 0) return escHtml(title);
+  return escHtml(title.substring(0, idx)) +
+    '<mark>' + escHtml(title.substring(idx, idx + query.length)) + '</mark>' +
+    escHtml(title.substring(idx + query.length));
+}
+
+function onSearchKey(e) {
+  if (!autocomplete.classList.contains('open') || !acItems.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acActive = Math.min(acActive + 1, acItems.length - 1);
+    updateACActive();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acActive = Math.max(acActive - 1, 0);
+    updateACActive();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (acActive >= 0 && acItems[acActive]) {
+      selectOccupation(acItems[acActive]);
+      closeAC();
+    } else if (acItems.length === 1) {
+      selectOccupation(acItems[0]);
+      closeAC();
+    }
+  } else if (e.key === 'Escape') {
+    closeAC();
+  }
+}
+
+function updateACActive() {
+  autocomplete.querySelectorAll('.ac-item').forEach((el, i) => {
+    el.classList.toggle('active', i === acActive);
+  });
+  // Scroll into view
+  const active = autocomplete.querySelector('.ac-item.active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+
+function closeAC() {
+  autocomplete.classList.remove('open');
+  acItems = [];
+  acActive = -1;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// ============================================================
+// Select an occupation => render everything
+// ============================================================
+function selectOccupation(occ) {
+  selectedOcc = occ;
+  history.replaceState(null, '', '#' + occ.s);
+  searchInput.value = occ.t;
+
+  // Compact search
+  document.getElementById('search-section').classList.add('compact');
+  document.getElementById('search-intro').style.display = 'none';
+
+  // Show analysis
+  const analysis = document.getElementById('analysis');
+  analysis.classList.remove('visible');
+  // Force reflow for animation
+  void analysis.offsetWidth;
+  analysis.classList.add('visible');
+
+  renderOverview(occ);
+  renderScatter(occ);
+  renderBreakdown(occ);
+  renderRecommendations(occ);
+  renderPaths(occ);
+
+  // Scroll to top of analysis
+  document.getElementById('overview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ============================================================
+// Resolve skill IDs to objects
+// ============================================================
+function resolveSkills(ids) {
+  if (!ids) return [];
+  return ids.map(id => {
+    const sk = skillMap[id];
+    if (!sk) return null;
+    return { id, title: sk.t, auto: sk.a, amp: sk.m };
+  }).filter(Boolean);
+}
+
+function allSkills(occ) {
+  const essential = resolveSkills(occ.se).map(s => ({ ...s, essential: true }));
+  const optional = resolveSkills(occ.so).map(s => ({ ...s, essential: false }));
+  return [...essential, ...optional];
+}
+
+// ============================================================
+// 1. Portfolio Overview
+// ============================================================
+function renderOverview(occ) {
+  document.getElementById('occ-title').textContent = occ.t;
+  document.getElementById('occ-category').textContent = (occ.cat || '') + (occ.mg ? ' \u2014 ' + occ.mg : '');
+  document.getElementById('occ-isco').textContent = 'ISCO ' + (occ.c || '\u2014');
+
+  // Quadrant badge
+  const qbadge = document.getElementById('occ-quadrant');
+  const q = occ.q || 'STABLE';
+  const qc = Q_COLORS[q] || '#888';
+  qbadge.textContent = q;
+  qbadge.style.background = hexToRgba(qc, 0.15);
+  qbadge.style.color = qc;
+  qbadge.style.border = '1px solid ' + hexToRgba(qc, 0.3);
+
+  // Scores
+  const scores = [
+    { label: 'Automation Risk', value: occ.ar, color: '#e04040', colorHigh: true },
+    { label: 'Amplification Potential', value: occ.ap, color: '#4a90d9', colorHigh: false },
+    { label: 'Evolution Potential', value: occ.e, color: '#d4a017', colorHigh: false },
+  ];
+  let html = '';
+  for (const s of scores) {
+    const v = s.value != null ? s.value.toFixed(1) : '\u2014';
+    const pct = s.value != null ? (s.value / 10 * 100).toFixed(0) : 0;
+    html += `<div class="score-card">
+      <div class="score-label">${s.label}</div>
+      <div class="score-value" style="color:${s.color}">${v}</div>
+      <div class="score-bar"><div class="score-fill" style="width:${pct}%;background:${s.color}"></div></div>
+    </div>`;
+  }
+  document.getElementById('scores-row').innerHTML = html;
+
+  // Health indicator
+  const evo = occ.e != null ? occ.e : 0;
+  let healthLabel, healthColor, healthDesc;
+  if (evo > 5) {
+    healthLabel = 'Strong';
+    healthColor = '#3ca55c';
+    healthDesc = 'This occupation has strong evolution potential. Skills are well-positioned for AI augmentation.';
+  } else if (evo >= 3) {
+    healthLabel = 'Mixed';
+    healthColor = '#d4a017';
+    healthDesc = 'This occupation has a mixed outlook. Some skills will be amplified, others may be automated.';
+  } else {
+    healthLabel = 'At Risk';
+    healthColor = '#e04040';
+    healthDesc = 'This occupation faces significant automation pressure. Consider upskilling in high-amplification areas.';
+  }
+  document.getElementById('health-bar').innerHTML = `
+    <div class="health-dot" style="background:${healthColor};box-shadow:0 0 8px ${hexToRgba(healthColor, 0.4)}"></div>
+    <div>
+      <div class="health-label" style="color:${healthColor}">Portfolio Health: ${healthLabel}</div>
+      <div class="health-desc">${healthDesc}</div>
+    </div>`;
+}
+
+// ============================================================
+// 2. Scatter Plot (Canvas)
+// ============================================================
+let scatterDots = [];
+let scatterHovered = null;
+const SCATTER_PAD = { top: 40, right: 30, bottom: 50, left: 56 };
+
+function renderScatter(occ) {
+  const skills = allSkills(occ);
+  // Filter to only skills that have both scores
+  scatterDots = skills.filter(s => s.auto != null && s.amp != null);
+  scatterHovered = null;
+  drawScatter();
+}
+
+function getScatterSize() {
+  const wrap = document.querySelector('.scatter-wrap');
+  const w = wrap.clientWidth;
+  const h = Math.max(400, Math.min(500, w * 0.48));
+  return { w, h };
+}
+
+function drawScatter() {
+  const canvas = document.getElementById('scatterCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const { w, h } = getScatterSize();
+
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const pad = SCATTER_PAD;
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  // Clear
+  ctx.fillStyle = '#12121a';
+  ctx.fillRect(0, 0, w, h);
+
+  // Mapping functions (1-10 scale)
+  function xPos(v) { return pad.left + ((v - 1) / 9) * plotW; }
+  function yPos(v) { return pad.top + plotH - ((v - 1) / 9) * plotH; }
+
+  // Quadrant background fills (very subtle)
+  const midX = xPos(5.5);
+  const midY = yPos(5.5);
+
+  // TRANSFORM (top-right): high auto, high amp
+  ctx.fillStyle = hexToRgba(Q_COLORS.TRANSFORM, 0.04);
+  ctx.fillRect(midX, pad.top, pad.left + plotW - midX + pad.right, midY - pad.top);
+
+  // SHRINK (bottom-right): high auto, low amp
+  ctx.fillStyle = hexToRgba(Q_COLORS.SHRINK, 0.04);
+  ctx.fillRect(midX, midY, pad.left + plotW - midX + pad.right, pad.top + plotH - midY);
+
+  // EVOLVE (top-left): low auto, high amp
+  ctx.fillStyle = hexToRgba(Q_COLORS.EVOLVE, 0.04);
+  ctx.fillRect(0, pad.top, midX, midY - pad.top);
+
+  // STABLE (bottom-left): low auto, low amp
+  ctx.fillStyle = hexToRgba(Q_COLORS.STABLE, 0.04);
+  ctx.fillRect(0, midY, midX, pad.top + plotH - midY);
+
+  // Quadrant divider lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  // Vertical at x=5.5
+  ctx.beginPath(); ctx.moveTo(midX, pad.top); ctx.lineTo(midX, pad.top + plotH); ctx.stroke();
+  // Horizontal at y=5.5
+  ctx.beginPath(); ctx.moveTo(pad.left, midY); ctx.lineTo(pad.left + plotW, midY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Quadrant labels (faded)
+  ctx.font = '600 11px -apple-system, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const qLabelAlpha = 0.15;
+  ctx.fillStyle = hexToRgba(Q_COLORS.TRANSFORM, qLabelAlpha);
+  ctx.fillText('TRANSFORM', (midX + pad.left + plotW) / 2, (pad.top + midY) / 2);
+
+  ctx.fillStyle = hexToRgba(Q_COLORS.SHRINK, qLabelAlpha);
+  ctx.fillText('SHRINK', (midX + pad.left + plotW) / 2, (midY + pad.top + plotH) / 2);
+
+  ctx.fillStyle = hexToRgba(Q_COLORS.EVOLVE, qLabelAlpha);
+  ctx.fillText('EVOLVE', (pad.left + midX) / 2, (pad.top + midY) / 2);
+
+  ctx.fillStyle = hexToRgba(Q_COLORS.STABLE, qLabelAlpha);
+  ctx.fillText('STABLE', (pad.left + midX) / 2, (midY + pad.top + plotH) / 2);
+
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  // X axis
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top + plotH); ctx.lineTo(pad.left + plotW, pad.top + plotH); ctx.stroke();
+  // Y axis
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top + plotH); ctx.stroke();
+
+  // Axis ticks and labels
+  ctx.font = '400 10px -apple-system, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let v = 1; v <= 10; v++) {
+    const x = xPos(v);
+    ctx.fillText(v, x, pad.top + plotH + 8);
+    // Grid line
+    if (v > 1 && v < 10) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + plotH); ctx.stroke();
+    }
+  }
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let v = 1; v <= 10; v++) {
+    const y = yPos(v);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillText(v, pad.left - 10, y);
+    if (v > 1 && v < 10) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + plotW, y); ctx.stroke();
+    }
+  }
+
+  // Axis titles
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = '500 12px -apple-system, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Automation Risk', pad.left + plotW / 2, pad.top + plotH + 28);
+
+  ctx.save();
+  ctx.translate(16, pad.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Amplification Potential', 0, 0);
+  ctx.restore();
+
+  // Draw dots (optional first so essential draws on top)
+  const sorted = [...scatterDots].sort((a, b) => {
+    if (a.essential && !b.essential) return 1;  // essential on top
+    if (!a.essential && b.essential) return -1;
+    return 0;
+  });
+
+  for (const dot of sorted) {
+    const x = xPos(dot.auto);
+    const y = yPos(dot.amp);
+    const q = getQuadrant(dot.auto, dot.amp);
+    const color = Q_COLORS[q] || '#888';
+    const isHov = dot === scatterHovered;
+    const radius = dot.essential ? 7 : 5.5;
+
+    if (dot.essential) {
+      // Filled circle
+      ctx.beginPath();
+      ctx.arc(x, y, isHov ? radius + 2 : radius, 0, Math.PI * 2);
+      ctx.fillStyle = isHov ? color : hexToRgba(color, 0.75);
+      ctx.fill();
+      if (isHov) {
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    } else {
+      // Hollow circle
+      ctx.beginPath();
+      ctx.arc(x, y, isHov ? radius + 2 : radius, 0, Math.PI * 2);
+      ctx.fillStyle = isHov ? hexToRgba(color, 0.25) : hexToRgba(color, 0.1);
+      ctx.fill();
+      ctx.strokeStyle = isHov ? color : hexToRgba(color, 0.65);
+      ctx.lineWidth = isHov ? 2.5 : 2;
+      ctx.stroke();
+      if (isHov) {
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+// Scatter hit-test and tooltip
+const scatterCanvas = document.getElementById('scatterCanvas');
+const scatterTooltip = document.getElementById('scatter-tooltip');
+
+scatterCanvas.addEventListener('mousemove', onScatterMove);
+scatterCanvas.addEventListener('mouseleave', onScatterLeave);
+
+function onScatterMove(e) {
+  const rect = scatterCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const { w, h } = getScatterSize();
+  const pad = SCATTER_PAD;
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  function xPos(v) { return pad.left + ((v - 1) / 9) * plotW; }
+  function yPos(v) { return pad.top + plotH - ((v - 1) / 9) * plotH; }
+
+  let closest = null;
+  let closestDist = Infinity;
+  for (const dot of scatterDots) {
+    if (dot.auto == null || dot.amp == null) continue;
+    const dx = mx - xPos(dot.auto);
+    const dy = my - yPos(dot.amp);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const hitRadius = dot.essential ? 12 : 10;
+    if (dist < hitRadius && dist < closestDist) {
+      closest = dot;
+      closestDist = dist;
+    }
+  }
+
+  if (closest !== scatterHovered) {
+    scatterHovered = closest;
+    drawScatter();
+  }
+
+  if (closest) {
+    scatterCanvas.style.cursor = 'pointer';
+    const tt = scatterTooltip;
+    tt.querySelector('.stt-name').textContent = closest.title;
+    tt.querySelector('.stt-type').textContent = closest.essential ? 'Essential skill' : 'Optional skill';
+    const q = getQuadrant(closest.auto, closest.amp);
+    const qc = Q_COLORS[q] || '#888';
+    tt.querySelector('.stt-scores').innerHTML =
+      `<span style="color:var(--red)">Auto: ${closest.auto != null ? closest.auto.toFixed(1) : '?'}</span>` +
+      `<span style="color:var(--blue)">Amp: ${closest.amp != null ? closest.amp.toFixed(1) : '?'}</span>` +
+      `<span style="color:${qc}">${q || ''}</span>`;
+    let tx = e.clientX + 14, ty = e.clientY - 10;
+    if (tx + 260 > window.innerWidth) tx = e.clientX - 270;
+    if (ty < 10) ty = e.clientY + 14;
+    tt.style.left = tx + 'px';
+    tt.style.top = ty + 'px';
+    tt.classList.add('visible');
+  } else {
+    scatterCanvas.style.cursor = 'crosshair';
+    scatterTooltip.classList.remove('visible');
+  }
+}
+
+function onScatterLeave() {
+  scatterHovered = null;
+  scatterTooltip.classList.remove('visible');
+  drawScatter();
+}
+
+// ============================================================
+// 3. Skill Breakdown
+// ============================================================
+function renderBreakdown(occ) {
+  const skills = allSkills(occ);
+
+  // Depreciating: high automation risk (>= 6)
+  const depreciating = skills
+    .filter(s => s.auto != null && s.auto >= 6)
+    .sort((a, b) => b.auto - a.auto);
+
+  const depList = document.getElementById('dep-list');
+  document.getElementById('dep-count').textContent = depreciating.length + ' skill' + (depreciating.length !== 1 ? 's' : '') + ' at risk';
+
+  if (!depreciating.length) {
+    depList.innerHTML = '<div class="skill-empty">No skills with high automation risk</div>';
+  } else {
+    depList.innerHTML = depreciating.map(s => `
+      <div class="skill-row">
+        <span class="sk-name" title="${escHtml(s.title)}">${escHtml(s.title)}</span>
+        <span class="sk-score" style="color:var(--red)">${s.auto.toFixed(1)}</span>
+        <span class="sk-score-secondary">${s.amp != null ? s.amp.toFixed(1) : '\u2014'}</span>
+      </div>
+    `).join('');
+  }
+
+  // Appreciating: high amplification (>= 6)
+  const appreciating = skills
+    .filter(s => s.amp != null && s.amp >= 6)
+    .sort((a, b) => b.amp - a.amp);
+
+  const appList = document.getElementById('app-list');
+  document.getElementById('app-count').textContent = appreciating.length + ' skill' + (appreciating.length !== 1 ? 's' : '') + ' with high leverage';
+
+  if (!appreciating.length) {
+    appList.innerHTML = '<div class="skill-empty">No skills with high amplification potential</div>';
+  } else {
+    appList.innerHTML = appreciating.map(s => `
+      <div class="skill-row">
+        <span class="sk-name" title="${escHtml(s.title)}">${escHtml(s.title)}</span>
+        <span class="sk-score" style="color:var(--blue)">${s.amp.toFixed(1)}</span>
+        <span class="sk-score-secondary">${s.auto != null ? s.auto.toFixed(1) : '\u2014'}</span>
+      </div>
+    `).join('');
+  }
+}
+
+// ============================================================
+// 4. Rebalancing Recommendations
+// ============================================================
+function renderRecommendations(occ) {
+  const adj = occ.adj || [];
+  const currentSkillIds = new Set([...(occ.se || []), ...(occ.so || [])]);
+
+  // Collect gap skills from TRANSFORM and EVOLVE adjacent occupations
+  const seen = new Set();
+  const candidates = [];
+
+  for (const a of adj) {
+    if (a.q !== 'TRANSFORM' && a.q !== 'EVOLVE') continue;
+    const gapIds = a.gap || [];
+    for (const gid of gapIds) {
+      if (seen.has(gid)) continue;
+      if (currentSkillIds.has(gid)) continue;
+      seen.add(gid);
+      const sk = skillMap[gid];
+      if (!sk) continue;
+      if (sk.m == null) continue;  // skip unscored
+      candidates.push({
+        id: gid,
+        title: sk.t,
+        amp: sk.m,
+        auto: sk.a,
+        fromOcc: a.t,
+      });
+    }
+  }
+
+  // Sort by amplification descending
+  candidates.sort((a, b) => (b.amp || 0) - (a.amp || 0));
+  const top = candidates.slice(0, 8);
+
+  const grid = document.getElementById('rec-grid');
+  if (!top.length) {
+    grid.innerHTML = '<div class="rec-empty">No high-leverage gap skills found from adjacent career paths. Your current skill set covers the key areas well.</div>';
+    return;
+  }
+
+  grid.innerHTML = top.map(s => `
+    <div class="rec-card">
+      <div class="rec-amp">${s.amp.toFixed(0)}</div>
+      <div class="rec-info">
+        <div class="rec-name" title="${escHtml(s.title)}">${escHtml(s.title)}</div>
+        <div class="rec-from">Found in: ${escHtml(s.fromOcc)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// 5. Evolution Paths
+// ============================================================
+function renderPaths(occ) {
+  const adj = occ.adj || [];
+  // Sort by evolution_potential descending
+  const sorted = [...adj].sort((a, b) => (b.e || 0) - (a.e || 0));
+
+  const grid = document.getElementById('path-grid');
+  if (!sorted.length) {
+    grid.innerHTML = '<div class="rec-empty">No adjacent career paths available for this occupation.</div>';
+    return;
+  }
+
+  grid.innerHTML = sorted.map(a => {
+    const q = a.q || 'STABLE';
+    const qc = Q_COLORS[q] || '#888';
+    const overlap = a.ov != null ? (a.ov * 100).toFixed(0) : '\u2014';
+    const gapCount = (a.gap || []).length;
+    return `
+      <div class="path-card" data-slug="${escHtml(a.s)}" onclick="navigateToAdj(this)">
+        <div class="pc-top">
+          <span class="pc-title">${escHtml(a.t)}</span>
+          <span class="pc-badge" style="background:${hexToRgba(qc, 0.15)};color:${qc};border:1px solid ${hexToRgba(qc, 0.3)}">${q}</span>
+        </div>
+        <div class="pc-stats">
+          <div class="pc-stat">
+            <span class="pc-stat-val">${a.e != null ? a.e.toFixed(1) : '\u2014'}</span>
+            <span class="pc-stat-label">Evolution</span>
+          </div>
+          <div class="pc-stat">
+            <span class="pc-stat-val">${overlap}%</span>
+            <span class="pc-stat-label">Skill overlap</span>
+          </div>
+          <div class="pc-stat">
+            <span class="pc-stat-val">${gapCount}</span>
+            <span class="pc-stat-label">New skills</span>
+          </div>
+        </div>
+        <div class="pc-arrow">View full analysis <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></div>
+      </div>
+    `;
+  }).join('');
+}
+
+function navigateToAdj(el) {
+  const slug = el.dataset.slug;
+  if (!slug) return;
+  const occ = occupations.find(o => o.s === slug);
+  if (occ) {
+    selectOccupation(occ);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// ============================================================
+// Resize handler
+// ============================================================
+window.addEventListener('resize', () => {
+  if (selectedOcc) drawScatter();
+});
+
+</script>
+</body>
+</html>
