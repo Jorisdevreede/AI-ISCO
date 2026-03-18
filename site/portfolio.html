@@ -985,6 +985,13 @@ canvas#scatterCanvas {
   #hero-stats .hero-stat-number { font-size: 24px; }
   .qi-pct { font-size: 20px; }
 }
+/* --- Embed mode (loaded in iframe) --- */
+body.embed-mode #site-nav,
+body.embed-mode #hero-stats,
+body.embed-mode #quadrant-insights,
+body.embed-mode #search-section { display: none !important; }
+body.embed-mode #wrapper { padding-top: 0; max-width: 100%; }
+body.embed-mode #analysis { display: block; }
 </style>
 </head>
 <body>
@@ -1144,6 +1151,12 @@ function hexToRgba(hex, a) {
 }
 
 // ============================================================
+// Embed mode detection
+// ============================================================
+const isEmbed = new URLSearchParams(window.location.search).has('embed');
+if (isEmbed) document.body.classList.add('embed-mode');
+
+// ============================================================
 // State
 // ============================================================
 let portfolioData = null;      // raw loaded JSON
@@ -1165,7 +1178,7 @@ fetch('portfolio_data.json')
     skillMap = data.skills || {};
     occupations = data.occupations || [];
     buildIndex();
-    renderLanding();
+    if (!isEmbed) renderLanding();
     handleHashChange();
   })
   .catch(err => {
@@ -1450,17 +1463,21 @@ function escHtml(s) {
 // ============================================================
 function selectOccupation(occ) {
   selectedOcc = occ;
-  history.replaceState(null, '', '#' + occ.s);
-  searchInput.value = occ.t;
+  if (!isEmbed) {
+    history.replaceState(null, '', '#' + occ.s);
+    searchInput.value = occ.t;
+  }
 
-  // Collapse landing elements
-  document.getElementById('hero-stats').classList.add('hero-hidden');
-  document.getElementById('quadrant-insights').classList.add('hero-hidden');
-  document.getElementById('featured-chips').style.display = 'none';
+  if (!isEmbed) {
+    // Collapse landing elements
+    document.getElementById('hero-stats').classList.add('hero-hidden');
+    document.getElementById('quadrant-insights').classList.add('hero-hidden');
+    document.getElementById('featured-chips').style.display = 'none';
 
-  // Compact search
-  document.getElementById('search-section').classList.add('compact');
-  document.getElementById('search-intro').style.display = 'none';
+    // Compact search
+    document.getElementById('search-section').classList.add('compact');
+    document.getElementById('search-intro').style.display = 'none';
+  }
 
   // Show analysis
   const analysis = document.getElementById('analysis');

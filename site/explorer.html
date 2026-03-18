@@ -203,7 +203,16 @@ a:hover { text-decoration: underline; }
 #detail-panel {
   flex: 1;
   overflow-y: auto;
+  padding: 0;
+  background: var(--bg);
+}
+#detail-panel .detail-empty {
   padding: 24px 32px;
+}
+#detail-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
   background: var(--bg);
 }
 
@@ -561,7 +570,8 @@ a:hover { text-decoration: underline; }
     border-bottom: 1px solid var(--border);
   }
   #detail-panel {
-    padding: 20px 16px;
+    padding: 0;
+    min-height: 600px;
   }
   .controls-row {
     flex-direction: column;
@@ -901,50 +911,11 @@ a:hover { text-decoration: underline; }
   // --- Detail panel ---
   function showDetail(occ) {
     const panel = document.getElementById('detail-panel');
-    const qInfo = QUADRANT_COLORS[occ.quadrant] || QUADRANT_COLORS.STABLE;
-
-    const skills = (occ.top_skills || []).slice(0, 5);
-
-    let skillRows = '';
-    for (const sk of skills) {
-      skillRows +=
-        '<tr>' +
-        '<td>' + escapeHtml(sk.title) + '</td>' +
-        '<td class="skill-auto">' + (sk.auto != null ? sk.auto.toFixed(1) : '\u2014') + '</td>' +
-        '<td class="skill-amp">' + (sk.amp != null ? sk.amp.toFixed(1) : '\u2014') + '</td>' +
-        '</tr>';
-    }
-
     panel.innerHTML =
-      '<div class="detail-content">' +
-        '<div class="detail-title">' + escapeHtml(occ.title) + '</div>' +
-        '<div class="detail-badges">' +
-          '<span class="badge-isco">ISCO ' + escapeHtml(occ.isco_code) + '</span>' +
-          '<span class="badge-quadrant q-' + qInfo.css + '">' + escapeHtml(occ.quadrant) + '</span>' +
-        '</div>' +
-
-        '<div class="scores-row">' +
-          scoreCard('Automation Risk', occ.automation_risk, 'var(--red)') +
-          scoreCard('Amplification', occ.amplification_potential, 'var(--blue)') +
-          scoreCard('Evolution', occ.evolution_potential, 'var(--gold)') +
-        '</div>' +
-
-        (skills.length ?
-          '<div class="skills-section">' +
-            '<h3>Top Skills</h3>' +
-            '<table class="skills-table">' +
-              '<thead><tr><th>Skill</th><th>Auto</th><th>Amp</th></tr></thead>' +
-              '<tbody>' + skillRows + '</tbody>' +
-            '</table>' +
-          '</div>' : '') +
-
-        '<div class="detail-actions">' +
-          '<a href="portfolio.html#' + encodeURIComponent(occ.slug) + '" class="btn-primary">Full AI Analysis &rarr;</a>' +
-          '<a href="index.html" class="btn-secondary">View in Treemap &rarr;</a>' +
-        '</div>' +
-      '</div>';
+      '<iframe id="detail-iframe" src="portfolio.html?embed#' + encodeURIComponent(occ.slug) + '"></iframe>';
   }
 
+  // no longer needed but keep for reference
   function scoreCard(label, value, color) {
     const pct = Math.min(100, (value / 10) * 100);
     return (
