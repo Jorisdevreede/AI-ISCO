@@ -365,6 +365,289 @@ canvas#scatterCanvas {
   background: transparent;
 }
 
+/* --- Reimagined Section --- */
+#reimagined {
+  margin-bottom: 40px;
+  display: none;
+}
+#reimagined.has-data { display: block; }
+#reimagined h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+.reimagined-grid {
+  display: grid;
+  gap: 20px;
+}
+
+/* Evolution Story */
+.evo-story-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.evo-story-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.evo-timeline-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: rgba(212,160,23,0.15);
+  color: var(--gold);
+  border: 1px solid rgba(212,160,23,0.25);
+}
+.evo-time-saved {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(60,165,92,0.15);
+  color: var(--green);
+  border: 1px solid rgba(60,165,92,0.25);
+}
+.evo-story-text {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--fg);
+}
+.evo-story-text p { margin-bottom: 12px; }
+.evo-story-text p:last-child { margin-bottom: 0; }
+.evo-story-collapsed {
+  max-height: 120px;
+  overflow: hidden;
+  position: relative;
+}
+.evo-story-collapsed::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 50px;
+  background: linear-gradient(transparent, var(--bg2));
+}
+.evo-read-more {
+  display: none;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 500;
+}
+.evo-advice {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: rgba(74,144,217,0.06);
+  border: 1px solid rgba(74,144,217,0.15);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg);
+}
+.evo-advice strong {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+/* Week Bars */
+.week-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.week-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.week-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg2);
+  margin-bottom: 6px;
+}
+.week-bar-wrap {
+  display: flex;
+  width: 100%;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.week-bar-wrap:last-child { margin-bottom: 0; }
+.week-seg {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  position: relative;
+  transition: flex-basis 0.6s ease;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.week-seg span {
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.week-freed {
+  text-align: center;
+  font-size: 13px;
+  color: var(--green);
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+/* AI Tools & Tasks */
+.ai-lists-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.ai-lists-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+}
+.ai-list h4 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.ai-list ul {
+  list-style: none;
+  padding: 0;
+}
+.ai-list ul li {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg);
+  padding: 4px 0;
+  padding-left: 16px;
+  position: relative;
+}
+.ai-list ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.ai-list.auto-list h4 { color: var(--red); }
+.ai-list.auto-list li::before { background: var(--red); }
+.ai-list.amp-list h4 { color: var(--blue); }
+.ai-list.amp-list li::before { background: var(--blue); }
+.ai-list.tools-list h4 { color: var(--gold); }
+.ai-list.tools-list li::before { background: var(--gold); }
+
+/* Skill Cards */
+#skill-cards {
+  margin-bottom: 40px;
+}
+#skill-cards h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+#skill-cards .sc-subtitle {
+  font-size: 13px;
+  color: var(--fg2);
+  margin-bottom: 16px;
+}
+.skill-cards-list {
+  display: grid;
+  gap: 8px;
+}
+.skill-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.skill-card.expandable { cursor: pointer; }
+.skill-card.expandable:hover { border-color: rgba(255,255,255,0.15); }
+.skill-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+.sc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sc-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-scores {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.sc-score-auto { color: var(--red); font-weight: 600; }
+.sc-score-amp { color: var(--blue); font-weight: 600; }
+.sc-type-badge {
+  font-size: 10px;
+  color: var(--fg3);
+  background: rgba(255,255,255,0.05);
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.sc-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--fg3);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.skill-card.expanded .sc-chevron { transform: rotate(180deg); }
+.skill-card-body {
+  display: none;
+  padding: 0 16px 14px;
+  border-top: 1px solid var(--border);
+}
+.skill-card.expanded .skill-card-body { display: block; padding-top: 14px; }
+.sc-rationale {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--fg2);
+}
+
 /* --- Skill Breakdown --- */
 #skill-breakdown {
   display: grid;
@@ -596,6 +879,11 @@ canvas#scatterCanvas {
   .path-grid { grid-template-columns: 1fr; }
   .occ-title { font-size: 20px; }
   .score-card .score-value { font-size: 28px; }
+  .ai-lists-grid { grid-template-columns: 1fr; }
+  .week-seg span { font-size: 9px; }
+  .evo-story-collapsed { max-height: 80px; }
+  .evo-read-more { display: inline-block; }
+  .sc-scores { display: none; }
 }
 </style>
 </head>
@@ -656,6 +944,28 @@ canvas#scatterCanvas {
           <div class="scatter-legend-item"><div class="legend-dot-hollow"></div> Optional skill</div>
         </div>
       </div>
+    </div>
+
+    <!-- Your Role, Reimagined -->
+    <div id="reimagined">
+      <h2>Your Role, Reimagined</h2>
+      <div class="reimagined-grid">
+        <div class="evo-story-card" id="evo-story-card"></div>
+        <div class="week-card" id="week-card">
+          <h3>Your Week: Before &amp; After AI</h3>
+          <div id="week-bars"></div>
+        </div>
+        <div class="ai-lists-card" id="ai-lists-card">
+          <div class="ai-lists-grid" id="ai-lists-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skill Cards (with rationales) -->
+    <div id="skill-cards">
+      <h2>Essential Skills</h2>
+      <p class="sc-subtitle">Click a skill to see the AI impact rationale</p>
+      <div class="skill-cards-list" id="skill-cards-list"></div>
     </div>
 
     <!-- Skill Breakdown -->
@@ -922,6 +1232,8 @@ function selectOccupation(occ) {
 
   renderOverview(occ);
   renderScatter(occ);
+  renderReimagined(occ);
+  renderSkillCards(occ);
   renderBreakdown(occ);
   renderRecommendations(occ);
   renderPaths(occ);
@@ -938,7 +1250,7 @@ function resolveSkills(ids) {
   return ids.map(id => {
     const sk = skillMap[id];
     if (!sk) return null;
-    return { id, title: sk.t, auto: sk.a, amp: sk.m };
+    return { id, title: sk.t, auto: sk.a, amp: sk.m, rationale: sk.r || null };
   }).filter(Boolean);
 }
 
@@ -1191,6 +1503,107 @@ function drawScatter() {
       }
     }
   }
+
+  // Draw labels for notable essential skills (skip on narrow screens)
+  if (w >= 500) {
+    const essentialDots = scatterDots.filter(d => d.essential && d.auto != null && d.amp != null);
+    if (essentialDots.length > 0) {
+      // Pick up to 8 interesting labels
+      const labelCandidates = [];
+      const byAutoDesc = [...essentialDots].sort((a, b) => b.auto - a.auto);
+      const byAmpDesc = [...essentialDots].sort((a, b) => b.amp - a.amp);
+      const byTension = [...essentialDots].sort((a, b) => (b.auto * b.amp) - (a.auto * a.amp));
+      const picked = new Set();
+      function addCandidate(dot) {
+        if (picked.has(dot.id) || labelCandidates.length >= 8) return;
+        picked.add(dot.id);
+        labelCandidates.push(dot);
+      }
+      // Top 2 most automated
+      byAutoDesc.slice(0, 2).forEach(addCandidate);
+      // Top 2 most amplified
+      byAmpDesc.slice(0, 2).forEach(addCandidate);
+      // Top 1 highest tension
+      byTension.slice(0, 1).forEach(addCandidate);
+      // Corner outliers: highest auto+lowest amp, lowest auto+highest amp
+      const corners = [...essentialDots].sort((a, b) => (b.auto - b.amp) - (a.auto - a.amp));
+      if (corners.length) addCandidate(corners[0]);
+      if (corners.length > 1) addCandidate(corners[corners.length - 1]);
+
+      // Greedy label placement with overlap avoidance
+      ctx.font = '500 10px -apple-system, system-ui, sans-serif';
+      const placedLabels = [];
+      for (const dot of labelCandidates) {
+        const dx = xPos(dot.auto);
+        const dy = yPos(dot.amp);
+        let text = dot.title;
+        if (text.length > 22) text = text.substring(0, 20) + '\u2026';
+        const tw = ctx.measureText(text).width;
+        const lh = 16;
+        const px = 7, py = 3;
+
+        // Try positions: right, left, above, below
+        const offsets = [
+          { x: dx + 12, y: dy - lh/2 },
+          { x: dx - tw - 12 - px*2, y: dy - lh/2 },
+          { x: dx - tw/2 - px, y: dy - 18 },
+          { x: dx - tw/2 - px, y: dy + 12 },
+        ];
+
+        let best = null;
+        for (const off of offsets) {
+          const lx = off.x, ly = off.y;
+          const lw = tw + px*2, llh = lh + py*2;
+          // Check bounds
+          if (lx < pad.left || lx + lw > pad.left + plotW) continue;
+          if (ly < pad.top || ly + llh > pad.top + plotH) continue;
+          // Check overlap
+          let overlaps = false;
+          for (const pl of placedLabels) {
+            if (lx < pl.x + pl.w && lx + lw > pl.x && ly < pl.y + pl.h && ly + llh > pl.y) {
+              overlaps = true;
+              break;
+            }
+          }
+          if (!overlaps) { best = { x: lx, y: ly, w: lw, h: llh }; break; }
+        }
+
+        if (!best) continue; // skip if no non-overlapping position
+        placedLabels.push(best);
+
+        const q = getQuadrant(dot.auto, dot.amp);
+        const color = Q_COLORS[q] || '#888';
+
+        // Leader line
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(dx, dy);
+        ctx.lineTo(best.x + (best.w < dx ? best.w : 0), best.y + best.h / 2);
+        ctx.stroke();
+
+        // Background pill
+        const cr = 4;
+        ctx.fillStyle = 'rgba(10,10,15,0.8)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(best.x, best.y, best.w, best.h, cr);
+        } else {
+          ctx.rect(best.x, best.y, best.w, best.h);
+        }
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        // Text
+        ctx.fillStyle = color;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, best.x + px, best.y + best.h / 2);
+      }
+    }
+  }
 }
 
 // Scatter hit-test and tooltip
@@ -1259,6 +1672,158 @@ function onScatterLeave() {
   scatterHovered = null;
   scatterTooltip.classList.remove('visible');
   drawScatter();
+}
+
+// ============================================================
+// 2b. "Your Role, Reimagined" Section
+// ============================================================
+const WEEK_COLORS = [
+  '#e04040', '#d4a017', '#4a90d9', '#3ca55c', '#9b59b6', '#e67e22', '#1abc9c'
+];
+
+function renderReimagined(occ) {
+  const section = document.getElementById('reimagined');
+  const n = occ.n;
+
+  if (!n || !n.story) {
+    section.classList.remove('has-data');
+    return;
+  }
+  section.classList.add('has-data');
+
+  // Evolution Story
+  const storyCard = document.getElementById('evo-story-card');
+  const paragraphs = n.story.split('\n').filter(p => p.trim()).map(p => `<p>${escHtml(p)}</p>`).join('');
+  let storyHtml = '<div class="evo-story-header">';
+  if (n.tl) storyHtml += `<span class="evo-timeline-badge">Timeline: ${escHtml(n.tl)}</span>`;
+  if (n.ts != null) storyHtml += `<span class="evo-time-saved">~${n.ts}% time freed</span>`;
+  storyHtml += '</div>';
+  storyHtml += `<div class="evo-story-text" id="evo-story-text">${paragraphs}</div>`;
+  storyHtml += `<div class="evo-read-more" id="evo-read-more" onclick="toggleStory()">Read more</div>`;
+  if (n.adv) {
+    storyHtml += `<div class="evo-advice"><strong>Career advice:</strong> ${escHtml(n.adv)}</div>`;
+  }
+  storyCard.innerHTML = storyHtml;
+
+  // Check if story needs collapsing on mobile
+  requestAnimationFrame(() => {
+    const storyEl = document.getElementById('evo-story-text');
+    if (storyEl && window.innerWidth < 700) {
+      storyEl.classList.add('evo-story-collapsed');
+      document.getElementById('evo-read-more').style.display = 'inline-block';
+    }
+  });
+
+  // Week Bars
+  const weekBars = document.getElementById('week-bars');
+  if (n.week && n.week.before && n.week.after) {
+    let wHtml = '';
+    wHtml += '<div class="week-label">Before AI</div>';
+    wHtml += buildWeekBar(n.week.before);
+    wHtml += '<div class="week-label" style="margin-top:8px">After AI</div>';
+    wHtml += buildWeekBar(n.week.after);
+    if (n.ts != null) {
+      wHtml += `<div class="week-freed">~${n.ts}% of routine time freed, redirected to high-leverage work</div>`;
+    }
+    weekBars.innerHTML = wHtml;
+    document.getElementById('week-card').style.display = '';
+  } else {
+    document.getElementById('week-card').style.display = 'none';
+  }
+
+  // AI Tools & Tasks
+  const listsGrid = document.getElementById('ai-lists-grid');
+  let lHtml = '';
+  if (n.auto && n.auto.length) {
+    lHtml += '<div class="ai-list auto-list"><h4>Automated</h4><ul>';
+    for (const t of n.auto) lHtml += `<li>${escHtml(t)}</li>`;
+    lHtml += '</ul></div>';
+  }
+  if (n.amp && n.amp.length) {
+    lHtml += '<div class="ai-list amp-list"><h4>Amplified</h4><ul>';
+    for (const t of n.amp) lHtml += `<li>${escHtml(t)}</li>`;
+    lHtml += '</ul></div>';
+  }
+  if (n.tools && n.tools.length) {
+    lHtml += '<div class="ai-list tools-list"><h4>AI Tools</h4><ul>';
+    for (const t of n.tools) lHtml += `<li>${escHtml(t)}</li>`;
+    lHtml += '</ul></div>';
+  }
+  if (lHtml) {
+    listsGrid.innerHTML = lHtml;
+    document.getElementById('ai-lists-card').style.display = '';
+  } else {
+    document.getElementById('ai-lists-card').style.display = 'none';
+  }
+}
+
+function buildWeekBar(data) {
+  const entries = Object.entries(data);
+  let html = '<div class="week-bar-wrap">';
+  entries.forEach(([key, pct], i) => {
+    const color = WEEK_COLORS[i % WEEK_COLORS.length];
+    const label = key.replace(/_/g, ' ');
+    html += `<div class="week-seg" style="flex-basis:${pct}%;background:${color}" title="${label}: ${pct}%"><span>${pct > 8 ? label + ' ' + pct + '%' : ''}</span></div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function toggleStory() {
+  const el = document.getElementById('evo-story-text');
+  const btn = document.getElementById('evo-read-more');
+  if (el.classList.contains('evo-story-collapsed')) {
+    el.classList.remove('evo-story-collapsed');
+    btn.textContent = 'Show less';
+  } else {
+    el.classList.add('evo-story-collapsed');
+    btn.textContent = 'Read more';
+  }
+}
+
+// ============================================================
+// 2c. Skill Cards with Rationales
+// ============================================================
+function renderSkillCards(occ) {
+  const essential = resolveSkills(occ.se).map(s => ({ ...s, essential: true }));
+  const list = document.getElementById('skill-cards-list');
+
+  if (!essential.length) {
+    list.innerHTML = '<div class="skill-empty">No essential skills available</div>';
+    return;
+  }
+
+  // Sort by evolution tension (auto * amp) descending
+  essential.sort((a, b) => ((b.auto || 0) * (b.amp || 0)) - ((a.auto || 0) * (a.amp || 0)));
+
+  list.innerHTML = essential.map((s, i) => {
+    const q = getQuadrant(s.auto, s.amp);
+    const qc = Q_COLORS[q] || '#888';
+    const hasRationale = !!s.rationale;
+    const expandClass = hasRationale ? 'expandable' : '';
+
+    let html = `<div class="skill-card ${expandClass}" ${hasRationale ? `onclick="toggleSkillCard(this)"` : ''}>`;
+    html += '<div class="skill-card-header">';
+    html += `<div class="sc-dot" style="background:${qc}"></div>`;
+    html += `<span class="sc-name" title="${escHtml(s.title)}">${escHtml(s.title)}</span>`;
+    html += '<div class="sc-scores">';
+    if (s.auto != null) html += `<span class="sc-score-auto">${s.auto.toFixed(1)}</span>`;
+    if (s.amp != null) html += `<span class="sc-score-amp">${s.amp.toFixed(1)}</span>`;
+    html += '</div>';
+    if (hasRationale) {
+      html += '<svg class="sc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    }
+    html += '</div>';
+    if (hasRationale) {
+      html += `<div class="skill-card-body"><div class="sc-rationale">${escHtml(s.rationale)}</div></div>`;
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+}
+
+function toggleSkillCard(el) {
+  el.classList.toggle('expanded');
 }
 
 // ============================================================

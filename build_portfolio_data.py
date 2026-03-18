@@ -236,17 +236,34 @@ def main():
     print(f"  Occupations loaded: {len(occupations)}")
     print(f"  Skill scores loaded: {len(skill_scores_list)}")
 
-    # Build skill_scores lookup: uri -> {automation_risk, amplification_potential}
+    # Build skill_scores lookup: uri -> {automation_risk, amplification_potential, rationale}
     skill_scores = {}
     for s in skill_scores_list:
         uri = s.get("uri", "")
         if uri and s.get("automation_risk") is not None and s.get("amplification_potential") is not None:
-            skill_scores[uri] = {
+            entry = {
                 "automation_risk": float(s["automation_risk"]),
                 "amplification_potential": float(s["amplification_potential"]),
             }
+            if s.get("rationale"):
+                entry["rationale"] = s["rationale"]
+            skill_scores[uri] = entry
 
     print(f"  Skills with valid scores: {len(skill_scores)}")
+
+    # Load occupation narratives (optional — continue without if missing)
+    narratives_path = os.path.join(DATA_DIR, "occupation_narratives.json")
+    narratives_by_uri = {}
+    if os.path.exists(narratives_path):
+        with open(narratives_path, encoding="utf-8") as f:
+            narratives_list = json.load(f)
+        for narr in narratives_list:
+            uri = narr.get("uri", "")
+            if uri:
+                narratives_by_uri[uri] = narr
+        print(f"  Occupation narratives loaded: {len(narratives_by_uri)}")
+    else:
+        print(f"  WARNING: {narratives_path} not found — skipping narratives")
 
     # ------------------------------------------------------------------
     # 2. Collect all skill URIs and titles, build short ID map
@@ -257,11 +274,14 @@ def main():
             uri = skill["uri"]
             if uri not in skill_info:
                 sc = skill_scores.get(uri)
-                skill_info[uri] = {
+                info_entry = {
                     "title": skill.get("title", ""),
                     "automation_risk": sc["automation_risk"] if sc else None,
                     "amplification_potential": sc["amplification_potential"] if sc else None,
                 }
+                if sc and sc.get("rationale"):
+                    info_entry["rationale"] = sc["rationale"]
+                skill_info[uri] = info_entry
 
     all_skill_uris = set(skill_info.keys())
     uri_to_short = build_short_id_map(all_skill_uris)
@@ -324,6 +344,8 @@ def main():
             entry["m"] = round(info["amplification_potential"], 1)
         else:
             entry["m"] = None
+        if info.get("rationale"):
+            entry["r"] = info["rationale"]
         skills_dict[short_id] = entry
 
     print(f"\nSkills in output: {len(skills_dict)}")
@@ -392,6 +414,30 @@ def main():
             "so": so,
             "adj": adj_list,
         }
+
+        # Add narrative if available
+        narr = narratives_by_uri.get(occ.get("uri", ""))
+        if narr:
+            compact_narr = {}
+            if narr.get("evolution_story"):
+                compact_narr["story"] = narr["evolution_story"]
+            if narr.get("time_savings_pct") is not None:
+                compact_narr["ts"] = narr["time_savings_pct"]
+            if narr.get("automated_tasks"):
+                compact_narr["auto"] = narr["automated_tasks"]
+            if narr.get("amplified_capabilities"):
+                compact_narr["amp"] = narr["amplified_capabilities"]
+            if narr.get("ai_tools_applicable"):
+                compact_narr["tools"] = narr["ai_tools_applicable"]
+            if narr.get("rebalanced_week"):
+                compact_narr["week"] = narr["rebalanced_week"]
+            if narr.get("timeline"):
+                compact_narr["tl"] = narr["timeline"]
+            if narr.get("advice"):
+                compact_narr["adv"] = narr["advice"]
+            if compact_narr:
+                entry["n"] = compact_narr
+
         occ_output.append(entry)
 
     # ------------------------------------------------------------------
@@ -421,6 +467,13 @@ def main():
 
     scored_skills = sum(1 for s in skills_dict.values() if s["a"] is not None)
     print(f"  Skills with scores: {scored_skills} / {len(skills_dict)}")
+
+    skills_with_rationales = sum(1 for s in skills_dict.values() if s.get("r"))
+    print(f"  Skills with rationales: {skills_with_rationales} / {len(skills_dict)}")
+
+    if narratives_by_uri:
+        occs_with_narratives = sum(1 for o in occ_output if o.get("n"))
+        print(f"  Occupations with narratives: {occs_with_narratives} / {len(occ_output)}")
 
     adj_counts = [len(o["adj"]) for o in occ_output]
     with_adj = sum(1 for c in adj_counts if c > 0)
