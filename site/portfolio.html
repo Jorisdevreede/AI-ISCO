@@ -38,33 +38,130 @@ a:hover { text-decoration: underline; }
   padding: 0 24px 80px;
 }
 
-/* --- Header --- */
-#page-header {
-  padding: 28px 0 20px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 40px;
+/* --- Nav Bar --- */
+#site-nav {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: var(--bg2);
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
-#page-header .back-link {
+.nav-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  margin-right: 32px;
+}
+.nav-brand:hover { text-decoration: none; color: var(--fg); }
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+.nav-links a {
   font-size: 13px;
+  font-weight: 500;
   color: var(--fg2);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-links a:hover { color: var(--fg); background: rgba(255,255,255,0.05); text-decoration: none; }
+.nav-links a.nav-active {
+  color: var(--gold);
+  background: rgba(212,160,23,0.1);
+}
+
+/* --- Hero Stats --- */
+.hero-hidden { display: none; }
+
+#hero-stats {
+  display: flex;
+  gap: 16px;
+  margin: 0 0 24px;
+  padding-top: 28px;
+}
+.hero-stat-card {
+  flex: 1;
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 20px;
+  border-left: 4px solid var(--fg3);
+}
+.hero-stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.hero-stat-label {
+  font-size: 12px;
+  color: var(--fg2);
+  margin-top: 4px;
+}
+
+/* --- Quadrant Insights --- */
+#quadrant-insights {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 24px;
+}
+.qi-card {
+  flex: 1;
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 16px 18px;
+  border-left: 4px solid var(--fg3);
+}
+.qi-pct {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.qi-label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.qi-desc {
+  font-size: 12px;
+  color: var(--fg2);
+  margin-top: 2px;
+}
+
+/* --- Featured Chips --- */
+#featured-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 20px;
+}
+.featured-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--fg);
+  transition: border-color 0.2s, background 0.2s;
 }
-#page-header .back-link:hover { color: var(--fg); text-decoration: none; }
-#page-header .back-link svg { width: 14px; height: 14px; }
-#page-header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  margin-bottom: 8px;
+.featured-chip:hover {
+  border-color: rgba(255,255,255,0.2);
+  background: var(--bg3);
 }
-#page-header .subtitle {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--fg2);
-  max-width: 680px;
+.chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 /* --- Search --- */
@@ -870,7 +967,6 @@ canvas#scatterCanvas {
 /* --- Mobile --- */
 @media (max-width: 700px) {
   #wrapper { padding: 0 14px 60px; }
-  #page-header h1 { font-size: 22px; }
   #search-input { font-size: 15px; padding: 14px 16px 14px 42px; }
   .scores-row { flex-direction: column; }
   .score-card { min-width: unset; }
@@ -884,35 +980,46 @@ canvas#scatterCanvas {
   .evo-story-collapsed { max-height: 80px; }
   .evo-read-more { display: inline-block; }
   .sc-scores { display: none; }
+  #hero-stats { flex-direction: column; }
+  #quadrant-insights { flex-direction: column; }
+  #hero-stats .hero-stat-number { font-size: 24px; }
+  .qi-pct { font-size: 20px; }
 }
 </style>
 </head>
 <body>
 
+<nav id="site-nav">
+  <a href="index.html" class="nav-brand">AI-ISCO</a>
+  <div class="nav-links">
+    <a href="index.html">Treemap</a>
+    <a href="explorer.html">Explorer</a>
+    <a href="portfolio.html" class="nav-active">Analyze Your Job</a>
+  </div>
+</nav>
+
 <div id="wrapper">
 
-  <!-- Header -->
-  <div id="page-header">
-    <a href="index.html" class="back-link">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-      Back to Job Explorer
-    </a>
-    <h1>Skill Portfolio Analyzer</h1>
-    <p class="subtitle">Treat your career like an investment portfolio. See which skills are appreciating, which are depreciating, and how to rebalance.</p>
-  </div>
+  <!-- Hero Stats (populated by JS after data load) -->
+  <div id="hero-stats" class="hero-hidden"></div>
+
+  <!-- Quadrant Insights (populated by JS after data load) -->
+  <div id="quadrant-insights" class="hero-hidden"></div>
 
   <!-- Search -->
   <div id="search-section">
     <div id="search-intro">
-      <p>Every occupation is a <b>portfolio of skills</b>. Some skills are gaining value as AI amplifies them. Others are losing value as AI automates them. Search for your occupation to see the full picture.</p>
+      <h2 style="font-size:24px;font-weight:700;color:#fff;margin-bottom:10px;">What does AI mean for <em style="color:var(--gold);font-style:italic;">your</em> career?</h2>
+      <p>Search any of <b>3,043 occupations</b> for a full skill-by-skill AI impact analysis.</p>
     </div>
     <div class="search-wrap">
       <div class="search-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </div>
-      <input type="text" id="search-input" placeholder="Search for your occupation..." autocomplete="off" spellcheck="false">
+      <input type="text" id="search-input" placeholder="Try 'Software developer'..." autocomplete="off" spellcheck="false">
       <div id="autocomplete"></div>
     </div>
+    <div id="featured-chips"></div>
   </div>
 
   <!-- Analysis (hidden until selection) -->
@@ -1058,6 +1165,7 @@ fetch('portfolio_data.json')
     skillMap = data.skills || {};
     occupations = data.occupations || [];
     buildIndex();
+    renderLanding();
     handleHashChange();
   })
   .catch(err => {
@@ -1065,6 +1173,132 @@ fetch('portfolio_data.json')
     document.getElementById('search-intro').innerHTML =
       '<p style="color:var(--red)">Could not load portfolio_data.json. Make sure the file exists in the same directory.</p>';
   });
+
+// ============================================================
+// Landing: Hero Stats, Quadrant Insights, Featured Chips
+// ============================================================
+function renderLanding() {
+  const numOcc = occupations.length;
+  const numSkills = Object.keys(skillMap).length;
+
+  // Compute avg time freed from narratives
+  let tsSum = 0, tsCount = 0;
+  for (const o of occupations) {
+    if (o.n && o.n.ts != null) { tsSum += o.n.ts; tsCount++; }
+  }
+  const avgTs = tsCount > 0 ? Math.round(tsSum / tsCount) : 0;
+
+  // Count narratives
+  let narrativeCount = 0;
+  for (const o of occupations) {
+    if (o.n && o.n.story) narrativeCount++;
+  }
+
+  // Quadrant distribution
+  const qCounts = { EVOLVE: 0, STABLE: 0, TRANSFORM: 0, SHRINK: 0 };
+  for (const o of occupations) {
+    const q = o.q || 'STABLE';
+    if (qCounts[q] !== undefined) qCounts[q]++;
+  }
+  const total = occupations.length || 1;
+
+  // --- Hero Stats ---
+  const heroEl = document.getElementById('hero-stats');
+  const stats = [
+    { value: numOcc, label: 'Occupations Analyzed', color: 'var(--gold)' },
+    { value: numSkills, label: 'Skills Scored', color: 'var(--blue)' },
+    { value: avgTs, label: 'Avg. Time Freed by AI', color: 'var(--green)', suffix: '%', prefix: '~' },
+    { value: narrativeCount, label: 'AI Evolution Narratives', color: 'var(--red)' },
+  ];
+  heroEl.innerHTML = stats.map((s, i) => `
+    <div class="hero-stat-card" style="border-left-color:${s.color}">
+      <div class="hero-stat-number" style="color:${s.color}" data-target="${s.value}" data-prefix="${s.prefix || ''}" data-suffix="${s.suffix || ''}" id="hero-counter-${i}">0</div>
+      <div class="hero-stat-label">${s.label}</div>
+    </div>
+  `).join('');
+  heroEl.classList.remove('hero-hidden');
+
+  // Animate counters
+  stats.forEach((s, i) => {
+    animateCounter(document.getElementById('hero-counter-' + i), s.value, s.prefix || '', s.suffix || '');
+  });
+
+  // --- Quadrant Insights ---
+  const qiEl = document.getElementById('quadrant-insights');
+  const quadrants = [
+    { key: 'EVOLVE', label: 'EVOLVE', desc: 'Jobs enhanced by AI', color: 'var(--blue)' },
+    { key: 'STABLE', label: 'STABLE', desc: 'Largely unaffected', color: 'var(--green)' },
+    { key: 'TRANSFORM', label: 'TRANSFORM', desc: 'Role fundamentally changes', color: 'var(--gold)' },
+    { key: 'SHRINK', label: 'SHRINK', desc: 'At automation risk', color: 'var(--red)' },
+  ];
+  qiEl.innerHTML = quadrants.map(q => {
+    const pct = ((qCounts[q.key] / total) * 100).toFixed(1);
+    return `
+      <div class="qi-card" style="border-left-color:${q.color}">
+        <div class="qi-pct" style="color:${q.color}">${pct}%</div>
+        <div class="qi-label">${q.label}</div>
+        <div class="qi-desc">${q.desc}</div>
+      </div>
+    `;
+  }).join('');
+  qiEl.classList.remove('hero-hidden');
+
+  // --- Featured Chips ---
+  const chipNames = [
+    'software developer', 'registered nurse', 'secondary school teacher', 'accountant',
+    'graphic designer', 'chef', 'civil engineer', 'data analyst'
+  ];
+  const chipsEl = document.getElementById('featured-chips');
+  chipsEl.innerHTML = chipNames.map(name => {
+    const occ = occupations.find(o => o.t.toLowerCase().includes(name.toLowerCase()));
+    const q = occ ? occ.q || 'STABLE' : 'STABLE';
+    const qc = Q_COLORS[q] || '#888';
+    return `<div class="featured-chip" data-chip-name="${name}" onclick="onChipClick(this)">
+      <span class="chip-dot" style="background:${qc}"></span>
+      <span>${name.charAt(0).toUpperCase() + name.slice(1)}</span>
+    </div>`;
+  }).join('');
+}
+
+function onChipClick(el) {
+  const name = el.dataset.chipName;
+  const occ = occupations.find(o => o.t.toLowerCase().includes(name.toLowerCase()));
+  if (occ) selectOccupation(occ);
+}
+
+function animateCounter(el, target, prefix, suffix) {
+  const duration = 1200;
+  const startTime = performance.now();
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const value = Math.round(easeOutCubic(progress) * target);
+    el.textContent = prefix + value.toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ============================================================
+// Placeholder cycling
+// ============================================================
+const placeholderExamples = [
+  "Try 'Software developer'...",
+  "Try 'Nurse'...",
+  "Try 'Secondary school teacher'...",
+  "Try 'Accountant'...",
+  "Try 'Graphic designer'...",
+  "Try 'Data analyst'...",
+];
+let placeholderIdx = 0;
+setInterval(() => {
+  const input = document.getElementById('search-input');
+  if (input && !input.value && document.activeElement !== input) {
+    placeholderIdx = (placeholderIdx + 1) % placeholderExamples.length;
+    input.placeholder = placeholderExamples[placeholderIdx];
+  }
+}, 3000);
 
 function buildIndex() {
   occIndex = occupations.map(o => ({
@@ -1218,6 +1452,11 @@ function selectOccupation(occ) {
   selectedOcc = occ;
   history.replaceState(null, '', '#' + occ.s);
   searchInput.value = occ.t;
+
+  // Collapse landing elements
+  document.getElementById('hero-stats').classList.add('hero-hidden');
+  document.getElementById('quadrant-insights').classList.add('hero-hidden');
+  document.getElementById('featured-chips').style.display = 'none';
 
   // Compact search
   document.getElementById('search-section').classList.add('compact');

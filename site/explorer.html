@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISCO Occupation Explorer — AI-ISCO</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --bg3: #1a1a26;
+  --fg: #e0e0e8;
+  --fg2: #888894;
+  --fg3: #555560;
+  --gold: #d4a017;
+  --red: #e04040;
+  --blue: #4a90d9;
+  --green: #3ca55c;
+  --border: rgba(255,255,255,0.08);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* --- Nav Bar --- */
+#site-nav {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: var(--bg2);
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.nav-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  margin-right: 32px;
+}
+.nav-brand:hover { text-decoration: none; color: var(--fg); }
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg2);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-links a:hover { color: var(--fg); background: rgba(255,255,255,0.05); text-decoration: none; }
+.nav-links a.nav-active {
+  color: var(--gold);
+  background: rgba(212,160,23,0.1);
+}
+
+/* --- Explorer Layout --- */
+#explorer-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+
+#explorer-header {
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+#explorer-header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+#explorer-header .subtitle {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fg2);
+  max-width: 720px;
+  margin-bottom: 16px;
+}
+
+/* --- Controls --- */
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#tree-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+  padding: 9px 14px 9px 36px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--fg);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+#tree-search::placeholder { color: var(--fg3); }
+#tree-search:focus {
+  border-color: rgba(74,144,217,0.5);
+  box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
+}
+.search-field {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+}
+.search-field .s-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg3);
+  pointer-events: none;
+  width: 16px;
+  height: 16px;
+}
+
+.ctrl-select {
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--fg);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23888894' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.ctrl-select:focus {
+  border-color: rgba(74,144,217,0.5);
+}
+
+/* --- Panels --- */
+#explorer-panels {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 200px);
+}
+
+#tree-panel {
+  width: 420px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  padding-top: 8px;
+}
+
+#detail-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  background: var(--bg);
+}
+
+/* --- Scrollbar --- */
+#tree-panel::-webkit-scrollbar,
+#detail-panel::-webkit-scrollbar {
+  width: 6px;
+}
+#tree-panel::-webkit-scrollbar-track,
+#detail-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+#tree-panel::-webkit-scrollbar-thumb,
+#detail-panel::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+}
+#tree-panel::-webkit-scrollbar-thumb:hover,
+#detail-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* --- Tree Nodes --- */
+.tree-group {
+  user-select: none;
+}
+.tree-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  transition: background 0.1s;
+}
+.tree-group-header:hover {
+  background: rgba(255,255,255,0.03);
+}
+.tree-chevron {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--fg3);
+  transition: transform 0.2s ease;
+}
+.tree-group.expanded > .tree-group-header > .tree-chevron {
+  transform: rotate(90deg);
+}
+.tree-group-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tree-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg3);
+  background: rgba(255,255,255,0.05);
+  padding: 1px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.tree-qbar {
+  width: 60px;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  background: rgba(255,255,255,0.04);
+}
+.tree-qbar span {
+  height: 100%;
+  display: block;
+}
+
+.tree-group-children {
+  display: none;
+  overflow: hidden;
+}
+.tree-group.expanded > .tree-group-children {
+  display: block;
+}
+
+/* Level indentation */
+.tree-level-1 > .tree-group-header { padding-left: 12px; }
+.tree-level-2 > .tree-group-header { padding-left: 32px; }
+.tree-level-3 > .tree-group-header { padding-left: 52px; }
+.tree-level-4 > .tree-group-header { padding-left: 72px; }
+
+/* --- Leaf nodes --- */
+.tree-leaf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 92px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--fg);
+  text-transform: capitalize;
+  transition: background 0.1s;
+}
+.tree-leaf:hover {
+  background: rgba(255,255,255,0.03);
+}
+.tree-leaf.selected {
+  background: rgba(74,144,217,0.08);
+  border-left: 2px solid var(--blue);
+  padding-left: 90px;
+}
+.tree-leaf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tree-leaf-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tree-leaf-score {
+  font-size: 11px;
+  color: var(--fg3);
+  flex-shrink: 0;
+}
+.tree-leaf.hidden,
+.tree-group.hidden {
+  display: none;
+}
+
+/* --- Detail Panel --- */
+.detail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  color: var(--fg3);
+  font-size: 15px;
+}
+
+.detail-content {
+  animation: fadeIn 0.25s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: capitalize;
+  margin-bottom: 10px;
+}
+.detail-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.badge-isco {
+  font-size: 12px;
+  color: var(--fg3);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: rgba(255,255,255,0.05);
+  padding: 4px 10px;
+  border-radius: 5px;
+}
+.badge-quadrant {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Score cards */
+.scores-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.score-card {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+}
+.score-card .score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg2);
+  margin-bottom: 8px;
+}
+.score-card .score-value {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.score-card .score-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.score-card .score-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* Skills table */
+.skills-section {
+  margin-bottom: 28px;
+}
+.skills-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--fg);
+}
+.skills-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.skills-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg3);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.skills-table th:not(:first-child) {
+  text-align: center;
+  width: 100px;
+}
+.skills-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  text-transform: capitalize;
+}
+.skills-table td:not(:first-child) {
+  text-align: center;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+}
+.skills-table tr:last-child td {
+  border-bottom: none;
+}
+.skill-auto { color: var(--red); }
+.skill-amp { color: var(--blue); }
+
+/* Action buttons */
+.detail-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.btn-primary:hover { opacity: 0.85; text-decoration: none; }
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.25); text-decoration: none; }
+
+/* Quadrant colors */
+.q-transform { background: rgba(212,160,23,0.15); color: var(--gold); }
+.q-evolve { background: rgba(74,144,217,0.15); color: var(--blue); }
+.q-stable { background: rgba(60,165,92,0.15); color: var(--green); }
+.q-shrink { background: rgba(224,64,64,0.15); color: var(--red); }
+
+.qbar-transform { background: var(--gold); }
+.qbar-evolve { background: var(--blue); }
+.qbar-stable { background: var(--green); }
+.qbar-shrink { background: var(--red); }
+
+.dot-transform { background: var(--gold); }
+.dot-evolve { background: var(--blue); }
+.dot-stable { background: var(--green); }
+.dot-shrink { background: var(--red); }
+
+/* Search match highlight */
+.tree-leaf-name mark,
+.tree-group-name mark {
+  background: none;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+  #explorer-panels {
+    flex-direction: column;
+  }
+  #tree-panel {
+    width: 100%;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  #detail-panel {
+    padding: 20px 16px;
+  }
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-field {
+    max-width: 100%;
+  }
+  #tree-search {
+    max-width: 100%;
+  }
+  .scores-row {
+    gap: 10px;
+  }
+  .score-card {
+    min-width: 100px;
+  }
+  .detail-title {
+    font-size: 19px;
+  }
+  .tree-leaf {
+    padding-left: 72px;
+  }
+  .tree-leaf.selected {
+    padding-left: 70px;
+  }
+  .tree-level-4 > .tree-group-header { padding-left: 52px; }
+}
+</style>
+</head>
+<body>
+
+<nav id="site-nav">
+  <a href="index.html" class="nav-brand">AI-ISCO</a>
+  <div class="nav-links">
+    <a href="index.html">Treemap</a>
+    <a href="explorer.html" class="nav-active">Explorer</a>
+    <a href="portfolio.html">Analyze Your Job</a>
+  </div>
+</nav>
+
+<div id="explorer-wrapper">
+  <div id="explorer-header">
+    <h1>ISCO Occupation Explorer</h1>
+    <p class="subtitle">Browse 3,000+ occupations by ISCO-08 hierarchy. Click any group to explore, select an occupation for details.</p>
+    <div class="controls-row">
+      <div class="search-field">
+        <svg class="s-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/>
+        </svg>
+        <input type="text" id="tree-search" placeholder="Search occupations..." autocomplete="off" spellcheck="false">
+      </div>
+      <select id="quadrant-filter" class="ctrl-select">
+        <option value="ALL">All quadrants</option>
+        <option value="TRANSFORM">Transform</option>
+        <option value="EVOLVE">Evolve</option>
+        <option value="STABLE">Stable</option>
+        <option value="SHRINK">Shrink</option>
+      </select>
+      <select id="sort-select" class="ctrl-select">
+        <option value="name">Name (A-Z)</option>
+        <option value="auto-desc">Automation Risk (High-Low)</option>
+        <option value="amp-desc">Amplification (High-Low)</option>
+        <option value="evo-desc">Evolution (High-Low)</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="explorer-panels">
+    <div id="tree-panel"></div>
+    <div id="detail-panel">
+      <div class="detail-empty">Select an occupation from the tree to view details</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const QUADRANT_COLORS = {
+    TRANSFORM: { css: 'transform', color: '#d4a017' },
+    EVOLVE:    { css: 'evolve',    color: '#4a90d9' },
+    STABLE:    { css: 'stable',    color: '#3ca55c' },
+    SHRINK:    { css: 'shrink',    color: '#e04040' }
+  };
+
+  let allOccupations = [];
+  let treeData = {};
+  let selectedLeaf = null;
+  let searchTerm = '';
+  let quadrantFilter = 'ALL';
+  let sortKey = 'name';
+
+  // --- Load data ---
+  fetch('data.json')
+    .then(r => r.json())
+    .then(data => {
+      allOccupations = data;
+      buildTree();
+      renderTree();
+    });
+
+  // --- Build nested tree ---
+  function buildTree() {
+    treeData = {};
+    for (const occ of allOccupations) {
+      const mg = occ.major_group || 'Other';
+      const smg = occ.sub_major_group || 'Other';
+      const mig = occ.minor_group || 'Other';
+      const ug = occ.unit_group || 'Other';
+      if (!treeData[mg]) treeData[mg] = {};
+      if (!treeData[mg][smg]) treeData[mg][smg] = {};
+      if (!treeData[mg][smg][mig]) treeData[mg][smg][mig] = {};
+      if (!treeData[mg][smg][mig][ug]) treeData[mg][smg][mig][ug] = [];
+      treeData[mg][smg][mig][ug].push(occ);
+    }
+  }
+
+  // --- Quadrant distribution ---
+  function quadrantDist(occs) {
+    const counts = { TRANSFORM: 0, EVOLVE: 0, STABLE: 0, SHRINK: 0 };
+    for (const o of occs) counts[o.quadrant] = (counts[o.quadrant] || 0) + 1;
+    return counts;
+  }
+
+  function makeQBar(occs) {
+    const dist = quadrantDist(occs);
+    const total = occs.length || 1;
+    const bar = document.createElement('div');
+    bar.className = 'tree-qbar';
+    for (const q of ['TRANSFORM', 'EVOLVE', 'STABLE', 'SHRINK']) {
+      if (dist[q] > 0) {
+        const seg = document.createElement('span');
+        seg.className = 'qbar-' + q.toLowerCase();
+        seg.style.width = ((dist[q] / total) * 100) + '%';
+        bar.appendChild(seg);
+      }
+    }
+    return bar;
+  }
+
+  // --- Collect all occupations under a tree branch ---
+  function collectOccs(obj) {
+    if (Array.isArray(obj)) return obj;
+    let result = [];
+    for (const key of Object.keys(obj)) {
+      result = result.concat(collectOccs(obj[key]));
+    }
+    return result;
+  }
+
+  // --- Sort occupations ---
+  function sortOccs(occs) {
+    const sorted = occs.slice();
+    switch (sortKey) {
+      case 'name':
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'auto-desc':
+        sorted.sort((a, b) => b.automation_risk - a.automation_risk || a.title.localeCompare(b.title));
+        break;
+      case 'amp-desc':
+        sorted.sort((a, b) => b.amplification_potential - a.amplification_potential || a.title.localeCompare(b.title));
+        break;
+      case 'evo-desc':
+        sorted.sort((a, b) => b.evolution_potential - a.evolution_potential || a.title.localeCompare(b.title));
+        break;
+    }
+    return sorted;
+  }
+
+  // --- Sort group keys ---
+  function sortGroupKeys(keys, childMap) {
+    if (sortKey === 'name') return keys.slice().sort((a, b) => a.localeCompare(b));
+    // For score sorts, sort groups by average of the relevant score
+    const avgScore = (key) => {
+      const occs = collectOccs(childMap[key]);
+      if (!occs.length) return 0;
+      let field = sortKey === 'auto-desc' ? 'automation_risk' : sortKey === 'amp-desc' ? 'amplification_potential' : 'evolution_potential';
+      return occs.reduce((s, o) => s + o[field], 0) / occs.length;
+    };
+    return keys.slice().sort((a, b) => avgScore(b) - avgScore(a) || a.localeCompare(b));
+  }
+
+  // --- Filter check ---
+  function passesFilter(occ) {
+    if (quadrantFilter !== 'ALL' && occ.quadrant !== quadrantFilter) return false;
+    if (searchTerm && !occ.title.toLowerCase().includes(searchTerm)) return false;
+    return true;
+  }
+
+  // --- Highlight search match ---
+  function highlightTitle(title) {
+    if (!searchTerm) return escapeHtml(title);
+    const lower = title.toLowerCase();
+    const idx = lower.indexOf(searchTerm);
+    if (idx === -1) return escapeHtml(title);
+    const before = title.slice(0, idx);
+    const match = title.slice(idx, idx + searchTerm.length);
+    const after = title.slice(idx + searchTerm.length);
+    return escapeHtml(before) + '<mark>' + escapeHtml(match) + '</mark>' + escapeHtml(after);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // --- Render tree ---
+  function renderTree() {
+    const panel = document.getElementById('tree-panel');
+    panel.innerHTML = '';
+
+    const majorKeys = sortGroupKeys(Object.keys(treeData), treeData);
+
+    for (const mg of majorKeys) {
+      const mgOccs = collectOccs(treeData[mg]);
+      const filteredMgOccs = mgOccs.filter(passesFilter);
+      if (filteredMgOccs.length === 0) continue;
+
+      const mgNode = makeGroupNode(mg, filteredMgOccs, 1);
+      const mgChildren = mgNode.querySelector('.tree-group-children');
+
+      const smgKeys = sortGroupKeys(Object.keys(treeData[mg]), treeData[mg]);
+      for (const smg of smgKeys) {
+        const smgOccs = collectOccs(treeData[mg][smg]);
+        const filteredSmgOccs = smgOccs.filter(passesFilter);
+        if (filteredSmgOccs.length === 0) continue;
+
+        const smgNode = makeGroupNode(smg, filteredSmgOccs, 2);
+        const smgChildren = smgNode.querySelector('.tree-group-children');
+
+        const migKeys = sortGroupKeys(Object.keys(treeData[mg][smg]), treeData[mg][smg]);
+        for (const mig of migKeys) {
+          const migOccs = collectOccs(treeData[mg][smg][mig]);
+          const filteredMigOccs = migOccs.filter(passesFilter);
+          if (filteredMigOccs.length === 0) continue;
+
+          const migNode = makeGroupNode(mig, filteredMigOccs, 3);
+          const migChildren = migNode.querySelector('.tree-group-children');
+
+          const ugKeys = sortGroupKeys(Object.keys(treeData[mg][smg][mig]), treeData[mg][smg][mig]);
+          for (const ug of ugKeys) {
+            const ugOccs = treeData[mg][smg][mig][ug];
+            const filteredUgOccs = ugOccs.filter(passesFilter);
+            if (filteredUgOccs.length === 0) continue;
+
+            const ugNode = makeGroupNode(ug, filteredUgOccs, 4);
+            const ugChildren = ugNode.querySelector('.tree-group-children');
+
+            const sortedOccs = sortOccs(filteredUgOccs);
+            for (const occ of sortedOccs) {
+              ugChildren.appendChild(makeLeafNode(occ));
+            }
+
+            migChildren.appendChild(ugNode);
+          }
+          smgChildren.appendChild(migNode);
+        }
+        mgChildren.appendChild(smgNode);
+      }
+
+      // Auto-expand when searching
+      if (searchTerm) {
+        mgNode.classList.add('expanded');
+        mgNode.querySelectorAll('.tree-group').forEach(g => g.classList.add('expanded'));
+      }
+
+      panel.appendChild(mgNode);
+    }
+
+    // If nothing matched
+    if (!panel.children.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'padding:32px 16px;text-align:center;color:var(--fg3);font-size:14px;';
+      empty.textContent = 'No occupations match your filters.';
+      panel.appendChild(empty);
+    }
+  }
+
+  function makeGroupNode(name, occs, level) {
+    const node = document.createElement('div');
+    node.className = 'tree-group tree-level-' + level;
+
+    const header = document.createElement('div');
+    header.className = 'tree-group-header';
+    header.innerHTML =
+      '<span class="tree-chevron">&#9656;</span>' +
+      '<span class="tree-group-name">' + highlightTitle(name) + '</span>';
+
+    const count = document.createElement('span');
+    count.className = 'tree-count';
+    count.textContent = occs.length;
+    header.appendChild(count);
+    header.appendChild(makeQBar(occs));
+
+    header.addEventListener('click', () => {
+      node.classList.toggle('expanded');
+    });
+
+    const children = document.createElement('div');
+    children.className = 'tree-group-children';
+
+    node.appendChild(header);
+    node.appendChild(children);
+    return node;
+  }
+
+  function makeLeafNode(occ) {
+    const leaf = document.createElement('div');
+    leaf.className = 'tree-leaf';
+    leaf.dataset.slug = occ.slug;
+
+    const qInfo = QUADRANT_COLORS[occ.quadrant] || QUADRANT_COLORS.STABLE;
+
+    leaf.innerHTML =
+      '<span class="tree-leaf-dot dot-' + qInfo.css + '"></span>' +
+      '<span class="tree-leaf-name">' + highlightTitle(occ.title) + '</span>' +
+      '<span class="tree-leaf-score">' + occ.evolution_potential.toFixed(1) + '</span>';
+
+    leaf.addEventListener('click', () => {
+      if (selectedLeaf) selectedLeaf.classList.remove('selected');
+      leaf.classList.add('selected');
+      selectedLeaf = leaf;
+      showDetail(occ);
+    });
+
+    return leaf;
+  }
+
+  // --- Detail panel ---
+  function showDetail(occ) {
+    const panel = document.getElementById('detail-panel');
+    const qInfo = QUADRANT_COLORS[occ.quadrant] || QUADRANT_COLORS.STABLE;
+
+    const skills = (occ.top_skills || []).slice(0, 5);
+
+    let skillRows = '';
+    for (const sk of skills) {
+      skillRows +=
+        '<tr>' +
+        '<td>' + escapeHtml(sk.title) + '</td>' +
+        '<td class="skill-auto">' + sk.auto.toFixed(1) + '</td>' +
+        '<td class="skill-amp">' + sk.amp.toFixed(1) + '</td>' +
+        '</tr>';
+    }
+
+    panel.innerHTML =
+      '<div class="detail-content">' +
+        '<div class="detail-title">' + escapeHtml(occ.title) + '</div>' +
+        '<div class="detail-badges">' +
+          '<span class="badge-isco">ISCO ' + escapeHtml(occ.isco_code) + '</span>' +
+          '<span class="badge-quadrant q-' + qInfo.css + '">' + escapeHtml(occ.quadrant) + '</span>' +
+        '</div>' +
+
+        '<div class="scores-row">' +
+          scoreCard('Automation Risk', occ.automation_risk, 'var(--red)') +
+          scoreCard('Amplification', occ.amplification_potential, 'var(--blue)') +
+          scoreCard('Evolution', occ.evolution_potential, 'var(--gold)') +
+        '</div>' +
+
+        (skills.length ?
+          '<div class="skills-section">' +
+            '<h3>Top Skills</h3>' +
+            '<table class="skills-table">' +
+              '<thead><tr><th>Skill</th><th>Auto</th><th>Amp</th></tr></thead>' +
+              '<tbody>' + skillRows + '</tbody>' +
+            '</table>' +
+          '</div>' : '') +
+
+        '<div class="detail-actions">' +
+          '<a href="portfolio.html#' + encodeURIComponent(occ.slug) + '" class="btn-primary">Full AI Analysis &rarr;</a>' +
+          '<a href="index.html" class="btn-secondary">View in Treemap &rarr;</a>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function scoreCard(label, value, color) {
+    const pct = Math.min(100, (value / 10) * 100);
+    return (
+      '<div class="score-card">' +
+        '<div class="score-label">' + label + '</div>' +
+        '<div class="score-value" style="color:' + color + '">' + value.toFixed(1) + '</div>' +
+        '<div class="score-bar"><div class="score-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '</div>'
+    );
+  }
+
+  // --- Controls ---
+  let searchTimeout;
+  document.getElementById('tree-search').addEventListener('input', function(e) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      searchTerm = e.target.value.trim().toLowerCase();
+      renderTree();
+    }, 200);
+  });
+
+  document.getElementById('quadrant-filter').addEventListener('change', function(e) {
+    quadrantFilter = e.target.value;
+    renderTree();
+  });
+
+  document.getElementById('sort-select').addEventListener('change', function(e) {
+    sortKey = e.target.value;
+    renderTree();
+  });
+
+})();
+</script>
+</body>
+</html>
