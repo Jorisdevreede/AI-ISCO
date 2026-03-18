@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insights — AI-ISCO</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --bg3: #1a1a26;
+  --fg: #e0e0e8;
+  --fg2: #888894;
+  --fg3: #555560;
+  --gold: #d4a017;
+  --red: #e04040;
+  --blue: #4a90d9;
+  --green: #3ca55c;
+  --border: rgba(255,255,255,0.08);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* --- Nav Bar --- */
+#site-nav {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: var(--bg2);
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.nav-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  margin-right: 32px;
+}
+.nav-brand:hover { text-decoration: none; color: var(--fg); }
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg2);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-links a:hover { color: var(--fg); background: rgba(255,255,255,0.05); text-decoration: none; }
+.nav-links a.nav-active {
+  color: var(--gold);
+  background: rgba(212,160,23,0.1);
+}
+
+/* --- Page Layout --- */
+#wrapper {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* --- Hero --- */
+.hero {
+  padding: 48px 0 40px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+.hero-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+.hero h1 {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.hero-sub {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--fg2);
+  max-width: 700px;
+  margin-bottom: 28px;
+}
+.hero-stats {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.hero-stat {
+  text-align: center;
+}
+.hero-stat-val {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px;
+  color: var(--fg2);
+  margin-top: 2px;
+}
+
+/* --- Section --- */
+.section {
+  margin-bottom: 56px;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+.section h2 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.section-desc {
+  font-size: 15px;
+  color: var(--fg2);
+  line-height: 1.6;
+  margin-bottom: 24px;
+  max-width: 700px;
+}
+
+/* --- Ranking Table --- */
+.rank-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rank-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg3);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.rank-table th.num { text-align: center; width: 70px; }
+.rank-table td {
+  padding: 12px;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: top;
+}
+.rank-table td.num {
+  text-align: center;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+}
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-table .rank-num {
+  font-size: 12px;
+  color: var(--fg3);
+  font-weight: 700;
+  text-align: center;
+  width: 32px;
+}
+.rank-title {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.rank-isco {
+  font-size: 11px;
+  color: var(--fg3);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.rank-narrative {
+  font-size: 13px;
+  color: var(--fg2);
+  line-height: 1.5;
+  margin-top: 6px;
+  max-width: 600px;
+}
+.badge-q {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.badge-shrink { background: rgba(224,64,64,0.15); color: var(--red); }
+.badge-transform { background: rgba(212,160,23,0.15); color: var(--gold); }
+.badge-evolve { background: rgba(74,144,217,0.15); color: var(--blue); }
+.badge-stable { background: rgba(60,165,92,0.15); color: var(--green); }
+
+/* --- Stats Grid --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.stat-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg2);
+  margin-bottom: 8px;
+}
+.stat-card-val {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-card-sub {
+  font-size: 12px;
+  color: var(--fg3);
+}
+.quadrant-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.q-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.q-bar-label {
+  width: 100px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.q-bar-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.q-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.q-bar-pct {
+  width: 50px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--fg2);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* --- ISCO Group Table --- */
+.group-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+}
+.group-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg3);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.group-table th.num { text-align: center; width: 80px; }
+.group-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.group-table td.num {
+  text-align: center;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.group-table tr:last-child td { border-bottom: none; }
+
+/* --- Article --- */
+.article {
+  border-top: 3px solid var(--gold);
+  padding-top: 40px;
+  margin-top: 56px;
+}
+.article-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+.article h2 {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+.article-byline {
+  font-size: 14px;
+  color: var(--fg2);
+  margin-bottom: 32px;
+  font-style: italic;
+}
+.article-body {
+  column-count: 2;
+  column-gap: 40px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--fg);
+}
+.article-body p {
+  margin-bottom: 18px;
+}
+.article-body .dropcap::first-letter {
+  font-size: 3.2em;
+  font-weight: 800;
+  float: left;
+  line-height: 0.85;
+  margin-right: 8px;
+  margin-top: 4px;
+  color: var(--gold);
+}
+.article-body .pullquote {
+  column-span: all;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--gold);
+  border-left: 3px solid var(--gold);
+  padding: 16px 0 16px 24px;
+  margin: 28px 0;
+  font-style: italic;
+}
+
+/* --- Loading --- */
+.loading {
+  text-align: center;
+  padding: 60px 0;
+  color: var(--fg3);
+  font-size: 15px;
+}
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+  .hero h1 { font-size: 26px; }
+  .hero-stats { gap: 20px; }
+  .hero-stat-val { font-size: 22px; }
+  .section h2 { font-size: 22px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .article-body { column-count: 1; }
+  .article h2 { font-size: 24px; }
+  .rank-table { font-size: 13px; }
+  .rank-narrative { display: none; }
+  .rank-table th:last-child,
+  .rank-table td:last-child { display: none; }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .hero-stats { flex-direction: column; gap: 12px; }
+  .hero-stat { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<nav id="site-nav">
+  <a href="index.html" class="nav-brand">AI-ISCO</a>
+  <div class="nav-links">
+    <a href="index.html">Treemap</a>
+    <a href="explorer.html">Explorer</a>
+    <a href="portfolio.html">Analyze Your Job</a>
+    <a href="insights.html" class="nav-active">Insights</a>
+  </div>
+</nav>
+
+<div id="wrapper">
+  <div id="content">
+    <div class="loading">Loading occupation data...</div>
+  </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+const QCOLORS = { TRANSFORM: '#d4a017', SHRINK: '#e04040', EVOLVE: '#4a90d9', STABLE: '#3ca55c' };
+
+Promise.all([
+  fetch('data.json').then(r => r.json()),
+  fetch('portfolio_data.json').then(r => r.json())
+]).then(([data, portfolio]) => {
+  // Build narrative lookup by slug
+  const narrativeMap = {};
+  for (const occ of portfolio.occupations) {
+    narrativeMap[occ.s] = occ;
+  }
+
+  render(data, narrativeMap);
+});
+
+function render(data, narrativeMap) {
+  const el = document.getElementById('content');
+
+  // --- Compute rankings ---
+  const byQuadrant = { TRANSFORM: [], SHRINK: [], EVOLVE: [], STABLE: [] };
+  for (const d of data) {
+    if (byQuadrant[d.quadrant]) byQuadrant[d.quadrant].push(d);
+  }
+
+  // SHRINK: highest automation risk, lowest amplification
+  const shrinkRanked = byQuadrant.SHRINK.slice()
+    .sort((a, b) => (b.automation_risk - b.amplification_potential) - (a.automation_risk - a.amplification_potential) || b.automation_risk - a.automation_risk);
+
+  // STABLE: lowest evolution potential
+  const stableRanked = byQuadrant.STABLE.slice()
+    .sort((a, b) => a.evolution_potential - b.evolution_potential || a.automation_risk - b.automation_risk);
+
+  // TRANSFORM: highest evolution potential
+  const transformRanked = byQuadrant.TRANSFORM.slice()
+    .sort((a, b) => b.evolution_potential - a.evolution_potential || b.automation_risk - a.automation_risk);
+
+  // --- Quadrant stats ---
+  const total = data.length;
+  const qCounts = {};
+  for (const q of ['EVOLVE', 'STABLE', 'TRANSFORM', 'SHRINK']) {
+    qCounts[q] = byQuadrant[q].length;
+  }
+
+  // --- Avg time savings by quadrant ---
+  const qTimeSavings = {};
+  for (const q of Object.keys(byQuadrant)) {
+    const items = byQuadrant[q];
+    let sum = 0, n = 0;
+    for (const d of items) {
+      const nm = narrativeMap[d.slug];
+      if (nm && nm.n && nm.n.ts != null) { sum += nm.n.ts; n++; }
+    }
+    qTimeSavings[q] = n > 0 ? (sum / n) : 0;
+  }
+
+  // --- Most common tools ---
+  const toolCounts = {};
+  for (const d of data) {
+    const nm = narrativeMap[d.slug];
+    if (nm && nm.n && nm.n.tools) {
+      for (const t of nm.n.tools) {
+        toolCounts[t] = (toolCounts[t] || 0) + 1;
+      }
+    }
+  }
+  const topTools = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+  // --- Average scores by ISCO major group ---
+  const majorGroups = {};
+  for (const d of data) {
+    const mg = d.major_group || 'Other';
+    if (!majorGroups[mg]) majorGroups[mg] = { sumAuto: 0, sumAmp: 0, sumEvo: 0, count: 0 };
+    majorGroups[mg].sumAuto += d.automation_risk;
+    majorGroups[mg].sumAmp += d.amplification_potential;
+    majorGroups[mg].sumEvo += d.evolution_potential;
+    majorGroups[mg].count++;
+  }
+
+  // --- Overall averages ---
+  let totalAuto = 0, totalAmp = 0;
+  for (const d of data) { totalAuto += d.automation_risk; totalAmp += d.amplification_potential; }
+  const avgAuto = totalAuto / total;
+  const avgAmp = totalAmp / total;
+
+  // --- Build HTML ---
+  let html = '';
+
+  // Hero
+  html += `
+  <div class="hero">
+    <div class="hero-kicker">AI-ISCO Research Report</div>
+    <h1>The AI Evolution of 3,000 Jobs</h1>
+    <p class="hero-sub">A comprehensive analysis of how artificial intelligence is reshaping every occupation in the ESCO taxonomy &mdash; which jobs shrink, which transform, and which remain untouched.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">${total.toLocaleString()}</div>
+        <div class="hero-stat-label">Occupations analyzed</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">13,939</div>
+        <div class="hero-stat-label">Skills scored</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" style="color:var(--red)">${qCounts.SHRINK}</div>
+        <div class="hero-stat-label">Jobs at risk (SHRINK)</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" style="color:var(--gold)">${qCounts.TRANSFORM}</div>
+        <div class="hero-stat-label">Jobs transforming</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" style="color:var(--blue)">${qCounts.EVOLVE}</div>
+        <div class="hero-stat-label">Jobs enhanced</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" style="color:var(--green)">${qCounts.STABLE}</div>
+        <div class="hero-stat-label">Jobs stable</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Section 1: The Vanishing Jobs
+  html += `
+  <div class="section">
+    <div class="section-label" style="color:var(--red)">High Risk</div>
+    <h2>The Vanishing Jobs</h2>
+    <p class="section-desc">These occupations face the highest automation risk with the lowest amplification potential &mdash; their core skills can be replicated by AI with little room for human augmentation.</p>
+    ${rankTable(shrinkRanked.slice(0, 10), narrativeMap, 'SHRINK')}
+  </div>`;
+
+  // Section 2: The Immovable
+  html += `
+  <div class="section">
+    <div class="section-label" style="color:var(--green)">Resilient</div>
+    <h2>The Immovable</h2>
+    <p class="section-desc">These jobs have the lowest AI evolution potential &mdash; their skills are deeply physical, interpersonal, or experiential in ways current AI cannot meaningfully replicate or augment.</p>
+    ${rankTable(stableRanked.slice(0, 10), narrativeMap, 'STABLE')}
+  </div>`;
+
+  // Section 3: The Metamorphosis
+  html += `
+  <div class="section">
+    <div class="section-label" style="color:var(--gold)">Transforming</div>
+    <h2>The Metamorphosis</h2>
+    <p class="section-desc">These occupations sit at the intersection of high automation risk and high amplification potential &mdash; they won't disappear, but they will evolve into something fundamentally different.</p>
+    ${rankTable(transformRanked.slice(0, 10), narrativeMap, 'TRANSFORM')}
+  </div>`;
+
+  // Section 4: By the Numbers
+  html += `
+  <div class="section">
+    <div class="section-label" style="color:var(--fg2)">Statistics</div>
+    <h2>By the Numbers</h2>
+    <p class="section-desc">Aggregate statistics across all ${total.toLocaleString()} occupations.</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-label">Avg Automation Risk</div>
+        <div class="stat-card-val" style="color:var(--red)">${avgAuto.toFixed(1)}</div>
+        <div class="stat-card-sub">out of 10</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Avg Amplification</div>
+        <div class="stat-card-val" style="color:var(--blue)">${avgAmp.toFixed(1)}</div>
+        <div class="stat-card-sub">out of 10</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Median Time Savings</div>
+        <div class="stat-card-val">${medianTimeSavings(data, narrativeMap)}%</div>
+        <div class="stat-card-sub">of weekly tasks automated</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Most Common Quadrant</div>
+        <div class="stat-card-val" style="color:var(--blue)">EVOLVE</div>
+        <div class="stat-card-sub">${(qCounts.EVOLVE / total * 100).toFixed(1)}% of occupations</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;">Quadrant Distribution</h3>
+    <div class="quadrant-bars">
+      ${quadrantBar('EVOLVE', qCounts.EVOLVE, total)}
+      ${quadrantBar('STABLE', qCounts.STABLE, total)}
+      ${quadrantBar('TRANSFORM', qCounts.TRANSFORM, total)}
+      ${quadrantBar('SHRINK', qCounts.SHRINK, total)}
+    </div>
+
+    <h3 style="font-size:15px;font-weight:600;margin:32px 0 8px;">Median Time Savings by Quadrant</h3>
+    <div class="stats-grid">
+      ${['TRANSFORM','EVOLVE','SHRINK','STABLE'].map(q => `
+        <div class="stat-card">
+          <div class="stat-card-label" style="color:${QCOLORS[q]}">${q}</div>
+          <div class="stat-card-val">${Math.round(qTimeSavings[q])}%</div>
+          <div class="stat-card-sub">weekly time saved</div>
+        </div>`).join('')}
+    </div>
+
+    <h3 style="font-size:15px;font-weight:600;margin:32px 0 8px;">Most Common AI Tools</h3>
+    <table class="group-table">
+      <thead><tr><th>Tool</th><th class="num">Occupations</th></tr></thead>
+      <tbody>
+        ${topTools.map(([tool, count]) => `<tr><td>${esc(tool)}</td><td class="num">${count}</td></tr>`).join('')}
+      </tbody>
+    </table>
+
+    <h3 style="font-size:15px;font-weight:600;margin:32px 0 8px;">Average Scores by ISCO Major Group</h3>
+    <table class="group-table">
+      <thead><tr><th>Major Group</th><th class="num">Count</th><th class="num">Avg Auto</th><th class="num">Avg Amp</th><th class="num">Avg Evo</th></tr></thead>
+      <tbody>
+        ${Object.entries(majorGroups)
+          .sort((a, b) => b[1].sumEvo / b[1].count - a[1].sumEvo / a[1].count)
+          .map(([mg, s]) => `<tr>
+            <td>${esc(mg)}</td>
+            <td class="num">${s.count}</td>
+            <td class="num" style="color:var(--red)">${(s.sumAuto / s.count).toFixed(1)}</td>
+            <td class="num" style="color:var(--blue)">${(s.sumAmp / s.count).toFixed(1)}</td>
+            <td class="num">${(s.sumEvo / s.count).toFixed(1)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  // Section 5: The Article
+  html += articleHTML();
+
+  el.innerHTML = html;
+}
+
+function rankTable(items, narrativeMap, quadrant) {
+  const qcss = quadrant.toLowerCase();
+  let rows = '';
+  items.forEach((d, i) => {
+    const nm = narrativeMap[d.slug];
+    const story = nm && nm.n && nm.n.story ? nm.n.story : '';
+    const excerpt = story ? truncate(story, 160) : '';
+    rows += `<tr>
+      <td class="rank-num">${i + 1}</td>
+      <td>
+        <div class="rank-title">${esc(d.title)}</div>
+        <span class="rank-isco">ISCO ${d.isco_code || '\u2014'}</span>
+        ${excerpt ? `<div class="rank-narrative">${esc(excerpt)}</div>` : ''}
+      </td>
+      <td class="num" style="color:var(--red)">${d.automation_risk.toFixed(1)}</td>
+      <td class="num" style="color:var(--blue)">${d.amplification_potential.toFixed(1)}</td>
+      <td class="num">${d.evolution_potential.toFixed(1)}</td>
+    </tr>`;
+  });
+  return `<table class="rank-table">
+    <thead><tr>
+      <th>#</th><th>Occupation</th><th class="num">Auto</th><th class="num">Amp</th><th class="num">Evo</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function quadrantBar(q, count, total) {
+  const pct = (count / total * 100).toFixed(1);
+  return `<div class="q-bar-row">
+    <span class="q-bar-label" style="color:${QCOLORS[q]}">${q}</span>
+    <div class="q-bar-track"><div class="q-bar-fill" style="width:${pct}%;background:${QCOLORS[q]}"></div></div>
+    <span class="q-bar-pct">${count} (${pct}%)</span>
+  </div>`;
+}
+
+function medianTimeSavings(data, narrativeMap) {
+  const vals = [];
+  for (const d of data) {
+    const nm = narrativeMap[d.slug];
+    if (nm && nm.n && nm.n.ts != null) vals.push(nm.n.ts);
+  }
+  vals.sort((a, b) => a - b);
+  if (!vals.length) return 0;
+  const mid = Math.floor(vals.length / 2);
+  return vals.length % 2 ? vals[mid] : Math.round((vals[mid - 1] + vals[mid]) / 2);
+}
+
+function truncate(s, n) {
+  if (s.length <= n) return s;
+  return s.slice(0, n).replace(/\s+\S*$/, '') + '\u2026';
+}
+
+function esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function articleHTML() {
+  return `
+  <div class="article">
+    <div class="article-kicker">Analysis</div>
+    <h2>The Great Rebalancing</h2>
+    <p class="article-byline">A data-driven look at how AI is reshaping the labor market &mdash; not as a tidal wave, but as a selective current</p>
+    <div class="article-body">
+      <p class="dropcap">When we scored all 13,939 skills across 3,000 European occupations for AI automation risk and amplification potential, the most striking finding wasn't what disappeared. It was what didn't. Only 6% of occupations fell into the SHRINK quadrant &mdash; those facing high automation with little opportunity for human augmentation. The overwhelming majority, over 51%, landed in EVOLVE: jobs where AI amplifies human capability rather than replacing it.</p>
+
+      <p>The numbers tell a story of transformation, not extinction. Consider the precast concrete moulder, one of the highest-risk occupations in our dataset with an automation risk of 9.0 and amplification potential of just 2.0. Every core skill in this role &mdash; mixing compounds, operating moulding machinery, filling moulds &mdash; can be performed by industrial robotics and automated casting systems. The human contribution narrows to quality oversight of a largely autonomous process.</p>
+
+      <p>But step one level up the abstraction ladder and a different picture emerges. The blacksmith, a profession older than written language, scores 5.33 on automation risk yet 6.33 on amplification. Far from vanishing, the AI-era blacksmith uses computational metallurgy to model crystal structures, generative design to optimize form, and CNC-assisted tooling that extends rather than replaces their craft knowledge. The human forge remains central; AI just makes the hammer smarter.</p>
+
+      <div class="pullquote">"Over half of all jobs aren't being replaced by AI &mdash; they're being amplified. The hammer gets smarter, but the hand that wields it becomes more valuable."</div>
+
+      <p>The TRANSFORM quadrant, containing about 17% of occupations, reveals the most dramatic shifts. Weather forecasters score 9.0 on both axes: AI can generate forecasts autonomously, yet the amplification potential for human meteorologists is equally enormous. Their role evolves from reading synoptic charts to orchestrating ensembles of AI models, interpreting edge cases where training data is sparse, and communicating probabilistic risk to decision-makers. The job title stays the same; the job itself is unrecognizable.</p>
+
+      <p>Similarly, the subtitler &mdash; once spending hours synchronizing text frame by frame &mdash; now reviews and refines AI-generated subtitle tracks, focusing creative energy on cultural adaptation, humor, and emotional tone that machine translation consistently misses. Their weekly time savings exceed 50%, but the quality bar rises with it.</p>
+
+      <p>Perhaps the most surprising cluster sits in the STABLE quadrant: 26% of occupations that AI barely touches. Horse riding instructors, manual therapists, distillery workers, glass blowers. These aren't necessarily low-skill roles &mdash; manual therapy requires years of training &mdash; but they share a common trait: their core value is embodied, spatial, or sensory in ways that current AI architectures cannot meaningfully replicate. You can't outsource the feel of a horse's gait to a language model.</p>
+
+      <p>The data reveals important structural patterns. No managers appear in SHRINK. Not one. While individual managerial tasks &mdash; scheduling, reporting, email drafting &mdash; face high automation, the composite role of management is heavily weighted toward interpersonal judgment, political navigation, and contextual decision-making that AI amplifies but cannot perform alone. Managers overwhelmingly land in EVOLVE.</p>
+
+      <div class="pullquote">"No managers appear in SHRINK. Not one. The composite role of managing people resists automation even as individual managerial tasks are easily automated."</div>
+
+      <p>Looking at ISCO major groups, Professionals show the highest average amplification potential, while Elementary Occupations face the highest automation risk. But even here, the picture is nuanced: a paramedic (classified under health associate professionals) scores high on amplification because AI-powered triage, diagnostic support, and real-time protocol guidance makes every response faster and more precise &mdash; without ever replacing the human who arrives at the scene.</p>
+
+      <p>The most common AI tools across all occupations are not the headline-grabbing generative models but workaday platforms: AI-powered scheduling systems, automated reporting tools, natural language document processors, and predictive maintenance platforms. The revolution, it turns out, is administrative before it's creative.</p>
+
+      <p>What does all this mean for workers and policymakers? First, the framing of "jobs lost to AI" is misleading. A more accurate description is "jobs rewritten by AI." For every occupation facing genuine displacement, three are being enhanced. The challenge isn't mass unemployment &mdash; it's mass reskilling. Workers in TRANSFORM roles need support to evolve alongside their jobs. Workers in SHRINK roles need pathways to adjacent occupations in EVOLVE and STABLE quadrants.</p>
+
+      <p>Second, the data suggests that the AI labor transition will be slower and more uneven than both optimists and pessimists predict. The median time savings across all occupations is around 30% of weekly tasks &mdash; significant, but not the overnight revolution of popular imagination. The transition will unfold over years, not quarters, giving organizations and workers time to adapt if they act now.</p>
+
+      <p>The great rebalancing is not a story of human obsolescence. It is a story of human redefinition &mdash; a labor market where the most valued skills shift from execution to judgment, from routine to exception-handling, from producing outputs to curating them. The jobs of tomorrow will carry the same titles. The work inside them will be fundamentally new.</p>
+    </div>
+  </div>`;
+}
+
+})();
+</script>
+</body>
+</html>
