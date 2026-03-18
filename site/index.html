@@ -28,225 +28,109 @@ body {
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  padding-bottom: 250px;
+  padding-bottom: 60px;
 }
 
 #header {
   padding: 20px 28px 16px;
-  flex-shrink: 0;
 }
 
-.intro {
-  margin-bottom: 18px;
-}
+.intro { margin-bottom: 18px; }
 .intro h1 {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
 }
-.intro h1 a {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--fg2);
-  text-decoration: none;
-}
+.intro h1 a { font-size: 13px; font-weight: 400; color: var(--fg2); text-decoration: none; }
 .intro h1 a:hover { text-decoration: underline; }
-.intro p {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--fg2);
-  margin-bottom: 8px;
-}
+.intro p { font-size: 15px; line-height: 1.6; color: var(--fg2); margin-bottom: 8px; }
 .intro a { color: var(--fg2); }
 .intro strong, .intro b { color: var(--fg); font-weight: 600; }
 
 .quadrant-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 16px;
-  margin: 12px 0;
-  font-size: 13px;
-  line-height: 1.5;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px;
+  margin: 12px 0; font-size: 13px; line-height: 1.5;
 }
-.quadrant-grid .q-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.quadrant-grid .q-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
+.quadrant-grid .q-item { display: flex; align-items: center; gap: 8px; }
+.quadrant-grid .q-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 .quadrant-grid .q-label { font-weight: 600; color: var(--fg); }
 .quadrant-grid .q-desc { color: var(--fg2); }
 
-.stats-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px 28px;
-  align-items: flex-start;
-  margin-bottom: 12px;
+.controls-row {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;
 }
+.color-toggle { display: flex; gap: 4px; }
+.color-toggle button {
+  padding: 6px 14px; font-size: 12px; font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;
+  background: transparent; color: var(--fg2); cursor: pointer; transition: all 0.15s;
+}
+.color-toggle button.active { background: rgba(255,255,255,0.08); color: var(--fg); border-color: rgba(255,255,255,0.2); }
+.color-toggle button:hover:not(.active) { background: rgba(255,255,255,0.04); }
 
-.stat-section {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.gradient-legend { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--fg2); }
+.gradient-legend canvas { border-radius: 2px; }
+.gradient-legend .quadrant-swatches { display: flex; gap: 10px; align-items: center; }
+.gradient-legend .q-swatch { display: flex; align-items: center; gap: 4px; }
+.gradient-legend .q-swatch-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* Breadcrumb */
+#breadcrumb {
+  display: flex; align-items: center; gap: 6px; padding: 0 28px 12px;
+  font-size: 13px; flex-wrap: wrap;
 }
-.stat-section h3 {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--fg2);
+#breadcrumb .bc-item {
+  color: var(--blue); cursor: pointer; text-decoration: none;
+  padding: 3px 8px; border-radius: 4px; transition: background 0.15s;
 }
-.stat-big {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1;
+#breadcrumb .bc-item:hover { background: rgba(74,144,217,0.12); }
+#breadcrumb .bc-sep { color: var(--fg2); }
+#breadcrumb .bc-current { color: var(--fg); font-weight: 600; cursor: default; }
+#breadcrumb .bc-current:hover { background: none; }
+
+/* Stats row */
+.stats-row {
+  display: flex; flex-wrap: wrap; gap: 20px 28px; align-items: flex-start;
+  margin-bottom: 12px; padding: 0 28px;
 }
-.stat-label {
-  font-size: 11px;
-  color: var(--fg2);
-}
+.stat-section { display: flex; flex-direction: column; gap: 5px; }
+.stat-section h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg2); }
+.stat-big { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.stat-label { font-size: 11px; color: var(--fg2); }
 
 .tier-bar { display: flex; flex-direction: column; gap: 3px; }
 .tier-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
 .tier-color { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 .tier-name { flex: 1; color: var(--fg2); white-space: nowrap; }
-.tier-jobs { text-align: right; white-space: nowrap; }
+.tier-count { text-align: right; white-space: nowrap; }
 .tier-pct { text-align: right; width: 30px; color: var(--fg2); font-size: 11px; }
 
-.histogram { display: flex; align-items: flex-end; gap: 2px; height: 54px; }
-.histogram .bar { flex: 1; border-radius: 1px 1px 0 0; min-height: 1px; }
-.hist-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--fg2); margin-top: 2px; }
-
-.hbar-chart { display: flex; flex-direction: column; gap: 3px; }
-.hbar-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-.hbar-label { width: 72px; flex-shrink: 0; color: var(--fg2); font-size: 11px; text-align: right; }
-.hbar-track { flex: 1; height: 12px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; min-width: 36px; }
-.hbar-fill { height: 100%; border-radius: 2px; }
-.hbar-val { width: 30px; flex-shrink: 0; font-size: 11px; color: var(--fg); text-align: right; }
-
-.controls-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-}
-
-.color-toggle {
-  display: flex;
-  gap: 4px;
-}
-.color-toggle button {
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--fg2);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.color-toggle button.active {
-  background: rgba(255,255,255,0.08);
-  color: var(--fg);
-  border-color: rgba(255,255,255,0.2);
-}
-.color-toggle button:hover:not(.active) {
-  background: rgba(255,255,255,0.04);
-}
-
-.gradient-legend {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--fg2);
-}
-.gradient-legend canvas { border-radius: 2px; }
-.gradient-legend .quadrant-swatches {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.gradient-legend .q-swatch {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.gradient-legend .q-swatch-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-}
-
-canvas#canvas {
-  display: block;
-  cursor: default;
-}
+canvas#canvas { display: block; cursor: default; }
 
 #tooltip {
-  position: fixed;
-  pointer-events: none;
-  background: var(--bg2);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 13px;
-  line-height: 1.5;
-  max-width: 380px;
-  opacity: 0;
-  transition: opacity 0.12s;
-  z-index: 20;
+  position: fixed; pointer-events: none; background: var(--bg2);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+  padding: 12px 16px; font-size: 13px; line-height: 1.5;
+  max-width: 380px; opacity: 0; transition: opacity 0.12s; z-index: 20;
   box-shadow: 0 8px 32px rgba(0,0,0,0.6);
 }
 #tooltip.visible { opacity: 1; }
 #tooltip .tt-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; color: #fff; }
-#tooltip .tt-isco { font-size: 11px; color: var(--fg2); margin-bottom: 8px; }
+#tooltip .tt-sub { font-size: 11px; color: var(--fg2); margin-bottom: 8px; }
 #tooltip .tt-scores { margin-bottom: 8px; }
-#tooltip .tt-score-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
+#tooltip .tt-score-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 4px; }
 #tooltip .tt-score-label { width: 110px; flex-shrink: 0; color: var(--fg2); }
 #tooltip .tt-score-val { width: 30px; flex-shrink: 0; font-weight: 600; }
-#tooltip .tt-score-bar {
-  flex: 1;
-  height: 5px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 2px;
-  overflow: hidden;
-}
+#tooltip .tt-score-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
 #tooltip .tt-score-fill { height: 100%; border-radius: 2px; }
 #tooltip .tt-quadrant-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-size: 11px; font-weight: 600; margin-bottom: 8px;
 }
 #tooltip .tt-skills { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; }
 #tooltip .tt-skills-title { font-size: 11px; color: var(--fg2); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 #tooltip .tt-skill-row { display: flex; align-items: center; gap: 6px; font-size: 11px; margin-bottom: 2px; }
 #tooltip .tt-skill-name { flex: 1; color: var(--fg); }
 #tooltip .tt-skill-scores { color: var(--fg2); white-space: nowrap; }
-#tooltip .tt-rationale { font-size: 11px; color: var(--fg2); margin-top: 8px; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; }
 </style>
 </head>
 <body>
@@ -254,21 +138,20 @@ canvas#canvas {
 <div id="wrapper">
 <div id="header">
   <div class="intro">
-    <h1>AI-ISCO: Job Evolution Explorer <a href="https://github.com/yourproject/ai-isco">GitHub</a></h1>
-    <p>An interactive visualization of <b>ESCO occupations</b> mapped to ISCO-08, scored by AI along two independent axes: <b>Automation Risk</b> (how much AI can replace tasks) and <b>Amplification Potential</b> (how much AI can enhance the worker). These combine into an <b>Evolution Potential</b> score that captures the net direction of change. Each rectangle's <b>area</b> is proportional to the number of skills in that occupation. <b>Color</b> reflects the selected scoring dimension.</p>
-    <p><b>The 2x2 Quadrant Model:</b> By crossing automation risk and amplification potential, every occupation falls into one of four quadrants:</p>
+    <h1>AI-ISCO: Job Evolution Explorer <a href="https://github.com/Jorisdevreede/AI-ISCO">GitHub</a></h1>
+    <p>An interactive visualization of <b>3,000+ ESCO occupations</b> mapped to ISCO-08, scored by AI along two axes: <b>Automation Risk</b> and <b>Amplification Potential</b>. Click any block to drill down through the ISCO hierarchy. Each rectangle's <b>area</b> reflects the number of occupations (or skills) in that group.</p>
     <div class="quadrant-grid">
-      <div class="q-item"><div class="q-dot" style="background:#d4a017"></div><span class="q-label">TRANSFORM</span> <span class="q-desc">&mdash; High auto + high amp. Job evolves into something new and better.</span></div>
-      <div class="q-item"><div class="q-dot" style="background:#e04040"></div><span class="q-label">SHRINK</span> <span class="q-desc">&mdash; High auto + low amp. Job at risk of decline or displacement.</span></div>
-      <div class="q-item"><div class="q-dot" style="background:#4a90d9"></div><span class="q-label">EVOLVE</span> <span class="q-desc">&mdash; Low auto + high amp. Job enhanced and empowered by AI.</span></div>
-      <div class="q-item"><div class="q-dot" style="background:#3ca55c"></div><span class="q-label">STABLE</span> <span class="q-desc">&mdash; Low auto + low amp. Job largely unaffected by AI.</span></div>
+      <div class="q-item"><div class="q-dot" style="background:#d4a017"></div><span class="q-label">TRANSFORM</span> <span class="q-desc">&mdash; high auto + high amp: job evolves</span></div>
+      <div class="q-item"><div class="q-dot" style="background:#e04040"></div><span class="q-label">SHRINK</span> <span class="q-desc">&mdash; high auto + low amp: job at risk</span></div>
+      <div class="q-item"><div class="q-dot" style="background:#4a90d9"></div><span class="q-label">EVOLVE</span> <span class="q-desc">&mdash; low auto + high amp: job enhanced</span></div>
+      <div class="q-item"><div class="q-dot" style="background:#3ca55c"></div><span class="q-label">STABLE</span> <span class="q-desc">&mdash; low auto + low amp: largely unaffected</span></div>
     </div>
-    <p><b>Caveat:</b> All scores are LLM-generated estimates based on ESCO skill profiles, not rigorous economic forecasts. A high automation risk does not mean the job will disappear &mdash; it may transform, grow, or be protected by regulation, demand elasticity, or social preference. Use this as an exploration tool, not a prediction engine.</p>
+    <p><b>Caveat:</b> Scores are LLM-generated estimates based on ESCO skill profiles. Use as an exploration tool, not a prediction engine.</p>
   </div>
 
   <div class="controls-row">
     <div class="stat-section">
-      <h3>Layer</h3>
+      <h3>Color by</h3>
       <div class="color-toggle" id="colorToggle">
         <button data-mode="evolution" class="active">Evolution Potential</button>
         <button data-mode="automation">Automation Risk</button>
@@ -282,19 +165,20 @@ canvas#canvas {
       <span id="legendHigh">High</span>
     </div>
   </div>
+</div>
 
-  <div class="stats-row">
+<div id="breadcrumb"></div>
+
+<div style="padding: 0 28px 12px;">
+  <div class="stats-row" id="statsRow">
     <div class="stat-section">
-      <h3>Occupations</h3>
+      <h3>Showing</h3>
       <div class="stat-big" id="statTotal">&mdash;</div>
+      <div class="stat-label" id="statLabel">occupations</div>
     </div>
     <div class="stat-section" id="block2"></div>
     <div class="stat-section" id="block3"></div>
     <div class="stat-section" id="block4"></div>
-    <div class="stat-section" id="block5"></div>
-    <div class="stat-section" id="block6"></div>
-    <div class="stat-section" id="block7"></div>
-    <div class="stat-section" id="block8"></div>
   </div>
 </div>
 
@@ -303,124 +187,126 @@ canvas#canvas {
 
 <div id="tooltip">
   <div class="tt-title"></div>
-  <div class="tt-isco"></div>
+  <div class="tt-sub"></div>
   <div class="tt-scores"></div>
   <div class="tt-skills"></div>
-  <div class="tt-rationale"></div>
 </div>
 
 <script>
 
-// -- Color mode state --
+// === Data & State ===
+let allData = [];
 let colorMode = "evolution";
 
-// -- Quadrant colors --
-const QUADRANT_COLORS = {
-  TRANSFORM: "#d4a017",
-  SHRINK:    "#e04040",
-  EVOLVE:    "#4a90d9",
-  STABLE:    "#3ca55c",
-};
+// Drill-down: path is an array of {level, key} objects
+// level: "root" | "major" | "sub_major" | "minor" | "unit"
+let drillPath = [];
 
-// -- Color scale functions --
+const QUADRANT_COLORS = { TRANSFORM: "#d4a017", SHRINK: "#e04040", EVOLVE: "#4a90d9", STABLE: "#3ca55c" };
 
-// Evolution: green -> amber -> gold (rewarding high scores)
-function evolutionColor(v, alpha) {
-  if (v == null) return `rgba(128,128,128,${alpha})`;
+// === Color scales ===
+function evolutionColor(v, a) {
+  if (v == null) return `rgba(128,128,128,${a})`;
   const t = Math.max(0, Math.min(1, v / 10));
   let r, g, b;
-  if (t < 0.5) {
-    const s = t / 0.5;
-    r = Math.round(60 + s * 140);
-    g = Math.round(165 + s * 30);
-    b = Math.round(80 - s * 50);
-  } else {
-    const s = (t - 0.5) / 0.5;
-    r = Math.round(200 + s * 12);
-    g = Math.round(195 - s * 35);
-    b = Math.round(30 - s * 7);
-  }
-  return `rgba(${r},${g},${b},${alpha})`;
+  if (t < 0.5) { const s = t / 0.5; r = 60+s*140; g = 165+s*30; b = 80-s*50; }
+  else { const s = (t-0.5)/0.5; r = 200+s*12; g = 195-s*35; b = 30-s*7; }
+  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
 }
-
-// Automation: green -> yellow -> red (warning for high risk)
-function automationColor(v, alpha) {
-  if (v == null) return `rgba(128,128,128,${alpha})`;
+function automationColor(v, a) {
+  if (v == null) return `rgba(128,128,128,${a})`;
   const t = Math.max(0, Math.min(1, v / 10));
   let r, g, b;
-  if (t < 0.5) {
-    const s = t / 0.5;
-    r = Math.round(60 + s * 195);
-    g = Math.round(175 + s * 55);
-    b = Math.round(80 - s * 60);
-  } else {
-    const s = (t - 0.5) / 0.5;
-    r = Math.round(255);
-    g = Math.round(230 - s * 170);
-    b = Math.round(20 - s * 10);
-  }
-  return `rgba(${r},${g},${b},${alpha})`;
+  if (t < 0.5) { const s = t / 0.5; r = 60+s*195; g = 175+s*55; b = 80-s*60; }
+  else { const s = (t-0.5)/0.5; r = 255; g = 230-s*170; b = 20-s*10; }
+  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
 }
-
-// Amplification: gray -> light blue -> bright blue
-function amplificationColor(v, alpha) {
-  if (v == null) return `rgba(128,128,128,${alpha})`;
+function amplificationColor(v, a) {
+  if (v == null) return `rgba(128,128,128,${a})`;
   const t = Math.max(0, Math.min(1, v / 10));
   let r, g, b;
-  if (t < 0.5) {
-    const s = t / 0.5;
-    r = Math.round(100 - s * 40);
-    g = Math.round(105 + s * 50);
-    b = Math.round(115 + s * 75);
-  } else {
-    const s = (t - 0.5) / 0.5;
-    r = Math.round(60 - s * 20);
-    g = Math.round(155 - s * 15);
-    b = Math.round(190 + s * 27);
-  }
-  return `rgba(${r},${g},${b},${alpha})`;
+  if (t < 0.5) { const s = t / 0.5; r = 100-s*40; g = 105+s*50; b = 115+s*75; }
+  else { const s = (t-0.5)/0.5; r = 60-s*20; g = 155-s*15; b = 190+s*27; }
+  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
 }
-
-// Quadrant: fixed color per quadrant
-function quadrantColor(q, alpha) {
+function quadrantColor(q, a) {
   const hex = QUADRANT_COLORS[q] || "#888";
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function metricValue(d) {
+  if (colorMode === "evolution") return d.evolution_potential;
+  if (colorMode === "automation") return d.automation_risk;
+  if (colorMode === "amplification") return d.amplification_potential;
+  return null;
+}
+function metricColorFn() {
+  if (colorMode === "evolution") return evolutionColor;
+  if (colorMode === "automation") return automationColor;
+  if (colorMode === "amplification") return amplificationColor;
+  return (v, a) => `rgba(128,128,128,${a})`;
 }
 
 function tileColorCSS(d, alpha) {
-  if (colorMode === "evolution") return evolutionColor(d.evolution_potential, alpha);
-  if (colorMode === "automation") return automationColor(d.automation_risk, alpha);
-  if (colorMode === "amplification") return amplificationColor(d.amplification_potential, alpha);
+  if (d._isGroup) {
+    if (colorMode === "quadrant") return quadrantColor(d._dominantQuadrant, alpha);
+    return metricColorFn()(d._avgMetric, alpha);
+  }
   if (colorMode === "quadrant") return quadrantColor(d.quadrant, alpha);
-  return `rgba(128,128,128,${alpha})`;
+  return metricColorFn()(metricValue(d), alpha);
 }
 
-function tileSubInfo(r) {
-  if (colorMode === "evolution") {
-    return (r.evolution_potential != null ? "Evo " + r.evolution_potential.toFixed(1) + "/10" : "") +
-           (r.num_skills ? " \u00b7 " + r.num_skills + " skills" : "");
+// === Hierarchy helpers ===
+const LEVELS = ["major_group", "sub_major_group", "minor_group", "unit_group"];
+
+function getFilteredData() {
+  let items = allData;
+  for (const step of drillPath) {
+    items = items.filter(d => d[step.level] === step.key);
   }
-  if (colorMode === "automation") {
-    return (r.automation_risk != null ? "Auto " + r.automation_risk.toFixed(1) + "/10" : "") +
-           (r.num_skills ? " \u00b7 " + r.num_skills + " skills" : "");
-  }
-  if (colorMode === "amplification") {
-    return (r.amplification_potential != null ? "Amp " + r.amplification_potential.toFixed(1) + "/10" : "") +
-           (r.num_skills ? " \u00b7 " + r.num_skills + " skills" : "");
-  }
-  if (colorMode === "quadrant") {
-    return (r.quadrant || "") + (r.num_skills ? " \u00b7 " + r.num_skills + " skills" : "");
-  }
-  return "";
+  return items;
 }
 
-// -- Squarified treemap layout --
+function getNextLevel() {
+  if (drillPath.length >= LEVELS.length) return null;
+  return LEVELS[drillPath.length];
+}
 
+function buildGroups(items, groupField) {
+  const groups = {};
+  for (const d of items) {
+    const key = d[groupField] || "Other";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(d);
+  }
+  return Object.entries(groups).map(([key, members]) => {
+    const avgAuto = members.reduce((s, d) => s + (d.automation_risk || 0), 0) / members.length;
+    const avgAmp = members.reduce((s, d) => s + (d.amplification_potential || 0), 0) / members.length;
+    const avgMetric = members.reduce((s, d) => s + (metricValue(d) || 0), 0) / members.length;
+    // Dominant quadrant
+    const qc = { TRANSFORM: 0, SHRINK: 0, EVOLVE: 0, STABLE: 0 };
+    for (const d of members) { if (d.quadrant && qc[d.quadrant] !== undefined) qc[d.quadrant]++; }
+    const dominant = Object.keys(qc).reduce((a, b) => qc[a] >= qc[b] ? a : b);
+    return {
+      _isGroup: true,
+      _groupField: groupField,
+      _groupKey: key,
+      _members: members,
+      _avgMetric: avgMetric,
+      _avgAuto: avgAuto,
+      _avgAmp: avgAmp,
+      _dominantQuadrant: dominant,
+      _quadrantCounts: qc,
+      title: key,
+      value: members.length,
+    };
+  }).sort((a, b) => b.value - a.value);
+}
+
+// === Treemap layout ===
 function squarify(items, x, y, w, h) {
-  if (items.length === 0) return [];
+  if (!items.length) return [];
   if (items.length === 1) return [{ ...items[0], rx: x, ry: y, rw: w, rh: h }];
   const total = items.reduce((s, d) => s + d.value, 0);
   if (total === 0) return [];
@@ -455,7 +341,6 @@ function squarify(items, x, y, w, h) {
   }
   return results;
 }
-
 function worstAspect(row, rowSum, side, totalArea, availableExtent) {
   const rowExtent = availableExtent * (rowSum / totalArea);
   if (rowExtent === 0) return Infinity;
@@ -469,35 +354,35 @@ function worstAspect(row, rowSum, side, totalArea, availableExtent) {
   return worst;
 }
 
-// -- Rendering --
-
-let data = [];
+// === Rendering ===
 let rects = [];
 let hovered = null;
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let dpr = window.devicePixelRatio || 1;
-const MARGIN = 12, GAP = 1.5;
+const MARGIN = 12, GAP = 2;
 
 function layout() {
   const wrapper = document.getElementById("wrapper");
   const w = wrapper.clientWidth;
-  const h = Math.round(w * 3 / 4);
+  const h = Math.round(w * 0.6);
   canvas.width = w * dpr; canvas.height = h * dpr;
   canvas.style.width = w + "px"; canvas.style.height = h + "px";
   const tx = MARGIN, ty = MARGIN, tw = w - MARGIN * 2, th = h - MARGIN * 2;
-  const byCategory = {};
-  for (const d of data) { if (!byCategory[d.category]) byCategory[d.category] = []; byCategory[d.category].push(d); }
-  const categories = Object.keys(byCategory).map(cat => ({
-    cat, items: byCategory[cat].sort((a, b) => (b.num_skills || 0) - (a.num_skills || 0)),
-    value: byCategory[cat].reduce((s, d) => s + (d.num_skills || 1), 0),
-  })).sort((a, b) => b.value - a.value);
-  const catRects = squarify(categories, tx, ty, tw, th);
-  rects = [];
-  for (const cr of catRects) {
-    const items = cr.items.map(d => ({ ...d, value: d.num_skills || 1 }));
-    const innerRects = squarify(items, cr.rx + GAP, cr.ry + GAP, cr.rw - GAP * 2, cr.rh - GAP * 2);
-    for (const ir of innerRects) rects.push(ir);
+
+  const filtered = getFilteredData();
+  const nextLevel = getNextLevel();
+
+  if (nextLevel) {
+    // Show groups
+    const groups = buildGroups(filtered, nextLevel);
+    const items = groups.map(g => ({ ...g, value: g.value }));
+    rects = squarify(items, tx, ty, tw, th);
+  } else {
+    // Leaf level: show individual occupations
+    const items = filtered.map(d => ({ ...d, value: d.num_skills || 1 }))
+      .sort((a, b) => b.value - a.value);
+    rects = squarify(items, tx, ty, tw, th);
   }
 }
 
@@ -505,25 +390,75 @@ function draw() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = "#0a0a0f";
   ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
   for (const r of rects) {
-    const isHovered = r === hovered;
+    const isHov = r === hovered;
     const g = GAP / 2, rx = r.rx + g, ry = r.ry + g, rw = r.rw - g * 2, rh = r.rh - g * 2;
     if (rw <= 0 || rh <= 0) continue;
-    ctx.fillStyle = tileColorCSS(r, isHovered ? 0.8 : 0.5);
+
+    ctx.fillStyle = tileColorCSS(r, isHov ? 0.85 : 0.55);
     ctx.fillRect(rx, ry, rw, rh);
-    if (isHovered) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(rx, ry, rw, rh); }
-    if (rw > 50 && rh > 18) {
-      ctx.save(); ctx.beginPath(); ctx.rect(rx + 4, ry + 2, rw - 8, rh - 4); ctx.clip();
-      const fontSize = Math.min(13, Math.max(9, Math.min(rw / 10, rh / 3)));
-      ctx.font = `500 ${fontSize}px -apple-system, system-ui, sans-serif`;
-      ctx.fillStyle = isHovered ? "#fff" : "rgba(255,255,255,0.85)";
+
+    if (isHov) {
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(rx, ry, rw, rh);
+    }
+
+    // Text rendering
+    if (rw > 40 && rh > 20) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(rx + 6, ry + 4, rw - 12, rh - 8); ctx.clip();
+
+      const isGroup = r._isGroup;
+      const maxFontSize = isGroup ? 20 : 13;
+      const fontSize = Math.min(maxFontSize, Math.max(9, Math.min(rw / 8, rh / (isGroup ? 2.5 : 3))));
+
+      ctx.font = `${isGroup ? 700 : 500} ${fontSize}px -apple-system, system-ui, sans-serif`;
+      ctx.fillStyle = isHov ? "#fff" : "rgba(255,255,255,0.9)";
       ctx.textBaseline = "top";
-      ctx.fillText(r.title, rx + 5, ry + 4);
-      if (rh > 34 && rw > 60) {
-        ctx.font = `400 ${Math.max(8, fontSize - 2)}px -apple-system, system-ui, sans-serif`;
+      ctx.fillText(r.title, rx + 8, ry + 6);
+
+      // Sub-info line
+      if (rh > 38 && rw > 60) {
+        const subSize = Math.max(9, fontSize - 3);
+        ctx.font = `400 ${subSize}px -apple-system, system-ui, sans-serif`;
         ctx.fillStyle = "rgba(255,255,255,0.5)";
-        ctx.fillText(tileSubInfo(r), rx + 5, ry + 4 + fontSize + 2);
+        if (isGroup) {
+          const count = r._members.length;
+          const cfn = metricColorFn();
+          const label = colorMode === "quadrant"
+            ? `${count} occupations \u00b7 ${r._dominantQuadrant}`
+            : `${count} occupations \u00b7 avg ${r._avgMetric.toFixed(1)}/10`;
+          ctx.fillText(label, rx + 8, ry + 8 + fontSize + 2);
+        } else {
+          const val = metricValue(r);
+          const quad = r.quadrant || "";
+          ctx.fillText(
+            (val != null ? val.toFixed(1) + "/10" : "") +
+            (quad ? " \u00b7 " + quad : "") +
+            (r.num_skills ? " \u00b7 " + r.num_skills + " skills" : ""),
+            rx + 8, ry + 8 + fontSize + 2
+          );
+        }
       }
+
+      // Quadrant mini-bars for groups
+      if (isGroup && rh > 70 && rw > 80) {
+        const barY = ry + 10 + fontSize * 2 + 6;
+        const barW = Math.min(rw - 24, 160);
+        const total = r._members.length;
+        let bx = rx + 8;
+        for (const q of ["TRANSFORM", "SHRINK", "EVOLVE", "STABLE"]) {
+          const qw = (r._quadrantCounts[q] / total) * barW;
+          if (qw > 0) {
+            ctx.fillStyle = QUADRANT_COLORS[q];
+            ctx.globalAlpha = 0.7;
+            ctx.fillRect(bx, barY, Math.max(1, qw), 6);
+            ctx.globalAlpha = 1;
+            bx += qw;
+          }
+        }
+      }
+
       ctx.restore();
     }
   }
@@ -539,15 +474,7 @@ function hitTest(mx, my) {
   return null;
 }
 
-function formatNumber(n) {
-  if (n == null) return "\u2014";
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
-  if (n >= 1e3) return Math.round(n / 1e3) + "K";
-  return n.toLocaleString();
-}
-
-// -- Tooltip --
-
+// === Tooltip ===
 function scoreBar(label, value, colorFn) {
   if (value == null) return "";
   const pct = (value / 10 * 100).toFixed(0);
@@ -561,38 +488,52 @@ function scoreBar(label, value, colorFn) {
 
 function showTooltip(d, mx, my) {
   const tt = document.getElementById("tooltip");
-  tt.querySelector(".tt-title").textContent = d.title;
-  tt.querySelector(".tt-isco").textContent = "ISCO " + (d.isco_code || "\u2014") + " \u00b7 " + (d.category || "") + " \u00b7 " + (d.num_skills || 0) + " skills";
 
-  // Score bars
-  let scoresHTML = "";
-  scoresHTML += scoreBar("Automation Risk", d.automation_risk, automationColor);
-  scoresHTML += scoreBar("Amplification", d.amplification_potential, amplificationColor);
-  scoresHTML += scoreBar("Evolution", d.evolution_potential, evolutionColor);
-  if (d.quadrant) {
-    const qc = QUADRANT_COLORS[d.quadrant] || "#888";
-    scoresHTML += `<div class="tt-quadrant-badge" style="background:${qc}22;color:${qc};border:1px solid ${qc}44;">${d.quadrant}</div>`;
-  }
-  tt.querySelector(".tt-scores").innerHTML = scoresHTML;
-
-  // Skills
-  let skillsHTML = "";
-  if (d.top_skills && d.top_skills.length > 0) {
-    const shown = d.top_skills.slice(0, 5);
-    skillsHTML = `<div class="tt-skills-title">Top skills</div>`;
-    for (const sk of shown) {
-      const autoC = automationColor(sk.auto, 1);
-      const ampC = amplificationColor(sk.amp, 1);
-      skillsHTML += `<div class="tt-skill-row">
-        <span class="tt-skill-name">${sk.title}</span>
-        <span class="tt-skill-scores"><span style="color:${autoC}">A:${sk.auto}</span> <span style="color:${ampC}">M:${sk.amp}</span></span>
-      </div>`;
+  if (d._isGroup) {
+    tt.querySelector(".tt-title").textContent = d.title;
+    tt.querySelector(".tt-sub").textContent = d._members.length + " occupations";
+    let html = scoreBar("Avg Automation", d._avgAuto, automationColor);
+    html += scoreBar("Avg Amplification", d._avgAmp, amplificationColor);
+    const avgEvo = (d._avgAuto * d._avgAmp) / 10;
+    html += scoreBar("Avg Evolution", avgEvo, evolutionColor);
+    // Quadrant breakdown
+    html += `<div style="margin-top:6px;font-size:11px;color:var(--fg2)">`;
+    for (const q of ["TRANSFORM","SHRINK","EVOLVE","STABLE"]) {
+      const c = d._quadrantCounts[q];
+      if (c > 0) {
+        const pct = (c / d._members.length * 100).toFixed(0);
+        html += `<span style="color:${QUADRANT_COLORS[q]};font-weight:600">${q}</span>: ${c} (${pct}%) &nbsp;`;
+      }
     }
-  }
-  tt.querySelector(".tt-skills").innerHTML = skillsHTML;
+    html += `</div>`;
+    tt.querySelector(".tt-scores").innerHTML = html;
+    tt.querySelector(".tt-skills").innerHTML = "<div style='font-size:11px;color:var(--fg2);margin-top:6px'>Click to drill down</div>";
+  } else {
+    tt.querySelector(".tt-title").textContent = d.title;
+    tt.querySelector(".tt-sub").textContent =
+      "ISCO " + (d.isco_code || "\u2014") + " \u00b7 " + (d.category || "") + " \u00b7 " + (d.num_skills || 0) + " skills";
+    let html = scoreBar("Automation Risk", d.automation_risk, automationColor);
+    html += scoreBar("Amplification", d.amplification_potential, amplificationColor);
+    html += scoreBar("Evolution", d.evolution_potential, evolutionColor);
+    if (d.quadrant) {
+      const qc = QUADRANT_COLORS[d.quadrant] || "#888";
+      html += `<div class="tt-quadrant-badge" style="background:${qc}22;color:${qc};border:1px solid ${qc}44;">${d.quadrant}</div>`;
+    }
+    tt.querySelector(".tt-scores").innerHTML = html;
 
-  // Rationale
-  tt.querySelector(".tt-rationale").textContent = d.rationale || d.description || "";
+    let skillsHTML = "";
+    if (d.top_skills && d.top_skills.length > 0) {
+      skillsHTML = `<div class="tt-skills-title">Top skills</div>`;
+      for (const sk of d.top_skills.slice(0, 5)) {
+        const ac = automationColor(sk.auto, 1), mc = amplificationColor(sk.amp, 1);
+        skillsHTML += `<div class="tt-skill-row">
+          <span class="tt-skill-name">${sk.title}</span>
+          <span class="tt-skill-scores"><span style="color:${ac}">A:${sk.auto != null ? sk.auto.toFixed(0) : '?'}</span> <span style="color:${mc}">M:${sk.amp != null ? sk.amp.toFixed(0) : '?'}</span></span>
+        </div>`;
+      }
+    }
+    tt.querySelector(".tt-skills").innerHTML = skillsHTML;
+  }
 
   let tx = mx + 16, ty = my - 16;
   if (tx + 380 > window.innerWidth) tx = mx - 396;
@@ -604,313 +545,146 @@ function showTooltip(d, mx, my) {
 
 function hideTooltip() { document.getElementById("tooltip").classList.remove("visible"); }
 
-// -- Stat helpers --
+// === Breadcrumb ===
+const LEVEL_LABELS = {
+  major_group: "Major Group",
+  sub_major_group: "Sub-Major Group",
+  minor_group: "Minor Group",
+  unit_group: "Unit Group",
+};
 
-function renderTiers(tiers, totalCount) {
-  return tiers.map(t => `<div class="tier-row">
-    <div class="tier-color" style="background:${t.color}"></div>
-    <span class="tier-name">${t.label}</span>
-    <span class="tier-jobs">${t.count}</span>
-    <span class="tier-pct">${totalCount > 0 ? (t.count / totalCount * 100).toFixed(0) : 0}%</span>
-  </div>`).join("");
-}
-
-function renderHbars(items) {
-  return items.map(it => `<div class="hbar-row">
-    <span class="hbar-label">${it.label}</span>
-    <div class="hbar-track"><div class="hbar-fill" style="width:${it.pct}%;background:${it.color}"></div></div>
-    <span class="hbar-val">${it.val}</span>
-  </div>`).join("");
-}
-
-// -- Get ISCO major group from code (first digit) --
-function iscoMajorGroup(code) {
-  if (!code) return "Unknown";
-  const MAJOR = {
-    "0": "Armed forces",
-    "1": "Managers",
-    "2": "Professionals",
-    "3": "Technicians",
-    "4": "Clerical support",
-    "5": "Services & sales",
-    "6": "Agriculture",
-    "7": "Craft & trades",
-    "8": "Plant & machine ops",
-    "9": "Elementary",
-  };
-  return MAJOR[String(code).charAt(0)] || "Other";
-}
-
-// -- Stats by mode --
-
-function updateStats() {
-  const total = data.length;
-  document.getElementById("statTotal").textContent = total.toLocaleString();
-
-  if (colorMode === "evolution") updateEvolutionStats(total);
-  else if (colorMode === "automation") updateAutomationStats(total);
-  else if (colorMode === "amplification") updateAmplificationStats(total);
-  else updateQuadrantStats(total);
-}
-
-function avg(arr, fn) {
-  let s = 0, c = 0;
-  for (const d of arr) { const v = fn(d); if (v != null) { s += v; c++; } }
-  return c > 0 ? s / c : 0;
-}
-
-function updateEvolutionStats(total) {
-  const a = avg(data, d => d.evolution_potential);
-  document.getElementById("block2").innerHTML = `<h3>Avg. Evolution</h3>
-    <div class="stat-big"><span style="color:${evolutionColor(a, 1)}">${a.toFixed(1)}</span></div>
-    <div class="stat-label">out of 10</div>`;
-
-  // Histogram
-  const bins = new Array(11).fill(0);
-  for (const d of data) { if (d.evolution_potential != null) bins[Math.round(d.evolution_potential)]++; }
-  const maxH = Math.max(...bins);
-  document.getElementById("block3").innerHTML = `<h3>Distribution</h3>
-    <div class="histogram">${bins.map((c, i) => `<div class="bar" style="height:${Math.max(2, maxH > 0 ? c / maxH * 100 : 0)}%;background:${evolutionColor(i, 0.7)}"></div>`).join("")}</div>
-    <div class="hist-labels"><span>0</span><span>5</span><span>10</span></div>`;
-
-  // Tiers
-  const tierDefs = [
-    { label: "Low (0\u20133)", lo: 0, hi: 3.99, mid: 2 },
-    { label: "Medium (4\u20136)", lo: 4, hi: 6.99, mid: 5 },
-    { label: "High (7\u201310)", lo: 7, hi: 10, mid: 8.5 },
-  ];
-  const tiers = tierDefs.map(t => {
-    let count = 0;
-    for (const d of data) { if (d.evolution_potential != null && d.evolution_potential >= t.lo && d.evolution_potential <= t.hi) count++; }
-    return { ...t, count, color: evolutionColor(t.mid, 1) };
-  });
-  document.getElementById("block4").innerHTML = `<h3>Evolution tiers</h3><div class="tier-bar">${renderTiers(tiers, total)}</div>`;
-
-  // By ISCO major group
-  const groups = {};
-  for (const d of data) { const g = iscoMajorGroup(d.isco_code); if (!groups[g]) groups[g] = []; groups[g].push(d); }
-  const byGroup = Object.keys(groups).map(g => ({
-    label: g.length > 10 ? g.substring(0, 10) : g,
-    avg: avg(groups[g], d => d.evolution_potential),
-  })).sort((a, b) => b.avg - a.avg).slice(0, 6);
-  document.getElementById("block5").innerHTML = `<h3>By ISCO group</h3><div class="hbar-chart">${renderHbars(byGroup.map(g => ({
-    label: g.label, val: g.avg.toFixed(1), pct: g.avg / 10 * 100, color: evolutionColor(g.avg, 0.8)
-  })))}</div>`;
-
-  clearBlocks(6, 8);
-}
-
-function updateAutomationStats(total) {
-  const a = avg(data, d => d.automation_risk);
-  document.getElementById("block2").innerHTML = `<h3>Avg. Automation Risk</h3>
-    <div class="stat-big"><span style="color:${automationColor(a, 1)}">${a.toFixed(1)}</span></div>
-    <div class="stat-label">out of 10</div>`;
-
-  // Histogram
-  const bins = new Array(11).fill(0);
-  for (const d of data) { if (d.automation_risk != null) bins[Math.round(d.automation_risk)]++; }
-  const maxH = Math.max(...bins);
-  document.getElementById("block3").innerHTML = `<h3>Distribution</h3>
-    <div class="histogram">${bins.map((c, i) => `<div class="bar" style="height:${Math.max(2, maxH > 0 ? c / maxH * 100 : 0)}%;background:${automationColor(i, 0.7)}"></div>`).join("")}</div>
-    <div class="hist-labels"><span>0</span><span>5</span><span>10</span></div>`;
-
-  // Tiers
-  const tierDefs = [
-    { label: "Low risk (0\u20133)", lo: 0, hi: 3.99, mid: 2 },
-    { label: "Medium risk (4\u20136)", lo: 4, hi: 6.99, mid: 5 },
-    { label: "High risk (7\u201310)", lo: 7, hi: 10, mid: 8.5 },
-  ];
-  const tiers = tierDefs.map(t => {
-    let count = 0;
-    for (const d of data) { if (d.automation_risk != null && d.automation_risk >= t.lo && d.automation_risk <= t.hi) count++; }
-    return { ...t, count, color: automationColor(t.mid, 1) };
-  });
-  document.getElementById("block4").innerHTML = `<h3>Risk tiers</h3><div class="tier-bar">${renderTiers(tiers, total)}</div>`;
-
-  // By ISCO major group
-  const groups = {};
-  for (const d of data) { const g = iscoMajorGroup(d.isco_code); if (!groups[g]) groups[g] = []; groups[g].push(d); }
-  const byGroup = Object.keys(groups).map(g => ({
-    label: g.length > 10 ? g.substring(0, 10) : g,
-    avg: avg(groups[g], d => d.automation_risk),
-  })).sort((a, b) => b.avg - a.avg).slice(0, 6);
-  document.getElementById("block5").innerHTML = `<h3>By ISCO group</h3><div class="hbar-chart">${renderHbars(byGroup.map(g => ({
-    label: g.label, val: g.avg.toFixed(1), pct: g.avg / 10 * 100, color: automationColor(g.avg, 0.8)
-  })))}</div>`;
-
-  // High risk count
-  let highRisk = 0;
-  for (const d of data) { if (d.automation_risk != null && d.automation_risk >= 7) highRisk++; }
-  document.getElementById("block6").innerHTML = `<h3>High risk (7+)</h3>
-    <div class="stat-big" style="color:${automationColor(8, 1)}">${highRisk}</div>
-    <div class="stat-label">occupations</div>`;
-
-  clearBlocks(7, 8);
-}
-
-function updateAmplificationStats(total) {
-  const a = avg(data, d => d.amplification_potential);
-  document.getElementById("block2").innerHTML = `<h3>Avg. Amplification</h3>
-    <div class="stat-big"><span style="color:${amplificationColor(a, 1)}">${a.toFixed(1)}</span></div>
-    <div class="stat-label">out of 10</div>`;
-
-  // Histogram
-  const bins = new Array(11).fill(0);
-  for (const d of data) { if (d.amplification_potential != null) bins[Math.round(d.amplification_potential)]++; }
-  const maxH = Math.max(...bins);
-  document.getElementById("block3").innerHTML = `<h3>Distribution</h3>
-    <div class="histogram">${bins.map((c, i) => `<div class="bar" style="height:${Math.max(2, maxH > 0 ? c / maxH * 100 : 0)}%;background:${amplificationColor(i, 0.7)}"></div>`).join("")}</div>
-    <div class="hist-labels"><span>0</span><span>5</span><span>10</span></div>`;
-
-  // Tiers
-  const tierDefs = [
-    { label: "Low (0\u20133)", lo: 0, hi: 3.99, mid: 2 },
-    { label: "Medium (4\u20136)", lo: 4, hi: 6.99, mid: 5 },
-    { label: "High (7\u201310)", lo: 7, hi: 10, mid: 8.5 },
-  ];
-  const tiers = tierDefs.map(t => {
-    let count = 0;
-    for (const d of data) { if (d.amplification_potential != null && d.amplification_potential >= t.lo && d.amplification_potential <= t.hi) count++; }
-    return { ...t, count, color: amplificationColor(t.mid, 1) };
-  });
-  document.getElementById("block4").innerHTML = `<h3>Amplification tiers</h3><div class="tier-bar">${renderTiers(tiers, total)}</div>`;
-
-  // By ISCO major group
-  const groups = {};
-  for (const d of data) { const g = iscoMajorGroup(d.isco_code); if (!groups[g]) groups[g] = []; groups[g].push(d); }
-  const byGroup = Object.keys(groups).map(g => ({
-    label: g.length > 10 ? g.substring(0, 10) : g,
-    avg: avg(groups[g], d => d.amplification_potential),
-  })).sort((a, b) => b.avg - a.avg).slice(0, 6);
-  document.getElementById("block5").innerHTML = `<h3>By ISCO group</h3><div class="hbar-chart">${renderHbars(byGroup.map(g => ({
-    label: g.label, val: g.avg.toFixed(1), pct: g.avg / 10 * 100, color: amplificationColor(g.avg, 0.8)
-  })))}</div>`;
-
-  clearBlocks(6, 8);
-}
-
-function updateQuadrantStats(total) {
-  // Quadrant breakdown
-  const counts = { TRANSFORM: 0, SHRINK: 0, EVOLVE: 0, STABLE: 0 };
-  for (const d of data) { if (d.quadrant && counts[d.quadrant] !== undefined) counts[d.quadrant]++; }
-  const tiers = Object.keys(counts).map(q => ({
-    label: q, count: counts[q], color: QUADRANT_COLORS[q],
-  }));
-  document.getElementById("block2").innerHTML = `<h3>Quadrant breakdown</h3><div class="tier-bar">${renderTiers(tiers, total)}</div>`;
-
-  // Avg scores per quadrant
-  const quadrants = ["TRANSFORM", "SHRINK", "EVOLVE", "STABLE"];
-  const qGroups = {};
-  for (const q of quadrants) qGroups[q] = data.filter(d => d.quadrant === q);
-
-  const autoByQ = quadrants.map(q => ({
-    label: q, avg: avg(qGroups[q], d => d.automation_risk),
-  }));
-  document.getElementById("block3").innerHTML = `<h3>Avg automation by quadrant</h3><div class="hbar-chart">${renderHbars(autoByQ.map(g => ({
-    label: g.label, val: g.avg.toFixed(1), pct: g.avg / 10 * 100, color: QUADRANT_COLORS[g.label]
-  })))}</div>`;
-
-  const ampByQ = quadrants.map(q => ({
-    label: q, avg: avg(qGroups[q], d => d.amplification_potential),
-  }));
-  document.getElementById("block4").innerHTML = `<h3>Avg amplification by quadrant</h3><div class="hbar-chart">${renderHbars(ampByQ.map(g => ({
-    label: g.label, val: g.avg.toFixed(1), pct: g.avg / 10 * 100, color: QUADRANT_COLORS[g.label]
-  })))}</div>`;
-
-  // By ISCO major group: dominant quadrant
-  const groups = {};
-  for (const d of data) { const g = iscoMajorGroup(d.isco_code); if (!groups[g]) groups[g] = []; groups[g].push(d); }
-  const byGroup = Object.keys(groups).map(g => {
-    const qc = { TRANSFORM: 0, SHRINK: 0, EVOLVE: 0, STABLE: 0 };
-    for (const d of groups[g]) { if (d.quadrant && qc[d.quadrant] !== undefined) qc[d.quadrant]++; }
-    const dominant = Object.keys(qc).reduce((a, b) => qc[a] >= qc[b] ? a : b);
-    return { label: g.length > 10 ? g.substring(0, 10) : g, dominant, pct: groups[g].length > 0 ? qc[dominant] / groups[g].length * 100 : 0, count: groups[g].length };
-  }).sort((a, b) => b.count - a.count).slice(0, 6);
-  document.getElementById("block5").innerHTML = `<h3>Dominant quadrant by ISCO</h3><div class="hbar-chart">${renderHbars(byGroup.map(g => ({
-    label: g.label, val: g.dominant, pct: g.pct, color: QUADRANT_COLORS[g.dominant]
-  })))}</div>`;
-
-  clearBlocks(6, 8);
-}
-
-function clearBlocks(from, to) {
-  for (let i = from; i <= to; i++) {
-    const el = document.getElementById("block" + i);
-    if (el) el.innerHTML = "";
+function renderBreadcrumb() {
+  const bc = document.getElementById("breadcrumb");
+  let html = `<span class="bc-item" onclick="navigateTo(-1)">All Occupations</span>`;
+  for (let i = 0; i < drillPath.length; i++) {
+    html += `<span class="bc-sep">&rsaquo;</span>`;
+    if (i < drillPath.length - 1) {
+      html += `<span class="bc-item" onclick="navigateTo(${i})">${drillPath[i].key}</span>`;
+    } else {
+      html += `<span class="bc-item bc-current">${drillPath[i].key}</span>`;
+    }
   }
+  bc.innerHTML = html;
 }
 
-// -- Events --
+function navigateTo(index) {
+  if (index < 0) {
+    drillPath = [];
+  } else {
+    drillPath = drillPath.slice(0, index + 1);
+  }
+  refresh();
+}
 
+// === Stats ===
+function updateStats() {
+  const filtered = getFilteredData();
+  const nextLevel = getNextLevel();
+  const count = nextLevel ? buildGroups(filtered, nextLevel).length : filtered.length;
+  document.getElementById("statTotal").textContent = count.toLocaleString();
+  document.getElementById("statLabel").textContent = nextLevel
+    ? (LEVEL_LABELS[nextLevel] || "groups") + " (" + filtered.length + " occupations)"
+    : "occupations";
+
+  // Quadrant breakdown
+  const qc = { TRANSFORM: 0, SHRINK: 0, EVOLVE: 0, STABLE: 0 };
+  for (const d of filtered) { if (d.quadrant && qc[d.quadrant] !== undefined) qc[d.quadrant]++; }
+  const total = filtered.length;
+  const tiers = Object.keys(qc).map(q => `<div class="tier-row">
+    <div class="tier-color" style="background:${QUADRANT_COLORS[q]}"></div>
+    <span class="tier-name">${q}</span>
+    <span class="tier-count">${qc[q]}</span>
+    <span class="tier-pct">${total > 0 ? (qc[q] / total * 100).toFixed(0) : 0}%</span>
+  </div>`).join("");
+  document.getElementById("block2").innerHTML = `<h3>Quadrants</h3><div class="tier-bar">${tiers}</div>`;
+
+  // Avg scores
+  let sa = 0, sm = 0, n = 0;
+  for (const d of filtered) { if (d.automation_risk != null) { sa += d.automation_risk; sm += d.amplification_potential; n++; } }
+  const aa = n > 0 ? sa / n : 0, am = n > 0 ? sm / n : 0;
+  document.getElementById("block3").innerHTML = `<h3>Avg Automation</h3>
+    <div class="stat-big"><span style="color:${automationColor(aa, 1)}">${aa.toFixed(1)}</span></div>
+    <div class="stat-label">risk (1-10)</div>`;
+  document.getElementById("block4").innerHTML = `<h3>Avg Amplification</h3>
+    <div class="stat-big"><span style="color:${amplificationColor(am, 1)}">${am.toFixed(1)}</span></div>
+    <div class="stat-label">potential (1-10)</div>`;
+}
+
+// === Events ===
 canvas.addEventListener("mousemove", (e) => {
   const hit = hitTest(e.clientX, e.clientY);
   if (hit !== hovered) { hovered = hit; draw(); }
   if (hovered) { showTooltip(hovered, e.clientX, e.clientY); canvas.style.cursor = "pointer"; }
   else { hideTooltip(); canvas.style.cursor = "default"; }
 });
-canvas.addEventListener("click", (e) => { const hit = hitTest(e.clientX, e.clientY); if (hit && hit.slug) window.open("occupations/" + hit.slug + ".html", "_blank"); });
+
+canvas.addEventListener("click", (e) => {
+  const hit = hitTest(e.clientX, e.clientY);
+  if (!hit) return;
+  if (hit._isGroup) {
+    drillPath.push({ level: hit._groupField, key: hit._groupKey });
+    refresh();
+  }
+});
+
 canvas.addEventListener("mouseleave", () => { hovered = null; hideTooltip(); draw(); });
+
+function refresh() {
+  hovered = null;
+  hideTooltip();
+  renderBreadcrumb();
+  updateStats();
+  layout();
+  draw();
+}
+
 function resize() { dpr = window.devicePixelRatio || 1; layout(); draw(); }
 
-// -- Legend --
-
+// === Legend ===
 const LEGEND_CONFIG = {
-  evolution:      { low: "Low", high: "High", fn: evolutionColor },
-  automation:     { low: "Low risk", high: "High risk", fn: automationColor },
-  amplification:  { low: "Low", high: "High", fn: amplificationColor },
-  quadrant:       null,
+  evolution:     { low: "Low", high: "High", fn: evolutionColor },
+  automation:    { low: "Low risk", high: "High risk", fn: automationColor },
+  amplification: { low: "Low", high: "High", fn: amplificationColor },
+  quadrant:      null,
 };
 
 function drawGradientLegend() {
   const wrap = document.getElementById("gradientLegendWrap");
   const cfg = LEGEND_CONFIG[colorMode];
-
   if (!cfg) {
-    // Quadrant mode: show swatches instead of gradient
     wrap.innerHTML = `<div class="quadrant-swatches">
       ${Object.keys(QUADRANT_COLORS).map(q => `<span class="q-swatch"><span class="q-swatch-dot" style="background:${QUADRANT_COLORS[q]}"></span>${q}</span>`).join("")}
     </div>`;
     return;
   }
-
-  // Restore gradient canvas if needed
-  if (!document.getElementById("gradientLegend")) {
-    wrap.innerHTML = `<span id="legendLow"></span><canvas id="gradientLegend" width="80" height="8"></canvas><span id="legendHigh"></span>`;
-  }
+  wrap.innerHTML = `<span id="legendLow">${cfg.low}</span><canvas id="gradientLegend" width="80" height="8" style="border-radius:2px"></canvas><span id="legendHigh">${cfg.high}</span>`;
   const c = document.getElementById("gradientLegend");
-  if (!c) return;
   const gctx = c.getContext("2d");
   for (let x = 0; x < 80; x++) {
-    const t = x / 79;
-    gctx.fillStyle = cfg.fn(t * 10, 1);
+    gctx.fillStyle = cfg.fn(x / 79 * 10, 1);
     gctx.fillRect(x, 0, 1, 8);
   }
-  document.getElementById("legendLow").textContent = cfg.low;
-  document.getElementById("legendHigh").textContent = cfg.high;
 }
 
-// -- Layer toggle --
-
+// === Layer toggle ===
 document.getElementById("colorToggle").addEventListener("click", (e) => {
   const btn = e.target.closest("button");
   if (!btn || !btn.dataset.mode) return;
   colorMode = btn.dataset.mode;
   document.querySelectorAll("#colorToggle button").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  updateStats();
   drawGradientLegend();
-  draw();
-  requestAnimationFrame(resize);
+  refresh();
 });
 
-// -- Load data --
-
+// === Load ===
 fetch("data.json")
   .then(r => r.json())
   .then(d => {
-    data = d;
-    updateStats();
+    allData = d;
     drawGradientLegend();
+    renderBreadcrumb();
+    updateStats();
     resize();
   });
 

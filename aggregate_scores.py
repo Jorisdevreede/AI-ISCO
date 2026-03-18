@@ -237,10 +237,15 @@ def main():
         orig = occ_by_uri.get(occ["uri"])
         num_essential = len(orig["essential_skills"]) if orig else 0
 
+        hierarchy = orig.get("hierarchy", []) if orig else []
         site_data.append({
             "title": occ["title"],
             "slug": slugify(occ["title"]),
             "category": category,
+            "major_group": hierarchy[0] if len(hierarchy) >= 1 else "",
+            "sub_major_group": hierarchy[1] if len(hierarchy) >= 2 else "",
+            "minor_group": hierarchy[2] if len(hierarchy) >= 3 else "",
+            "unit_group": hierarchy[3] if len(hierarchy) >= 4 else "",
             "isco_code": occ["isco_code"],
             "automation_risk": occ["automation_risk"],
             "amplification_potential": occ["amplification_potential"],
