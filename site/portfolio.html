@@ -1370,23 +1370,23 @@ function drawScatter() {
   const midY = yPos(5.5);
 
   // TRANSFORM (top-right): high auto, high amp
-  ctx.fillStyle = hexToRgba(Q_COLORS.TRANSFORM, 0.04);
+  ctx.fillStyle = hexToRgba(Q_COLORS.TRANSFORM, 0.07);
   ctx.fillRect(midX, pad.top, pad.left + plotW - midX + pad.right, midY - pad.top);
 
   // SHRINK (bottom-right): high auto, low amp
-  ctx.fillStyle = hexToRgba(Q_COLORS.SHRINK, 0.04);
+  ctx.fillStyle = hexToRgba(Q_COLORS.SHRINK, 0.07);
   ctx.fillRect(midX, midY, pad.left + plotW - midX + pad.right, pad.top + plotH - midY);
 
   // EVOLVE (top-left): low auto, high amp
-  ctx.fillStyle = hexToRgba(Q_COLORS.EVOLVE, 0.04);
+  ctx.fillStyle = hexToRgba(Q_COLORS.EVOLVE, 0.07);
   ctx.fillRect(0, pad.top, midX, midY - pad.top);
 
   // STABLE (bottom-left): low auto, low amp
-  ctx.fillStyle = hexToRgba(Q_COLORS.STABLE, 0.04);
+  ctx.fillStyle = hexToRgba(Q_COLORS.STABLE, 0.07);
   ctx.fillRect(0, midY, midX, pad.top + plotH - midY);
 
   // Quadrant divider lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
   // Vertical at x=5.5
@@ -1395,23 +1395,28 @@ function drawScatter() {
   ctx.beginPath(); ctx.moveTo(pad.left, midY); ctx.lineTo(pad.left + plotW, midY); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Quadrant labels (faded)
-  ctx.font = '600 11px -apple-system, system-ui, sans-serif';
+  // Quadrant labels (prominent, with pill background)
+  ctx.font = '700 13px -apple-system, system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const qLabelAlpha = 0.15;
-  ctx.fillStyle = hexToRgba(Q_COLORS.TRANSFORM, qLabelAlpha);
-  ctx.fillText('TRANSFORM', (midX + pad.left + plotW) / 2, (pad.top + midY) / 2);
-
-  ctx.fillStyle = hexToRgba(Q_COLORS.SHRINK, qLabelAlpha);
-  ctx.fillText('SHRINK', (midX + pad.left + plotW) / 2, (midY + pad.top + plotH) / 2);
-
-  ctx.fillStyle = hexToRgba(Q_COLORS.EVOLVE, qLabelAlpha);
-  ctx.fillText('EVOLVE', (pad.left + midX) / 2, (pad.top + midY) / 2);
-
-  ctx.fillStyle = hexToRgba(Q_COLORS.STABLE, qLabelAlpha);
-  ctx.fillText('STABLE', (pad.left + midX) / 2, (midY + pad.top + plotH) / 2);
+  const qLabels = [
+    { text: 'TRANSFORM', color: Q_COLORS.TRANSFORM, x: (midX + pad.left + plotW) / 2, y: pad.top + 20 },
+    { text: 'SHRINK',    color: Q_COLORS.SHRINK,    x: (midX + pad.left + plotW) / 2, y: pad.top + plotH - 14 },
+    { text: 'EVOLVE',    color: Q_COLORS.EVOLVE,    x: (pad.left + midX) / 2,         y: pad.top + 20 },
+    { text: 'STABLE',    color: Q_COLORS.STABLE,    x: (pad.left + midX) / 2,         y: pad.top + plotH - 14 },
+  ];
+  for (const ql of qLabels) {
+    const tw = ctx.measureText(ql.text).width;
+    const px = 10, py = 5;
+    ctx.fillStyle = hexToRgba(ql.color, 0.1);
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(ql.x - tw/2 - px, ql.y - 8 - py, tw + px*2, 16 + py*2, 4);
+    else ctx.rect(ql.x - tw/2 - px, ql.y - 8 - py, tw + px*2, 16 + py*2);
+    ctx.fill();
+    ctx.fillStyle = hexToRgba(ql.color, 0.55);
+    ctx.fillText(ql.text, ql.x, ql.y);
+  }
 
   // Axes
   ctx.strokeStyle = 'rgba(255,255,255,0.12)';
