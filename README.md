@@ -4,6 +4,7 @@
 [![Deploy to GitHub Pages](https://github.com/Jorisdevreede/AI-ISCO/actions/workflows/pages.yml/badge.svg)](https://github.com/Jorisdevreede/AI-ISCO/actions/workflows/pages.yml)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![ESCO v1.2.1](https://img.shields.io/badge/data-ESCO%20v1.2.1-003399)
+[![Licence: MIT code, CC BY 4.0 data](https://img.shields.io/badge/licence-MIT%20code%20%C2%B7%20CC%20BY%204.0%20data-lightgrey)](THIRD-PARTY-NOTICES.md)
 
 **Live:** [jorisdevreede.github.io/AI-ISCO](https://jorisdevreede.github.io/AI-ISCO/)
 
@@ -34,7 +35,7 @@ Jobs where both scores are high don't just disappear — they **transform** into
 | A second scorer you can run yourself | The same rubric through a different kind of model, for your own private comparison ([Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy)) |
 | No build step | Static pages in vanilla JS, served from `site/` |
 
-Inspired by [karpathy/jobs](https://github.com/karpathy/jobs). Built on [ESCO](https://esco.ec.europa.eu/) by the European Commission.
+Started from [karpathy/jobs](https://github.com/karpathy/jobs), whose BLS pipeline and treemap layout are still in this repository (see [Licensing and attribution](#licensing-and-attribution)). The ESCO skill-level pipeline, the narratives and the other three pages were written for this project. This publication uses the [ESCO](https://esco.ec.europa.eu/) classification of the European Commission.
 
 ## Quick start
 
@@ -427,3 +428,18 @@ TypeSafe's customer agreement prohibits publishing benchmarks or performance inf
 
 **How is Evolution Potential calculated?**
 `(automation_risk × amplification_potential) / 10`, on the occupation-level weighted averages.
+
+## Licensing and attribution
+
+Different parts of this repository carry different terms. [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) has the full list; in short:
+
+| What | Terms |
+|---|---|
+| Code written for this project (the ESCO pipeline scripts, `site/explorer.html`, `site/portfolio.html`, `site/insights.html`, `site/scorer.js`) | [MIT](LICENSE) |
+| The scores, quadrants, rationales and narratives this project generated | [CC BY 4.0](LICENSE-DATA) |
+| ESCO classification (`data/esco/`, titles and descriptions in `site/`) | European Commission reuse terms, not covered by the two licences above |
+| ISCO-08 group structure, titles and definitions | © 2012 International Labour Organization, not covered |
+| BLS Occupational Outlook Handbook pages and the ISCO-SOC crosswalk | Public domain, source: U.S. Bureau of Labor Statistics |
+| Files copied from karpathy/jobs (`score.py` and seven other scripts, `prompt.md`, `scores.json`, the BLS scrape, the treemap layout) | No licence published upstream, so none granted here |
+
+This publication uses the ESCO classification of the European Commission. The data in `site/` is a modified and adapted version of ESCO v1.2.1: the scores, quadrants, rationales and narratives are AI-generated additions (Google Gemini Flash via OpenRouter) and are not part of ESCO. The European Commission, the International Labour Organization, the U.S. Bureau of Labor Statistics, Google and TypeSafe do not endorse this project.
