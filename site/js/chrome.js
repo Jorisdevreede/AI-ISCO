@@ -102,8 +102,9 @@ export function renderChrome({ active, search } = {}) {
 
   const brand = link('index.html', 'AI-ISCO', query);
   brand.classList.add('nav-brand');
-  nav.appendChild(brand);
-  nav.appendChild(buildNavLinks(active, query));
+  // scorer.js may have added its switch already; the brand and links go before it
+  // so the switch stays at the right-hand end whichever script finishes first.
+  nav.prepend(brand, buildNavLinks(active, query));
 
   const existing = document.querySelector('footer.site-attribution');
   const footer = existing || buildFooter();

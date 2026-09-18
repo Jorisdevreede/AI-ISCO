@@ -88,6 +88,10 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
 .small { font-size: 0.8125rem; }
 .numeric { font-variant-numeric: tabular-nums; }
 
+/* Components below set a display, which would beat the user-agent rule for
+ * `hidden` and leave a hidden button or flex row on screen. */
+[hidden] { display: none !important; }
+
 .visually-hidden {
   position: absolute; width: 1px; height: 1px; margin: -1px;
   padding: 0; border: 0; clip: rect(0 0 0 0); clip-path: inset(50%); overflow: hidden;
@@ -231,12 +235,17 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
-.card + .card { margin-top: var(--space-3); }
+.card + .card,
+.card + .card-grid,
+.card-grid + .card { margin-top: var(--space-3); }
 .card-grid {
   display: grid;
   gap: var(--space-3);
   grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 }
+/* Inside a grid the gap does the spacing; a stacked-card margin would push the
+ * second card down and leave the row uneven. */
+.card-grid > .card { margin-top: 0; }
 
 /* --- combobox ------------------------------------------------------------ */
 
@@ -255,7 +264,7 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
 }
 .combobox input::placeholder { color: var(--fg-muted); }
 
-.combobox ul {
+.combobox [role="listbox"] {
   position: absolute;
   z-index: 20;
   left: 0;
@@ -270,7 +279,7 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
-.combobox li {
+.combobox [role="option"] {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -280,9 +289,9 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
-.combobox li.is-active, .combobox li:hover { background: rgba(255, 255, 255, 0.09); }
-.combobox li .code { font-family: var(--mono); font-size: 0.75rem; color: var(--fg-muted); }
-.combobox li .also { flex-basis: 100%; font-size: 0.75rem; color: var(--fg-muted); }
+.combobox [role="option"].is-active, .combobox [role="option"]:hover { background: rgba(255, 255, 255, 0.09); }
+.combobox [role="option"] .code { font-family: var(--mono); font-size: 0.75rem; color: var(--fg-muted); }
+.combobox [role="option"] .also { flex-basis: 100%; font-size: 0.75rem; color: var(--fg-muted); }
 
 /* --- quadrant badge and popover ------------------------------------------ */
 
