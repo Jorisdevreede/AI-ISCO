@@ -32,10 +32,11 @@ Jobs where both scores are high don't just disappear — they **transform** into
 | Two axes, four quadrants | TRANSFORM, SHRINK, EVOLVE, STABLE instead of a single "exposure" number |
 | A story per occupation | 3,039 evolution narratives with time savings, a rebalanced work week, timeline and career advice |
 | Career moves | Adjacent occupations by skill overlap, plus the gap skills to learn |
+| Pages built around questions | "How will my job be affected?", "which sectors, and how differently?", "how will this skill evolve?" and "how sure is this?" each have a page ([The frontend](#the-frontend)) |
 | A second scorer you can run yourself | The same rubric through a different kind of model, for your own private comparison ([Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy)) |
 | No build step | Static pages in vanilla JS, served from `site/` |
 
-Started from [karpathy/jobs](https://github.com/karpathy/jobs), whose BLS pipeline and treemap layout are still in this repository (see [Licensing and attribution](#licensing-and-attribution)). The ESCO skill-level pipeline, the narratives and the other three pages were written for this project. This publication uses the [ESCO](https://esco.ec.europa.eu/) classification of the European Commission.
+Started from [karpathy/jobs](https://github.com/karpathy/jobs), whose BLS pipeline is still in this repository (see [Licensing and attribution](#licensing-and-attribution)). The ESCO skill-level pipeline, the narratives and every page of the site were written for this project. This publication uses the [ESCO](https://esco.ec.europa.eu/) classification of the European Commission.
 
 ## Quick start
 
@@ -243,6 +244,20 @@ Creates the compressed dataset for the Skill Portfolio Analyzer:
 
 **Compression:** Skills use 8-character MD5 hash IDs with collision resolution. Occupation keys are heavily abbreviated (e.g. `t`=title, `ar`=automation_risk, `se`=essential_skills). Final output: ~9.6 MB.
 
+### Step 6: Build the site indexes (`build_site_indexes.py`)
+
+The pages should not download 13 MB to draw a search box. This step reads `site/data.json` and `site/portfolio_data.json` and writes the small files each page actually needs:
+
+| File | What is in it | Loaded by |
+|---|---|---|
+| `site/search_index.json` | Title, slug, ISCO code, both scores, quadrant and ESCO's alternative labels per occupation (80 KB gzipped) | Find a job, Browse sectors, What we found |
+| `site/groups.json` | Every ISCO group at every level: job count, quadrant counts, score spread, the most and least exposed jobs, children and parent | Browse sectors, What we found |
+| `site/stats.json` | Every number the pages quote: totals, quadrant shares, the share of occupations within 0.5 of a cut-off, the build date | all pages |
+| `site/skill_index.json` | Title, both scores and occupation counts per skill | Look up a skill, Browse sectors |
+| `site/skill_occupations.json` | Which occupations need each skill, essential and optional | Look up a skill |
+
+Alternative labels are why a search for "programmer" finds Software developer. No number on the site is typed into the prose: the pages compute them from these files as they load.
+
 ## The quadrant model
 
 Every occupation lands in one of four quadrants based on its aggregate scores (threshold = 6):
@@ -262,43 +277,74 @@ Distribution across 3,043 occupations:
 
 ## The frontend
 
-Four static pages — pure vanilla JS, no framework, no build step.
+Static pages in vanilla JS: ES modules, no framework, no build step. The site is organised around the questions a visitor arrives with, not around the taxonomy:
+
+| The visitor asks | Page |
+|---|---|
+| "How will my profession be affected?" | [Find a job](https://jorisdevreede.github.io/AI-ISCO/) → the job page |
+| "How will someone else's profession be affected?" | The same job page in neutral wording, with a link you can share |
+| "Which groups of professions are affected, and how differently?" | [Browse sectors](https://jorisdevreede.github.io/AI-ISCO/groups.html) |
+| "How will a skill evolve?" | [Look up a skill](https://jorisdevreede.github.io/AI-ISCO/skill.html) |
+| "Where could I move next, and what should I learn?" | The job page: nearby jobs and skills to learn |
+| "How sure is this?" | On every quadrant badge, and on [How sure is this?](https://jorisdevreede.github.io/AI-ISCO/method.html) |
+
+The decisions behind this layout, and the audit findings that led to them, are in [docs/frontend-redesign-brief.md](docs/frontend-redesign-brief.md).
+
+Deep links are hash-based, so GitHub Pages serves them unchanged:
+
+```
+job.html#software-developer                   my-job wording
+job.html#software-developer&for=other         neutral wording, for someone else's job
+job.html#optical-engineer&from=unit:2149      adds a way back to that group
+groups.html#g=major:2&view=ranked|scatter|treemap|table
+skill.html#59b27e7b
+```
 
 `site/scorer.js` lets a local checkout show a second set of scores. When `site/data_typesafe.json` and `site/portfolio_data_typesafe.json` exist (they are gitignored, so not on the published site), a **Scores from** switch appears in the navigation bar, remembers the choice across pages, and can be set with `?scorer=typesafe`. A banner then notes that the narratives and skill rationales were written from the Gemini scores. Without those files the pages load `data.json` and `portfolio_data.json` exactly as before.
 
-### Job Explorer ([index.html](https://jorisdevreede.github.io/AI-ISCO/))
+### Find a job ([index.html](https://jorisdevreede.github.io/AI-ISCO/))
 
-Drill-down canvas treemap of all 3,000+ occupations through the ISCO-08 hierarchy (10 major groups → 43 sub-major → 130 minor → 436 unit groups → individual jobs).
+The first page is a search box. It matches titles and ESCO's alternative labels, so "programmer" finds Software developer. Below it: a few example jobs, the jobs you viewed recently (kept in your browser only), and a way into the sectors. It loads the 80 KB search index and nothing else.
 
-- **Color modes:** Evolution Potential, Automation Risk, Amplification Potential, or Quadrant
-- **Interaction:** Click to drill down, breadcrumb navigation to go back
-- **Tooltips:** Job title, scores, number of skills
+### The job page ([job.html#software-developer](https://jorisdevreede.github.io/AI-ISCO/job.html#software-developer))
 
-### Skill Portfolio Analyzer ([portfolio.html](https://jorisdevreede.github.io/AI-ISCO/portfolio.html))
+Everything about one occupation, and the one page every other surface links to:
 
-Treats your career like an investment portfolio. Search any occupation to see:
+- **Both scores** with what each one means, and a quadrant badge that explains why the job landed there and whether it sits within 0.5 of a cut-off
+- **What to do next** before any detail: a job with high automation risk never gets a verdict without a next step
+- **Where the skills sit** — every skill plotted on the two axes, cut-off lines at 6, with a table alternative
+- **Why each essential skill scores as it does** — the model's rationale per skill
+- **How the work could change** — the narrative, what AI takes on and what it amplifies, the rebalanced week
+- **Where you could move next** and **skills you could learn** — nearby jobs by skill overlap, each labelled for what it is (a step up, a sideways move, or more exposed)
+- `&for=other` switches the wording to neutral for someone else's job and keeps it out of your recently viewed list
 
-- **2D skill scatter plot** — every skill plotted on automation risk vs amplification potential
-- **Portfolio health score** — strong, mixed, or at-risk based on skill distribution
-- **Depreciating skills** — high automation risk, losing value
-- **Appreciating skills** — high amplification potential, gaining value
-- **AI evolution narrative** — full story of how the occupation transforms, with timeline and career advice
-- **Rebalanced work week** — before/after breakdown of how time allocation shifts
-- **Evolution paths** — adjacent occupations with higher evolution potential and shared skill overlap
-- **Rebalancing recommendations** — gap skills from adjacent TRANSFORM/EVOLVE careers you should learn
+`portfolio.html#<slug>` links from before the redesign redirect here.
 
-### ISCO Explorer ([explorer.html](https://jorisdevreede.github.io/AI-ISCO/explorer.html))
+### Browse sectors ([groups.html](https://jorisdevreede.github.io/AI-ISCO/groups.html))
 
-List-based browse and search interface with expandable detail rows:
+Any ISCO-08 group at any level (10 major groups → 43 sub-major → 130 minor → 436 unit groups): how its jobs split over the four quadrants, then four views of the same jobs — a ranked dot plot, a scatter, a drill-down treemap and a sortable table — plus the most and least exposed jobs, the skills that drive the group, and a side-by-side comparison of two groups. The treemap is keyboard-navigable and every chart has a text summary and a table alternative. `explorer.html` redirects here.
 
-- **Search** by occupation title, ISCO code, or category
-- **Filter** by quadrant or evolution potential range
-- **Sort** by any column
-- **Detail panel** with full narrative, automated/amplified tasks, career advice, rebalanced week, and applicable AI tools
+### Look up a skill ([skill.html](https://jorisdevreede.github.io/AI-ISCO/skill.html))
 
-### Insights ([insights.html](https://jorisdevreede.github.io/AI-ISCO/insights.html))
+Both scores for one skill, the model's rationale, the occupations that need it (essential and optional) and the skills it most often appears with.
 
-Aggregated findings across all occupations, written up as a newspaper-style article.
+### What we found ([insights.html](https://jorisdevreede.github.io/AI-ISCO/insights.html))
+
+Aggregated findings across all occupations, written up as a newspaper-style article. Every number in it is computed from the published data as the page loads.
+
+### How sure is this? ([method.html](https://jorisdevreede.github.io/AI-ISCO/method.html))
+
+What the scores are (model estimates, nobody measured a real job), how the quadrants are cut, and how many occupations sit close enough to a cut-off that a small change in the scores would move them.
+
+### How the front end is put together
+
+| Where | What |
+|---|---|
+| `site/js/*.js` | Shared modules: search ranking, quadrant and near-the-line rules, URL state, group statistics, formatting, data loading, the navigation and attribution footer, an accessible combobox, the quadrant badge, the treemap layout. [site/js/README.md](site/js/README.md) documents each one |
+| `site/js/pages/*.js` | One thin DOM module per page, plus a pure `*-model.js` beside it that holds the logic and imports nothing from the DOM |
+| `site/css/app.css` | Shared tokens and components; each page adds its own small stylesheet |
+
+Accessibility is part of done: real links and buttons, an ARIA 1.2 combobox with a live region, visible focus, text contrast of at least 4.5:1, touch targets of at least 24 px, no horizontal scroll at 390 px, and a loading and an error state for every fetch.
 
 ## Setup
 
@@ -328,6 +374,7 @@ uv run python score_skills_typesafe.py    # Optional second scorer (resumable); 
 uv run python aggregate_scores.py         # Aggregate to occupation level (~seconds)
 uv run python generate_narratives.py      # Generate evolution narratives (~hours, resumable)
 uv run python build_portfolio_data.py     # Build portfolio adjacency data (~minutes)
+uv run python build_site_indexes.py       # Small per-page index files under site/ (~seconds)
 ```
 
 ### Resume after interruption
@@ -360,6 +407,29 @@ Push to master — GitHub Actions auto-deploys to GitHub Pages:
 git push origin master
 ```
 
+## Tests and code quality
+
+```bash
+uv sync --dev
+uv run pytest --ignore=tests/e2e --cov --cov-branch    # Python: unit and characterisation tests
+npm test                                               # JavaScript: node --test over the pure modules
+uv run ruff check .
+uv run radon cc -s -n B .                              # anything more complex than grade A
+```
+
+| What | How it is kept |
+|---|---|
+| Python coverage | Line and branch coverage over the pipeline scripts and the `aiisco/` package; CI fails below 95% |
+| Behaviour | Golden-output tests were written before any refactoring, and the real pipeline output was compared byte for byte before and after |
+| Unit size and complexity | Following the SIG maintainability guidelines: short functions, low cyclomatic complexity, at most four parameters, no duplicated blocks |
+| Front-end logic | Pure modules (search ranking, quadrant rules, URL state, page models, treemap layout) run under `node --test`; no browser needed |
+| No network, no keys | Every model call is faked in the tests. The fixtures under `tests/fixtures/` are synthetic ([why](tests/fixtures/README.md)) |
+| Known bugs | Behaviour that looks wrong but is published is pinned by a test marked `# BUG:` rather than silently changed, because fixing it changes the published numbers |
+
+`.github/workflows/tests.yml` runs the Python tests with the coverage gate, ruff and the JavaScript tests on every push and pull request. The files copied from karpathy/jobs are outside the scope of the tests.
+
+The shared Python code lives in the `aiisco/` package: `esco.py` (reading ESCO), `rollup.py` (weights, the threshold, quadrants), `portfolio.py` (adjacency and gap skills), `site_indexes.py`, `stats.py`, `openrouter.py` and `checkpoint.py` (model calls, retry, resume) and `jsonio.py`. The scripts at the top level are thin entry points over it.
+
 ## Key files
 
 | File | Purpose |
@@ -373,17 +443,24 @@ git push origin master
 | `merge_narrative_shards.py` | Consolidate parallel narrative shards |
 | `build_portfolio_data.py` | Jaccard adjacency, gap skills, compressed portfolio data |
 | `site/scorer.js` | Picks which score files the pages load; shows a "Scores from" switch only when a local second set exists |
-| `site/index.html` | Drill-down treemap explorer |
-| `site/portfolio.html` | Skill Portfolio Analyzer with narratives |
-| `site/explorer.html` | ISCO occupation explorer with search/filter |
+| `build_site_indexes.py` | The small index files each page loads (search, groups, stats, skills) |
+| `aiisco/` | Shared, tested Python: ESCO reading, roll-up and quadrant rules, adjacency, model calls, checkpoints |
+| `site/index.html` | Find a job: the search-first landing page |
+| `site/job.html` | The one job page (`portfolio.html` redirects to it) |
+| `site/groups.html` | Browse sectors: quadrant split, ranked, scatter, treemap, table (`explorer.html` redirects to it) |
+| `site/skill.html`, `site/method.html`, `site/insights.html` | Skill lookup, the method page, the findings article |
+| `site/js/`, `site/css/` | Shared ES modules and stylesheet, one page module per page |
+| `tests/` | pytest for the Python, `node --test` for the JavaScript, synthetic fixtures |
+| `docs/frontend-redesign-brief.md` | The questions the site answers and the decisions behind its layout |
 | `data/esco/` | Raw ESCO v1.2.1 CSV files |
 | `data/skill_scores.json` | All 13,939 skills scored on both axes (generated, not committed) |
 | `data/occupation_narratives.json` | 3,039 occupation evolution narratives |
 
 ## Stack
 
-- **Frontend:** Pure vanilla HTML/CSS/JS — no framework, no build step
-- **Visualization:** Canvas-based treemap and scatter plots
+- **Frontend:** Pure vanilla HTML/CSS/JS as ES modules — no framework, no build step
+- **Visualization:** Canvas treemap, SVG scatter and dot plots, each with a table alternative
+- **Tests:** pytest with coverage, `node --test`, ruff, radon; GitHub Actions
 - **Backend:** Python 3.10+ with [uv](https://github.com/astral-sh/uv)
 - **LLM API:** OpenRouter (Gemini Flash via `google/gemini-3-flash-preview`)
 - **Judgment API (optional experiment):** TypeSafe System One, model version pinned in the script
@@ -409,6 +486,7 @@ git push origin master
 - **Quadrants are a hard cut at 6.** An occupation at 5.9 and one at 6.1 get different labels, so occupations near the threshold are less settled than the label suggests.
 - **Narratives are LLM-generated** for 3,039 of the 3,043 occupations. Time savings, timelines and the rebalanced week are estimates, not forecasts.
 - **English labels only.** The pipeline reads the `_en` ESCO files.
+- **The job page downloads one large file.** `site/portfolio_data.json` holds every occupation's skills, so the first job page you open loads about 13 MB (less over the wire, and cached afterwards). It shows a loading state while it does. One file per job is a planned increment.
 - **The per-skill Gemini scores are not committed.** They survive only in compressed form inside `site/portfolio_data.json`, so re-aggregating from scratch means re-scoring.
 - **The optional TypeSafe scorer returns scores only,** no rationale text, and its results cannot be published here (see Step 2b).
 
@@ -435,11 +513,11 @@ Different parts of this repository carry different terms. [THIRD-PARTY-NOTICES.m
 
 | What | Terms |
 |---|---|
-| Code written for this project (the ESCO pipeline scripts, `site/explorer.html`, `site/portfolio.html`, `site/insights.html`, `site/scorer.js`) | [MIT](LICENSE) |
+| Code written for this project (the ESCO pipeline scripts, the `aiisco/` package, every page and module under `site/`, the tests) | [MIT](LICENSE) |
 | The scores, quadrants, rationales and narratives this project generated | [CC BY 4.0](LICENSE-DATA) |
 | ESCO classification (`data/esco/`, titles and descriptions in `site/`) | European Commission reuse terms, not covered by the two licences above |
 | ISCO-08 group structure, titles and definitions | © 2012 International Labour Organization, not covered |
 | BLS Occupational Outlook Handbook pages and the ISCO-SOC crosswalk | Public domain, source: U.S. Bureau of Labor Statistics |
-| Files copied from karpathy/jobs (`score.py` and seven other scripts, `prompt.md`, `scores.json`, the BLS scrape, the treemap layout) | No licence published upstream, so none granted here |
+| Files copied from karpathy/jobs (`score.py` and seven other scripts, `prompt.md`, `scores.json`, the BLS scrape) | No licence published upstream, so none granted here |
 
 This publication uses the ESCO classification of the European Commission. The data in `site/` is a modified and adapted version of ESCO v1.2.1: the scores, quadrants, rationales and narratives are AI-generated additions (Google Gemini Flash via OpenRouter) and are not part of ESCO. The European Commission, the International Labour Organization, the U.S. Bureau of Labor Statistics, Google and TypeSafe do not endorse this project.

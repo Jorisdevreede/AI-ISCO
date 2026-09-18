@@ -6,10 +6,11 @@ This repository mixes original work with material from other parties. This file 
 
 Code written for this project:
 
-- `ingest_esco.py`, `score_skills.py`, `score_skills_typesafe.py`, `compare_skill_scores.py`, `aggregate_scores.py`, `generate_narratives.py`, `merge_narrative_shards.py`, `build_portfolio_data.py`
-- `site/explorer.html`, `site/portfolio.html`, `site/insights.html`, `site/scorer.js`
-- `site/index.html`, except the treemap layout functions noted under [karpathy/jobs](#karpathyjobs)
-- `README.md`, `pyproject.toml`, `.github/workflows/`
+- `ingest_esco.py`, `score_skills.py`, `score_skills_typesafe.py`, `compare_skill_scores.py`, `aggregate_scores.py`, `generate_narratives.py`, `merge_narrative_shards.py`, `build_portfolio_data.py`, `build_site_indexes.py` and the `aiisco/` package
+- Every page under `site/` (`index.html`, `job.html`, `groups.html`, `skill.html`, `method.html`, `insights.html` and the `portfolio.html` and `explorer.html` redirects), `site/scorer.js`, `site/js/` and `site/css/`
+- `tests/`, `README.md`, `docs/`, `pyproject.toml`, `package.json`, `.github/workflows/`
+
+The treemap on `site/groups.html` uses `site/js/treemap-layout.js`, written for this project from the published algorithm (Bruls, Huizing and van Wijk, "Squarified Treemaps", 2000). Until September 2026 `site/index.html` carried a treemap layout taken from karpathy/jobs; that code is no longer in the site.
 
 ## Covered by CC BY 4.0 ([LICENSE-DATA](LICENSE-DATA))
 
@@ -49,8 +50,6 @@ This project started from [karpathy/jobs](https://github.com/karpathy/jobs). The
 
 - `score.py`, `make_prompt.py`, `build_site_data.py`, `make_csv.py`, `process.py`, `scrape.py`, `parse_detail.py`, `parse_occupations.py`
 - `prompt.md`, `scores.json`, `occupations.json`, `occupations.csv`, `occupational_outlook_handbook.html` and the 342 pages under `html/`
-
-The squarified treemap layout in `site/index.html` (the layout function and `worstAspect()`) is also taken from it.
 
 karpathy/jobs publishes no licence, so no licence is granted for these files here either. They are not covered by this repository's MIT or CC BY 4.0 grants, and the rights in them remain with their author. The ESCO pipeline and the published site do not depend on them.
 
