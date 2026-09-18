@@ -1,0 +1,15 @@
+occupationUri,occupationLabel,relationType,skillType,skillUri,skillLabel
+http://example.org/esco/occupation/occ-01,data steward,essential,skill/competence,http://example.org/esco/skill/s01,analyse data quality
+http://example.org/esco/occupation/occ-01,data steward,essential,knowledge,http://example.org/esco/skill/s02,data governance
+http://example.org/esco/occupation/occ-01,data steward,optional,skill/competence,http://example.org/esco/skill/s03,gérer un café
+http://example.org/esco/occupation/occ-02,kiln operator,essential,knowledge,http://example.org/esco/skill/s04,operate a kiln
+http://example.org/esco/occupation/occ-02,kiln operator,optional,skill/competence,http://example.org/esco/skill/s01,analyse data quality
+http://example.org/esco/occupation/occ-04,tunnel cleaner,essential,skill/competence,http://example.org/esco/skill/s08,work in a team
+http://example.org/esco/occupation/occ-05,lighthouse archivist,essential,skill/competence,http://example.org/esco/skill/s10,catalogue logbooks
+http://example.org/esco/occupation/occ-05,lighthouse archivist,essential,skill/competence,http://example.org/esco/skill/s10,catalogue logbooks
+http://example.org/esco/occupation/occ-05,lighthouse archivist,optional,skill/competence,http://example.org/esco/skill/s08,work in a team
+http://example.org/esco/occupation/occ-05,lighthouse archivist,essential,skill/competence,http://example.org/esco/skill/unknown-999,missing skill
+http://example.org/esco/occupation/occ-06,glaze mixer,essential,knowledge,http://example.org/esco/skill/s07,ceramic chemistry
+http://example.org/esco/occupation/occ-06,glaze mixer,optional,skill/competence,http://example.org/esco/skill/s06,keep a tidy workspace
+,,essential,skill/competence,http://example.org/esco/skill/s01,analyse data quality
+http://example.org/esco/occupation/occ-01,data steward,optional,skill/competence,,

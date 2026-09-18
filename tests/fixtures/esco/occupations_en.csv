@@ -1,0 +1,9 @@
+conceptType,conceptUri,iscoGroup,preferredLabel,altLabels,hiddenLabels,status,modifiedDate,regulatedProfessionNote,scopeNote,definition,inScheme,description,code,naceCode
+Occupation,http://example.org/esco/occupation/occ-01,2511,data steward,"data custodian
+data caretaker",,released,,,,,,Data stewards look after the meaning and quality of a data set.,,
+Occupation,http://example.org/esco/occupation/occ-02,8181,kiln operator,kiln tender,,released,,,,,,"Kiln operators fire ceramics, watching temperature curves.",,
+Occupation,http://example.org/esco/occupation/occ-03,5223,"shop assistant, night shift",,,released,,,,,,"They greet customers and say ""good evening"" a lot.",,
+Occupation,http://example.org/esco/occupation/occ-04,9112,tunnel cleaner,,,released,,,,,,Tunnel cleaners scrub service tunnels.,,
+Occupation,http://example.org/esco/occupation/occ-05,,lighthouse archivist,,,released,,,,,,Lighthouse archivists keep the logbooks of a coast.,,
+Occupation,http://example.org/esco/occupation/occ-06,,glaze mixer,,,released,,,,,,Glaze mixers weigh and blend ceramic glazes.,,
+Occupation,,1111,row without a uri,,,released,,,,,,This row has no conceptUri and must be dropped.,,

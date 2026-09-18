@@ -1,0 +1,158 @@
+[
+  {
+    "uri": "http://example.org/esco/occupation/occ-01",
+    "title": "data steward",
+    "description": "Data stewards look after the meaning and quality of a data set.",
+    "isco_code": "2511",
+    "isco_group": "Systems analysts",
+    "hierarchy": [
+      "Professionals",
+      "Information and communications technology professionals",
+      "Software and applications developers and analysts",
+      "Systems analysts"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s01",
+        "title": "analyse data quality",
+        "type": "skill",
+        "reuse_level": "sector-specific"
+      },
+      {
+        "uri": "http://example.org/esco/skill/s02",
+        "title": "data governance",
+        "type": "knowledge",
+        "reuse_level": "cross-sector"
+      }
+    ],
+    "optional_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s03",
+        "title": "gérer un café",
+        "type": "skill",
+        "reuse_level": "transversal"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/occ-02",
+    "title": "kiln operator",
+    "description": "Kiln operators fire ceramics, watching temperature curves.",
+    "isco_code": "818",
+    "isco_group": "Other stationary plant and machine operators",
+    "hierarchy": [
+      "Plant and machine operators",
+      "Other stationary plant and machine operators"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s04",
+        "title": "operate a kiln",
+        "type": "knowledge",
+        "reuse_level": "occupation-specific"
+      }
+    ],
+    "optional_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s01",
+        "title": "analyse data quality",
+        "type": "skill",
+        "reuse_level": "sector-specific"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/occ-03",
+    "title": "shop assistant, night shift",
+    "description": "They greet customers and say \"good evening\" a lot.",
+    "isco_code": "5223",
+    "isco_group": "",
+    "hierarchy": [],
+    "essential_skills": [],
+    "optional_skills": []
+  },
+  {
+    "uri": "http://example.org/esco/occupation/occ-04",
+    "title": "tunnel cleaner",
+    "description": "Tunnel cleaners scrub service tunnels.",
+    "isco_code": "911",
+    "isco_group": "Cleaners",
+    "hierarchy": [
+      "Cleaners",
+      "Cleaners and helpers",
+      "Cleaners"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s08",
+        "title": "work in a team",
+        "type": "skill",
+        "reuse_level": "transversal"
+      }
+    ],
+    "optional_skills": []
+  },
+  {
+    "uri": "http://example.org/esco/occupation/occ-05",
+    "title": "lighthouse archivist",
+    "description": "Lighthouse archivists keep the logbooks of a coast.",
+    "isco_code": "",
+    "isco_group": "",
+    "hierarchy": [],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s10",
+        "title": "catalogue logbooks",
+        "type": "skill",
+        "reuse_level": "occupation-specific"
+      },
+      {
+        "uri": "http://example.org/esco/skill/s10",
+        "title": "catalogue logbooks",
+        "type": "skill",
+        "reuse_level": "occupation-specific"
+      },
+      {
+        "uri": "http://example.org/esco/skill/unknown-999",
+        "title": "",
+        "type": "",
+        "reuse_level": ""
+      }
+    ],
+    "optional_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s08",
+        "title": "work in a team",
+        "type": "skill",
+        "reuse_level": "transversal"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/occ-06",
+    "title": "glaze mixer",
+    "description": "Glaze mixers weigh and blend ceramic glazes.",
+    "isco_code": "9",
+    "isco_group": "Elementary occupations",
+    "hierarchy": [
+      "Elementary occupations",
+      "Unclassified helpers"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s07",
+        "title": "ceramic chemistry",
+        "type": "knowledge",
+        "reuse_level": "sector-specific"
+      }
+    ],
+    "optional_skills": [
+      {
+        "uri": "http://example.org/esco/skill/s06",
+        "title": "keep a tidy workspace",
+        "type": "skill",
+        "reuse_level": ""
+      }
+    ]
+  }
+]

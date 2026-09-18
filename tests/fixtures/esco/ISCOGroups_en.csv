@@ -1,0 +1,11 @@
+conceptType,conceptUri,code,preferredLabel,status,altLabels,inScheme,description
+ISCOGroup,http://example.org/esco/isco/C2,2,Professionals,released,,,Professionals increase the existing stock of knowledge.
+ISCOGroup,http://example.org/esco/isco/C25,25,Information and communications technology professionals,released,,,
+ISCOGroup,http://example.org/esco/isco/C251,251,Software and applications developers and analysts,released,,,
+ISCOGroup,http://example.org/esco/isco/C2511,2511,Systems analysts,released,,,
+ISCOGroup,http://example.org/esco/isco/C8,8,Plant and machine operators,released,,,
+ISCOGroup,http://example.org/esco/isco/C818,818,Other stationary plant and machine operators,released,,,
+ISCOGroup,http://example.org/esco/isco/C9,9,Elementary occupations,released,,,
+ISCOGroup,http://example.org/esco/isco/CE,,Unclassified helpers,released,,,
+ISCOGroup,http://example.org/esco/isco/CYC1,911,Cleaners,released,,,
+ISCOGroup,http://example.org/esco/isco/CYC2,91,Cleaners and helpers,released,,,
