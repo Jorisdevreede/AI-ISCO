@@ -1,0 +1,42 @@
+Portfolio data builder
+============================================================
+  Occupations loaded: 9
+  Skill scores loaded: 15
+  Skills with valid scores: 15
+  Rationales borrowed from the gemini scores: 5
+  Occupation narratives loaded: 3
+  Unique skills across occupations: 15
+  Short IDs generated: 15
+  Occupations with scored skills: 7
+
+Computing Jaccard adjacency (essential skills only)...
+  Adjacency pairs (>= 0.15 overlap): 6
+
+Skills in output: 14
+
+============================================================
+Output summary
+============================================================
+  Output file: site/portfolio_data_v2.json
+  File size: 4,768 bytes (0.00 MB)
+  Skills: 14
+  Occupations: 7
+  Skills with scores: 13 / 14
+  Skills with rationales: 5 / 14
+  Occupations with narratives: 2 / 7
+  site/jobs/units.json: 147 bytes, 129 gzipped
+  jobs_v2               6 files  raw med/p90/max 1.6/2.9/3.2 KB  gz 0.8/1.2/1.2 KB  total 10 KB raw, 5 KB gz
+  skill_notes_v2        5 files  raw med/p90/max 0.1/0.1/0.1 KB  gz 0.1/0.1/0.1 KB  total 0 KB raw, 0 KB gz
+  Occupations with adjacency: 4 / 7
+  Adjacent occupations per entry: avg=0.9  min=0  max=2
+
+  Type distribution:
+    AUTOMATION_HEAVY    :    2 ( 28.6%)
+    TRANSFORMING        :    0 (  0.0%)
+    AUGMENTED           :    1 ( 14.3%)
+    MECHANISABLE        :    1 ( 14.3%)
+    INSULATED_PHYSICAL  :    0 (  0.0%)
+    INSULATED_PEOPLE    :    3 ( 42.9%)
+    MIXED               :    0 (  0.0%)
+
+Done.

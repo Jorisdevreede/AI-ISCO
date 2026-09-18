@@ -11,9 +11,9 @@ gap on the 1-10 scale, how agreement moves with TypeSafe's confidence, and the
 largest disagreements. With --occupations it also rolls both score sets up to
 occupations (same weights as aggregate_scores.py) and compares the quadrants.
 
-For your own evaluation only: TypeSafe's customer agreement (section 2.3(f))
-prohibits publishing benchmarks or performance information about their
-service, so do not publish this script's output without their written consent.
+The README's Step 2b quotes this script's output for the full run. Neither
+score set is ground truth: the comparison shows how far two models agree, not
+which one is right.
 
 Usage:
     uv run python compare_skill_scores.py

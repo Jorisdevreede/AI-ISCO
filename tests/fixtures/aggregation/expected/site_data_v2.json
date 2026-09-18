@@ -1,0 +1,307 @@
+[
+  {
+    "title": "Data entry clerk",
+    "slug": "data-entry-clerk",
+    "category": "Numerical and material recording clerks",
+    "major_group": "Clerical support workers",
+    "sub_major_group": "Numerical and material recording clerks",
+    "minor_group": "Numerical clerks",
+    "unit_group": "Data entry clerks",
+    "isco_code": "4132",
+    "automation_risk": 4.9,
+    "amplification_potential": 4.8,
+    "evolution_potential": 2.4,
+    "quadrant": "INSULATED_PEOPLE",
+    "num_skills": 12,
+    "num_essential_skills": 10,
+    "top_skills": [
+      {
+        "title": "type documents",
+        "auto": 7.6,
+        "amp": 5.4
+      },
+      {
+        "title": "copy ledgers",
+        "auto": 7.6,
+        "amp": null
+      },
+      {
+        "title": "scan invoices",
+        "auto": 7.2,
+        "amp": 5.4
+      },
+      {
+        "title": "file records",
+        "auto": 6.2,
+        "amp": 5.4
+      },
+      {
+        "title": "design systems",
+        "auto": 6.2,
+        "amp": 7.3
+      },
+      {
+        "title": "plan budgets",
+        "auto": null,
+        "amp": 6.76
+      }
+    ],
+    "mechanical_automation": 2.8,
+    "shares": {
+      "substituted": 0.2857,
+      "assisted": 0.1905,
+      "mechanised": 0.0952,
+      "insulated": 0.4286
+    }
+  },
+  {
+    "title": "Café manager",
+    "slug": "caf-manager",
+    "category": "Hospitality, retail and other services managers",
+    "major_group": "Managers",
+    "sub_major_group": "Hospitality, retail and other services managers",
+    "minor_group": "",
+    "unit_group": "",
+    "isco_code": "1412",
+    "automation_risk": 4.0,
+    "amplification_potential": 4.4,
+    "evolution_potential": 1.8,
+    "quadrant": "INSULATED_PEOPLE",
+    "num_skills": 6,
+    "num_essential_skills": 4,
+    "top_skills": [
+      {
+        "title": "type documents",
+        "auto": 7.6,
+        "amp": 5.4
+      },
+      {
+        "title": "design systems",
+        "auto": 6.2,
+        "amp": 7.3
+      },
+      {
+        "title": "advise clients",
+        "auto": 2.64,
+        "amp": 3.3
+      },
+      {
+        "title": "train staff",
+        "auto": 2.64,
+        "amp": 3.3
+      },
+      {
+        "title": "café service",
+        "auto": 2.64,
+        "amp": 3.3
+      }
+    ],
+    "mechanical_automation": 2.3,
+    "shares": {
+      "substituted": 0.1111,
+      "assisted": 0.2222,
+      "mechanised": 0.0,
+      "insulated": 0.6667
+    }
+  },
+  {
+    "title": "Software developer",
+    "slug": "software-developer",
+    "category": "Science and engineering professionals",
+    "major_group": "Professionals",
+    "sub_major_group": "Science and engineering professionals",
+    "minor_group": "Software and applications developers",
+    "unit_group": "",
+    "isco_code": "2512",
+    "automation_risk": 4.2,
+    "amplification_potential": 5.2,
+    "evolution_potential": 2.2,
+    "quadrant": "AUGMENTED",
+    "num_skills": 5,
+    "num_essential_skills": 4,
+    "top_skills": [
+      {
+        "title": "scan invoices",
+        "auto": 7.2,
+        "amp": 5.4
+      },
+      {
+        "title": "design systems",
+        "auto": 6.2,
+        "amp": 7.3
+      },
+      {
+        "title": "plan budgets",
+        "auto": 3.74,
+        "amp": 6.76
+      },
+      {
+        "title": "advise clients",
+        "auto": 2.64,
+        "amp": 3.3
+      },
+      {
+        "title": "négocier contracts",
+        "auto": 2.64,
+        "amp": 3.3
+      }
+    ],
+    "mechanical_automation": 2.3,
+    "shares": {
+      "substituted": 0.1111,
+      "assisted": 0.4444,
+      "mechanised": 0.0,
+      "insulated": 0.4445
+    }
+  },
+  {
+    "title": "Archivist",
+    "slug": "archivist",
+    "category": "",
+    "major_group": "",
+    "sub_major_group": "",
+    "minor_group": "",
+    "unit_group": "",
+    "isco_code": "",
+    "automation_risk": 5.0,
+    "amplification_potential": 4.3,
+    "evolution_potential": 2.1,
+    "quadrant": "MECHANISABLE",
+    "num_skills": 2,
+    "num_essential_skills": 2,
+    "top_skills": [
+      {
+        "title": "file records",
+        "auto": 6.2,
+        "amp": 5.4
+      },
+      {
+        "title": "sort post",
+        "auto": 3.74,
+        "amp": 3.3
+      }
+    ],
+    "mechanical_automation": 4.7,
+    "shares": {
+      "substituted": 0.0,
+      "assisted": 0.0,
+      "mechanised": 0.5,
+      "insulated": 0.5
+    }
+  },
+  {
+    "title": "Post sorter",
+    "slug": "post-sorter",
+    "category": "Clerical support workers",
+    "major_group": "Clerical support workers",
+    "sub_major_group": "",
+    "minor_group": "",
+    "unit_group": "",
+    "isco_code": "4412",
+    "automation_risk": 6.2,
+    "amplification_potential": 4.9,
+    "evolution_potential": 3.0,
+    "quadrant": "AUTOMATION_HEAVY",
+    "num_skills": 4,
+    "num_essential_skills": 4,
+    "top_skills": [
+      {
+        "title": "type documents",
+        "auto": 7.6,
+        "amp": 5.4
+      },
+      {
+        "title": "scan invoices",
+        "auto": 7.2,
+        "amp": 5.4
+      },
+      {
+        "title": "file records",
+        "auto": 6.2,
+        "amp": 5.4
+      },
+      {
+        "title": "sort post",
+        "auto": 3.74,
+        "amp": 3.3
+      }
+    ],
+    "mechanical_automation": 3.5,
+    "shares": {
+      "substituted": 0.5,
+      "assisted": 0.0,
+      "mechanised": 0.25,
+      "insulated": 0.25
+    }
+  },
+  {
+    "title": "Freelance consultant",
+    "slug": "freelance-consultant",
+    "category": "Business and administration professionals",
+    "major_group": "Professionals",
+    "sub_major_group": "Business and administration professionals",
+    "minor_group": "",
+    "unit_group": "",
+    "isco_code": "2423",
+    "automation_risk": 2.6,
+    "amplification_potential": 3.3,
+    "evolution_potential": 0.9,
+    "quadrant": "INSULATED_PEOPLE",
+    "num_skills": 2,
+    "num_essential_skills": 0,
+    "top_skills": [
+      {
+        "title": "advise clients",
+        "auto": 2.64,
+        "amp": 3.3
+      },
+      {
+        "title": "négocier contracts",
+        "auto": 2.64,
+        "amp": 3.3
+      }
+    ],
+    "mechanical_automation": 2.3,
+    "shares": {
+      "substituted": 0.0,
+      "assisted": 0.0,
+      "mechanised": 0.0,
+      "insulated": 1.0
+    }
+  },
+  {
+    "title": "AI trainer",
+    "slug": "ai-trainer",
+    "category": "Science and engineering professionals",
+    "major_group": "Professionals",
+    "sub_major_group": "Science and engineering professionals",
+    "minor_group": "",
+    "unit_group": "",
+    "isco_code": "2519",
+    "automation_risk": 7.6,
+    "amplification_potential": 7.3,
+    "evolution_potential": 5.5,
+    "quadrant": "AUTOMATION_HEAVY",
+    "num_skills": 2,
+    "num_essential_skills": 2,
+    "top_skills": [
+      {
+        "title": "curate datasets",
+        "auto": 7.6,
+        "amp": 7.3
+      },
+      {
+        "title": "tune models",
+        "auto": 7.6,
+        "amp": 7.3
+      }
+    ],
+    "mechanical_automation": 2.3,
+    "shares": {
+      "substituted": 1.0,
+      "assisted": 0.0,
+      "mechanised": 0.0,
+      "insulated": 0.0
+    }
+  }
+]

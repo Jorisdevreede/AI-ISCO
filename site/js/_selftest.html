@@ -17,6 +17,7 @@
   "scorer.js", "js/chrome.js", loadJSON("search_index").
 -->
 <base href="../">
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -50,6 +51,23 @@
   </section>
 
   <section class="card">
+    <h2>Type badge — the shares scheme</h2>
+    <p class="small muted">
+      The same button and popover, the seven types instead of the four boxes.
+      One near a cut-off, one not, and the residual class.
+    </p>
+    <p id="type-badge-slot"></p>
+  </section>
+
+  <section class="card">
+    <h2>Shares bar</h2>
+    <p class="small muted">
+      Full, with the legend in words; then the compact variant a list row uses.
+    </p>
+    <div id="shares-slot"></div>
+  </section>
+
+  <section class="card">
     <h2>Module checks</h2>
     <ul id="checks" class="small"></ul>
   </section>
@@ -71,7 +89,10 @@
 <script type="module">
 import { renderChrome, NAV_ITEMS } from './js/chrome.js';
 import { createCombobox } from './js/combobox.js';
-import { renderQuadrantBadge } from './js/badge.js';
+import { renderQuadrantBadge, renderTypeBadge } from './js/badge.js';
+import { renderSharesBar } from './js/shares-bar.js';
+import { shareSentence, sharePercents } from './js/shares.js';
+import { explainType, schemeOf, skillClassName, typeLabel, typeShortLabel } from './js/scheme.js';
 import { loadJSON, whenSlow, LoadError } from './js/data.js';
 import { rankOccupations, nearestTitles, fold } from './js/search.js';
 import { quadrantOf, isNearLine, explainQuadrant, exposureWord, THRESHOLD } from './js/quadrant.js';
@@ -105,6 +126,50 @@ badges.append(
 );
 check('badge is a real button with a popover', badges.querySelector('button.quadrant-badge[aria-controls]') !== null);
 check('badge marks a job near the line', badges.querySelectorAll('.quadrant-badge-near').length === 1);
+
+// --- the shares scheme ------------------------------------------------------
+
+const TRANSFORMING = { t: 'bookkeeper', q: 'TRANSFORMING', sh: [0.61, 0.22, 0.0, 0.17], nl: true };
+const PHYSICAL = { t: 'welder', q: 'INSULATED_PHYSICAL', sh: [0.14, 0.11, 0.26, 0.49], nl: false };
+const MIXED = { t: 'ship pilot', q: 'MIXED', sh: [0.2, 0.25, 0.3, 0.25], nl: false };
+
+const typeBadges = document.getElementById('type-badge-slot');
+for (const job of [TRANSFORMING, PHYSICAL, MIXED]) {
+  typeBadges.append(renderTypeBadge(job), document.createTextNode(' '));
+}
+check('the type badge is the same real button with a popover',
+  typeBadges.querySelector('button.type-badge[aria-controls][data-type="TRANSFORMING"]') !== null);
+check('the type badge names the type, never the code',
+  typeBadges.querySelector('[data-type="INSULATED_PHYSICAL"] .quadrant-badge-name').textContent === 'Physical work');
+check('the type badge marks only the job near a cut-off',
+  typeBadges.querySelectorAll('.quadrant-badge-near').length === 1);
+check('the popover explains the rule the job met',
+  /AI can take over covers 61%/.test(typeBadges.querySelector('.badge-popover').textContent));
+check('Mixed is explained as a residual class',
+  /not a finding that AI will leave the job alone/.test(explainType(MIXED).sentences.at(-1)));
+check('schemeOf reads the stats field', schemeOf({ scheme: 'shares' }) === 'shares' && schemeOf({}) === 'quadrants');
+check('names come from one module for both schemes',
+  typeLabel('TRANSFORM') === 'Transform' && typeLabel('AUGMENTED') === 'Augmented'
+  && typeShortLabel('INSULATED_PEOPLE') === 'People work' && typeLabel('NOPE') === 'Not scored');
+check('skill classes have words, not letters', skillClassName('M') === 'Machines can do');
+
+const sharesSlot = document.getElementById('shares-slot');
+sharesSlot.append(
+  renderSharesBar(TRANSFORMING.sh, { name: 'bookkeeper' }),
+  renderSharesBar(PHYSICAL.sh, { name: 'welder', compact: true }),
+);
+const bar = sharesSlot.querySelector('.shares-bar');
+check('the shares bar has an accessible name carrying the whole sentence',
+  bar.getAttribute('role') === 'img'
+  && bar.getAttribute('aria-label') === `What bookkeeper is made of: ${shareSentence(TRANSFORMING.sh)}.`);
+check('the bar draws only the parts with a width', bar.querySelectorAll('.shares-seg').length === 3);
+check('the legend repeats every part in words',
+  sharesSlot.querySelectorAll('.shares-legend li').length === 4
+  && sharesSlot.querySelector('.shares-legend').textContent.includes('Stays human'));
+check('the compact variant carries the sentence as visible text',
+  sharesSlot.querySelector('.shares--compact .shares-line').textContent === shareSentence(PHYSICAL.sh));
+check('rounded percentages add up to 100',
+  sharePercents([1 / 3, 1 / 3, 1 / 3, 0]).reduce((sum, part) => sum + part.percent, 0) === 100);
 
 const input = document.getElementById('job-search');
 const listbox = document.getElementById('job-listbox');

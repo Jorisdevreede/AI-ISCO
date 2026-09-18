@@ -1,0 +1,7 @@
+skill_answers_v2     13 files  raw med/p90/max 0.3/0.3/0.3 KB  gz 0.2/0.2/0.2 KB  total 5 KB raw, 3 KB gz
+groups                  12.2 KB raw      1.7 KB gz  budget 150 KB gz   ok
+rubric                  13.7 KB raw      3.4 KB gz  lazy, no budget    ok
+search_index             1.2 KB raw      0.5 KB gz  budget 260 KB gz   ok
+skill_index              1.6 KB raw      0.5 KB gz  budget 380 KB gz   ok
+skill_occupations        0.9 KB raw      0.3 KB gz  lazy, no budget    ok
+stats                    1.0 KB raw      0.4 KB gz  budget 20 KB gz    ok

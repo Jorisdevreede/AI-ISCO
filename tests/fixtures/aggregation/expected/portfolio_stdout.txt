@@ -23,6 +23,9 @@ Output summary
   Skills with scores: 13 / 14
   Skills with rationales: 5 / 14
   Occupations with narratives: 2 / 7
+  site/jobs/units.json: 147 bytes, 129 gzipped
+  jobs                  6 files  raw med/p90/max 1.6/2.0/2.3 KB  gz 0.8/0.9/1.0 KB  total 8 KB raw, 4 KB gz
+  skill_notes           5 files  raw med/p90/max 0.0/0.1/0.1 KB  gz 0.1/0.1/0.1 KB  total 0 KB raw, 0 KB gz
   Occupations with adjacency: 4 / 7
   Adjacent occupations per entry: avg=0.7  min=0  max=2
 

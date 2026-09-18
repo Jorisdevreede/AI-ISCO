@@ -1,0 +1,490 @@
+/* tree.html — the ISCO-08 tree and its detail pane. Page-specific rules only;
+ * tokens, nav, buttons, chips, cards, tables and the badge come from app.css.
+ *
+ * Rules kept here: the two panes scroll independently and never make the page
+ * scroll sideways, every quadrant is named in text as well as coloured, and a
+ * focused tree row draws the same gold ring the rest of the site draws.
+ */
+
+/* --- page shell ----------------------------------------------------------- */
+
+.tree-page { max-width: 1320px; }
+
+.tree-head { margin-bottom: var(--space-4); }
+.tree-head h1 { margin-bottom: var(--space-2); }
+.tree-head p { max-width: 62ch; margin-bottom: 0; }
+
+.section-heading {
+  margin-bottom: var(--space-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.tree-layout {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: start;
+}
+
+.tree-pane { min-width: 0; }
+
+/* --- the tools above the tree --------------------------------------------- */
+
+.tree-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+.tree-filter { flex: 1 1 200px; min-width: 0; }
+.tree-filter label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+.tree-filter input {
+  width: 100%;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  background: var(--bg2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+.tree-filter input::placeholder { color: var(--fg-muted); }
+
+.tree-count-line { margin: 0 0 var(--space-2); min-height: 1.3em; }
+
+/* --- the flat result list ------------------------------------------------- */
+
+/* A filter is a question about jobs, so the answer is a list of jobs. Every row
+ * is a real link and at least one tap target tall. */
+
+.result-list {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  max-height: min(52vh, 30rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.result-list li { border-bottom: 1px solid var(--line); }
+.result-list li:last-child { border-bottom: 0; }
+
+.result-link {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--fg);
+  text-decoration: none;
+}
+.result-link:hover { color: var(--fg); background: rgba(255, 255, 255, 0.06); }
+.result-title { text-decoration: underline; text-underline-offset: 2px; font-size: 0.9375rem; }
+.result-group, .result-also { color: var(--fg-muted); font-size: 0.75rem; }
+
+.tree-disclosure > summary {
+  min-height: var(--tap);
+  padding: var(--space-2) 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.tree-disclosure > summary:hover { color: var(--fg); }
+/* With no filter there is nothing to disclose: the tree is the page. */
+.tree-disclosure--plain > summary { display: none; }
+
+.tree-key { margin: 0 0 var(--space-2); }
+
+/* --- the tree ------------------------------------------------------------- */
+
+.tree-scroll {
+  max-height: calc(100vh - 19rem);
+  min-height: 22rem;
+  overflow: auto;
+  padding: var(--space-2);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overscroll-behavior: contain;
+}
+
+.tree, .tree ul[role='group'] { margin: 0; padding: 0; list-style: none; }
+.tree ul[role='group'] {
+  margin-left: 0.55rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid var(--line);
+}
+
+.tree-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  min-height: var(--tap);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.tree-row:hover { background: rgba(255, 255, 255, 0.06); }
+
+.tree-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 11rem;
+  min-width: 0;
+}
+/* "54% AI can take over" is longer than "6.4 / 8.9", so the figures may need a
+ * second line rather than pushing the row into a sideways scroll. */
+.tree-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-2);
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.tree-item[aria-selected='true'] > .tree-row {
+  background: rgba(232, 185, 59, 0.16);
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+
+/* The treeitem holds its whole subtree, so the ring is drawn on the row that
+ * actually has the focus rather than around every descendant. */
+.tree-item:focus-visible { outline: none; }
+.tree-item:focus-visible > .tree-row {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+
+.tree-twisty { flex: 0 0 14px; width: 14px; height: 14px; position: relative; }
+.tree-twisty--group::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  border-left: 5px solid var(--fg-muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transform-origin: 2px 4px;
+  transition: transform var(--speed);
+}
+.tree-item[aria-expanded='true'] > .tree-row .tree-twisty--group::before {
+  transform: rotate(90deg);
+}
+
+.tree-label { flex: 1 1 auto; min-width: 0; font-size: 0.875rem; }
+.tree-item--group > .tree-row .tree-label { font-weight: 600; }
+
+.tree-count {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+
+.tree-mix {
+  display: flex;
+  flex: 0 0 56px;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+/* Seven segments in the width four had would round the small types away. */
+.tree-mix--types { flex-basis: 84px; }
+.tree-mix-fill { height: 100%; }
+
+.tree-dot { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--fg-muted); }
+.tree-quad { flex: 0 0 auto; font-size: 0.75rem; font-weight: 600; }
+.tree-scores {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-quadrant='TRANSFORM'].tree-mix-fill, [data-quadrant='TRANSFORM'].tree-dot { background: var(--q-transform); }
+[data-quadrant='STABLE'].tree-mix-fill, [data-quadrant='STABLE'].tree-dot { background: var(--q-stable); }
+[data-quadrant='EVOLVE'].tree-mix-fill, [data-quadrant='EVOLVE'].tree-dot { background: var(--q-evolve); }
+[data-quadrant='SHRINK'].tree-mix-fill, [data-quadrant='SHRINK'].tree-dot { background: var(--q-shrink); }
+
+.tree-quad[data-quadrant='TRANSFORM'], .quad-cell[data-quadrant='TRANSFORM'] { color: var(--q-transform); }
+.tree-quad[data-quadrant='STABLE'], .quad-cell[data-quadrant='STABLE'] { color: var(--q-stable); }
+.tree-quad[data-quadrant='EVOLVE'], .quad-cell[data-quadrant='EVOLVE'] { color: var(--q-evolve); }
+.tree-quad[data-quadrant='SHRINK'], .quad-cell[data-quadrant='SHRINK'] { color: var(--q-shrink); }
+
+/* --- the seven types and the four skill classes --------------------------- */
+
+/* Under the shares scheme the same shapes carry data-type (a job) or data-class
+ * (a skill). Colour is never alone: every dot sits beside the type's short name,
+ * every bar beside its label, count and percentage. */
+
+[data-type='AUTOMATION_HEAVY'].tree-mix-fill, [data-type='AUTOMATION_HEAVY'].tree-dot,
+[data-type='AUTOMATION_HEAVY'] .mix-fill { background: var(--type-automation-heavy); }
+[data-type='TRANSFORMING'].tree-mix-fill, [data-type='TRANSFORMING'].tree-dot,
+[data-type='TRANSFORMING'] .mix-fill { background: var(--type-transforming); }
+[data-type='AUGMENTED'].tree-mix-fill, [data-type='AUGMENTED'].tree-dot,
+[data-type='AUGMENTED'] .mix-fill { background: var(--type-augmented); }
+[data-type='MECHANISABLE'].tree-mix-fill, [data-type='MECHANISABLE'].tree-dot,
+[data-type='MECHANISABLE'] .mix-fill { background: var(--type-mechanisable); }
+[data-type='INSULATED_PHYSICAL'].tree-mix-fill, [data-type='INSULATED_PHYSICAL'].tree-dot,
+[data-type='INSULATED_PHYSICAL'] .mix-fill { background: var(--type-insulated-physical); }
+[data-type='INSULATED_PEOPLE'].tree-mix-fill, [data-type='INSULATED_PEOPLE'].tree-dot,
+[data-type='INSULATED_PEOPLE'] .mix-fill { background: var(--type-insulated-people); }
+[data-type='MIXED'].tree-mix-fill, [data-type='MIXED'].tree-dot,
+[data-type='MIXED'] .mix-fill { background: var(--type-mixed); }
+
+.tree-quad[data-type='AUTOMATION_HEAVY'] { color: var(--type-automation-heavy); }
+.tree-quad[data-type='TRANSFORMING'] { color: var(--type-transforming); }
+.tree-quad[data-type='AUGMENTED'] { color: var(--type-augmented); }
+.tree-quad[data-type='MECHANISABLE'] { color: var(--type-mechanisable); }
+.tree-quad[data-type='INSULATED_PHYSICAL'] { color: var(--type-insulated-physical); }
+.tree-quad[data-type='INSULATED_PEOPLE'] { color: var(--type-insulated-people); }
+.tree-quad[data-type='MIXED'] { color: var(--type-mixed); }
+
+[data-class='S'] .mix-fill { background: var(--class-substituted); }
+[data-class='A'] .mix-fill { background: var(--class-assisted); }
+[data-class='M'] .mix-fill { background: var(--class-mechanised); }
+[data-class='I'] .mix-fill { background: var(--class-insulated); }
+
+.class-cell { font-weight: 600; }
+
+/* The same marker the job badge carries, on a skill whose class was decided by
+ * a chance sitting within five points of the cut. */
+.near-chip {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px var(--space-2);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--fg-muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
+.class-cell[data-class='S'] { color: var(--class-substituted); }
+.class-cell[data-class='A'] { color: var(--class-assisted); }
+.class-cell[data-class='M'] { color: var(--class-mechanised); }
+.class-cell[data-class='I'] { color: var(--class-insulated); }
+
+/* --- the detail pane ------------------------------------------------------ */
+
+.tree-detail {
+  position: sticky;
+  top: var(--space-4);
+  max-height: calc(100vh - 2 * var(--space-4));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.tree-detail:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tree-detail h2 { margin-bottom: var(--space-2); }
+.tree-detail h3 {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: 15px;
+}
+.tree-detail h4 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.tree-detail h3:first-of-type { margin-top: var(--space-4); }
+
+.tree-back { display: none; }
+
+.badge-line { margin-bottom: var(--space-3); }
+
+/* --- the quadrant split bars ---------------------------------------------- */
+
+.mix-bars { margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+.mix-bars li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+/* "Transform" fits 5.5rem; "Insulated by physical work" and "Machines can do"
+ * do not, and a name broken mid-word is the one thing these bars cannot do. */
+.mix-bars--wide li { grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr); }
+.mix-bars--wide .mix-name { line-height: 1.35; }
+.mix-name { font-size: 0.875rem; font-weight: 600; overflow-wrap: break-word; }
+.mix-track {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.mix-fill { display: block; height: 100%; border-radius: 999px; }
+.mix-figure {
+  grid-column: 2;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.mix-caveat {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  background: var(--bg3);
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+}
+
+[data-quadrant='TRANSFORM'] .mix-fill { background: var(--q-transform); }
+[data-quadrant='STABLE'] .mix-fill { background: var(--q-stable); }
+[data-quadrant='EVOLVE'] .mix-fill { background: var(--q-evolve); }
+[data-quadrant='SHRINK'] .mix-fill { background: var(--q-shrink); }
+
+/* --- the two scores ------------------------------------------------------- */
+
+.score-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+  margin-bottom: var(--space-3);
+}
+.score-card {
+  padding: var(--space-3);
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.score-label { margin: 0 0 var(--space-1); font-size: 0.8125rem; font-weight: 600; }
+.score-value { margin: 0 0 var(--space-2); font-size: 1.6rem; font-weight: 650; line-height: 1.1; }
+.score-value.is-missing { font-size: 1rem; color: var(--fg-muted); }
+.score-card--auto .score-value { color: var(--red); }
+.score-card--amp .score-value { color: var(--blue); }
+.score-card--mech .score-value { color: var(--purple); }
+.score-bar {
+  display: block;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.score-fill { display: block; height: 100%; border-radius: 999px; }
+.score-card--auto .score-fill { background: var(--red); }
+.score-card--amp .score-fill { background: var(--blue); }
+.score-card--mech .score-fill { background: var(--purple); }
+
+/* --- the shares figure and the reason a job stays human -------------------- */
+
+.shares-block { margin: 0 0 var(--space-4); }
+.why-line {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg3);
+  border-left: 3px solid var(--class-insulated);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--fg);
+}
+
+/* --- the skills table ----------------------------------------------------- */
+
+.skill-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.skill-toolbar .section-heading { margin: 0; }
+.chip[aria-pressed='true'] {
+  color: var(--gold);
+  background: rgba(232, 185, 59, 0.16);
+  border-color: rgba(232, 185, 59, 0.5);
+}
+
+th .th-sort {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+th .th-sort:hover { color: var(--fg); }
+
+/* WCAG 2.2 target size: a link in a list or a table row is not "inline in a
+ * sentence", so the inline exception does not cover it. One rule for every
+ * tappable row link on this page. */
+/* `.result-link` is left out on purpose: it is a column flex box with its own
+ * 44 px floor, and centring its children here would centre the text. */
+.skill-table td a,
+.mix-figure a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+/* The unit-group link sits inside a sentence, so the inline exception would
+ * cover it — but it is the one route out of this pane, and 16 px is no target.
+ * inline-block keeps it in the flow of the sentence and still gives it height. */
+.unit-line a {
+  display: inline-block;
+  min-height: var(--tap);
+  line-height: var(--tap);
+}
+
+/* The pane is narrower than a full page, so the headings wrap rather than push
+ * the quadrant column out of sight. */
+.skill-table th, .skill-table td { white-space: normal; }
+.skill-table th.numeric .th-sort { max-width: 6rem; }
+/* Without a floor the skill name shrinks to one word a line on a phone; the
+ * box scrolls itself instead. */
+.skill-table th:first-child, .skill-table td:first-child { min-width: 12rem; }
+.skill-table td { font-size: 0.8125rem; }
+.skill-table .quad-cell { font-weight: 600; }
+
+/* --- narrow --------------------------------------------------------------- */
+
+@media (max-width: 860px) {
+  .tree-layout { grid-template-columns: minmax(0, 1fr); }
+  .tree-detail { position: static; max-height: none; overflow: visible; }
+  .tree-scroll { max-height: 60vh; }
+  .tree-back { display: inline-flex; margin-bottom: var(--space-3); }
+}
+
+@media (max-width: 520px) {
+  .tree ul[role='group'] { margin-left: 0.2rem; padding-left: 0.45rem; }
+  .tree-main { flex: 1 1 100%; }
+  .mix-bars li { grid-template-columns: minmax(0, 1fr); }
+  .mix-figure { grid-column: 1; }
+
+  /* Five or six columns on a phone: tighter cells and a smaller floor under the
+   * skill name, so the scores stay on screen instead of behind a sideways
+   * scroll of the page (the box scrolls itself). */
+  .skill-table th, .skill-table td { padding: var(--space-2) var(--space-1); }
+  .skill-table th:first-child, .skill-table td:first-child { min-width: 7rem; }
+  .skill-table td { font-size: 0.75rem; }
+  th .th-sort { font-size: 0.75rem; }
+  .mix-bars--wide li { grid-template-columns: minmax(0, 1fr); }
+  .mix-bars--wide .mix-figure { grid-column: 1; }
+}

@@ -1,0 +1,70 @@
+Occupation score aggregation
+============================================================
+  Occupations: 9
+  Skills (metadata): 15
+  Skills (scored): 15
+  Skills with valid scores: 15
+
+Aggregated scores for 7 occupations
+Wrote 7 occupations to data/occupation_scores_v2.json
+Wrote 7 occupations to data/site_data_v2.json
+Copied to site/data_v2.json
+
+============================================================
+Summary statistics
+============================================================
+
+Distribution by type, COMP_LEVEL = 2:
+  AUTOMATION_HEAVY    :    2 ( 28.6%) ##############
+  TRANSFORMING        :    0 (  0.0%) 
+  AUGMENTED           :    2 ( 28.6%) ##############
+  MECHANISABLE        :    0 (  0.0%) 
+  INSULATED_PHYSICAL  :    0 (  0.0%) 
+  INSULATED_PEOPLE    :    2 ( 28.6%) ##############
+  MIXED               :    1 ( 14.3%) #######
+
+Distribution by type, COMP_LEVEL = 3 (published):
+  AUTOMATION_HEAVY    :    2 ( 28.6%) ##############
+  TRANSFORMING        :    0 (  0.0%) 
+  AUGMENTED           :    1 ( 14.3%) #######
+  MECHANISABLE        :    1 ( 14.3%) #######
+  INSULATED_PHYSICAL  :    0 (  0.0%) 
+  INSULATED_PEOPLE    :    3 ( 42.9%) #####################
+  MIXED               :    0 (  0.0%) 
+
+Average scores by ISCO major group:
+  Group  Count   Auto    Amp   Evol  Label
+  -----  -----  -----  -----  -----  --------------------
+  1          1    4.0    4.4    1.8  Managers
+  2          3    4.8    5.3    2.9  Professionals
+  4          2    5.6    4.8    2.7  Clerical support workers
+  ?          1    5.0    4.3    2.1  
+
+Top 10 highest evolution potential:
+   1. AI trainer                                           evol= 5.5  auto= 7.6  amp= 7.3  [AUTOMATION_HEAVY]
+   2. Post sorter                                          evol= 3.0  auto= 6.2  amp= 4.9  [AUTOMATION_HEAVY]
+   3. Data entry clerk                                     evol= 2.4  auto= 4.9  amp= 4.8  [INSULATED_PEOPLE]
+   4. Software developer                                   evol= 2.2  auto= 4.2  amp= 5.2  [AUGMENTED]
+   5. Archivist                                            evol= 2.1  auto= 5.0  amp= 4.3  [MECHANISABLE]
+   6. Café manager                                         evol= 1.8  auto= 4.0  amp= 4.4  [INSULATED_PEOPLE]
+   7. Freelance consultant                                 evol= 0.9  auto= 2.6  amp= 3.3  [INSULATED_PEOPLE]
+
+Top 10 highest automation risk:
+   1. AI trainer                                           auto= 7.6  amp= 7.3  [AUTOMATION_HEAVY]
+   2. Post sorter                                          auto= 6.2  amp= 4.9  [AUTOMATION_HEAVY]
+   3. Archivist                                            auto= 5.0  amp= 4.3  [MECHANISABLE]
+   4. Data entry clerk                                     auto= 4.9  amp= 4.8  [INSULATED_PEOPLE]
+   5. Software developer                                   auto= 4.2  amp= 5.2  [AUGMENTED]
+   6. Café manager                                         auto= 4.0  amp= 4.4  [INSULATED_PEOPLE]
+   7. Freelance consultant                                 auto= 2.6  amp= 3.3  [INSULATED_PEOPLE]
+
+Top 10 highest amplification potential:
+   1. AI trainer                                           amp= 7.3  auto= 7.6  [AUTOMATION_HEAVY]
+   2. Software developer                                   amp= 5.2  auto= 4.2  [AUGMENTED]
+   3. Post sorter                                          amp= 4.9  auto= 6.2  [AUTOMATION_HEAVY]
+   4. Data entry clerk                                     amp= 4.8  auto= 4.9  [INSULATED_PEOPLE]
+   5. Café manager                                         amp= 4.4  auto= 4.0  [INSULATED_PEOPLE]
+   6. Archivist                                            amp= 4.3  auto= 5.0  [MECHANISABLE]
+   7. Freelance consultant                                 amp= 3.3  auto= 2.6  [INSULATED_PEOPLE]
+
+Done.

@@ -45,6 +45,12 @@ def scored_skills(occupation, lookup):
                 yield skill, score, weight, relation
 
 
+def weighted_mean(contributions):
+    """The weighted average of (value, weight) pairs, on the same 1-10 scale."""
+    total = sum(weight for _, weight in contributions)
+    return round(sum(value * weight for value, weight in contributions) / total, 1)
+
+
 def weighted_averages(contributions):
     """Round the weighted averages of (automation, amplification, weight) triples.
 
@@ -112,12 +118,25 @@ def slugify(title):
     return slug.strip("-")
 
 
-def scorer_suffix(description, argv=None):
-    """File suffix for the chosen scorer: "" for the published Gemini scores."""
+#: Every scorer the pipeline can build from, and the file suffix each one writes.
+#: Declared once here: three steps take --scorer and all three must agree on it.
+SCORER_SUFFIX = {"gemini": "", "typesafe": "_typesafe", "v2": "_v2"}
+
+SCORER_HELP = (
+    "Which skill scores to build from (default: gemini). Every other scorer reads "
+    "skill_scores_<scorer>.json and writes its outputs with a matching suffix, "
+    "leaving the Gemini files untouched."
+)
+
+
+def add_scorer_argument(parser):
+    """Add the --scorer flag the three pipeline steps share."""
+    parser.add_argument("--scorer", choices=list(SCORER_SUFFIX), default="gemini",
+                        help=SCORER_HELP)
+
+
+def parse_scorer(description, argv=None):
+    """The scorer named on the command line, for a step that takes only that flag."""
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("--scorer", choices=["gemini", "typesafe"], default="gemini",
-                        help="Which skill scores to build from (default: gemini). "
-                             "typesafe reads skill_scores_typesafe.json and writes "
-                             "*_typesafe.json, leaving the Gemini files untouched.")
-    args = parser.parse_args(argv)
-    return "" if args.scorer == "gemini" else f"_{args.scorer}"
+    add_scorer_argument(parser)
+    return parser.parse_args(argv).scorer

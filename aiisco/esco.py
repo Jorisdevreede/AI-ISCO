@@ -268,9 +268,48 @@ def build_occupation(row, index):
     }
 
 
+#: Columns that record when ESCO last touched a row, not what the row says.
+#: The four repeated occupations of v1.2.1 carry two different timestamps.
+ROW_METADATA = ("modifiedDate",)
+
+
+def content_of(row):
+    """A row without the bookkeeping columns the join never reads."""
+    return {key: value for key, value in row.items() if key not in ROW_METADATA}
+
+
+def differing_fields(first, second):
+    """The content columns two rows for the same concept URI disagree on."""
+    left, right = content_of(first), content_of(second)
+    return sorted(key for key in set(left) | set(right)
+                  if left.get(key) != right.get(key))
+
+
+def dedupe_occupation_rows(occ_rows):
+    """One row per concept URI, in CSV order, skipping rows without one.
+
+    The official ESCO v1.2.1 download lists four occupations twice, identical
+    but for the timestamp of the last edit; counting those twice is what made
+    3,039 occupations read as 3,043 all the way to the pages. Two rows that
+    share a URI and disagree on anything the join reads are a damaged download
+    rather than a repeat, so they stop the ingest instead.
+    """
+    kept = {}
+    for row in occ_rows:
+        uri = row.get("conceptUri", "")
+        if not uri:
+            continue
+        first = kept.setdefault(uri, row)
+        clashes = [] if first is row else differing_fields(first, row)
+        if clashes:
+            raise ValueError(f"two occupation rows share the concept URI {uri} "
+                             f"but differ on {', '.join(clashes)}")
+    return list(kept.values())
+
+
 def build_occupations(occ_rows, index):
-    """Build the occupation records, skipping rows without a concept URI."""
-    return [build_occupation(row, index) for row in occ_rows if row.get("conceptUri", "")]
+    """Build the occupation records, one per concept URI."""
+    return [build_occupation(row, index) for row in dedupe_occupation_rows(occ_rows)]
 
 
 def count_usage(occupations):

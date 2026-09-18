@@ -26,7 +26,7 @@ export function isScored(value) {
 }
 
 /**
- * A count with thousands separators: 3043 -> "3,043".
+ * A count with thousands separators: 3039 -> "3,039".
  * @param {number} value
  * @returns {string}
  */
@@ -47,7 +47,7 @@ export function formatPercent(share, digits = 0) {
 }
 
 /**
- * "12 of 3,043 jobs" style phrase for captions under a chart.
+ * "12 of 3,039 jobs" style phrase for captions under a chart.
  * @param {number} part
  * @param {number} whole
  * @param {string} [noun='jobs']
@@ -56,4 +56,29 @@ export function formatPercent(share, digits = 0) {
 export function formatShare(part, whole, noun = 'jobs') {
   const share = whole ? formatPercent(part / whole) : formatPercent(0);
   return `${formatCount(part)} of ${formatCount(whole)} ${noun} (${share})`;
+}
+
+/**
+ * Whole percentages that add up to 100. Rounding each part on its own gives 99
+ * or 101 for a fair share of splits, and the same wrong total is then read out
+ * in every aria-label. The remainder goes to the largest fractions (the
+ * largest-remainder method), earlier parts first on a tie.
+ *
+ * @param {number[]} parts counts or shares; anything unusable reads as 0
+ * @returns {number[]} one whole percentage per part, summing to 100 (or all 0)
+ */
+export function largestRemainder(parts) {
+  const values = (parts || []).map((value) => (Number.isFinite(value) && value > 0 ? value : 0));
+  const total = values.reduce((sum, value) => sum + value, 0);
+  if (!total) return values.map(() => 0);
+  const exact = values.map((value, index) => {
+    const percent = (value / total) * 100;
+    return { index, floor: Math.floor(percent), fraction: percent - Math.floor(percent) };
+  });
+  let left = 100 - exact.reduce((sum, part) => sum + part.floor, 0);
+  for (const part of [...exact].sort((a, b) => (b.fraction - a.fraction) || (a.index - b.index))) {
+    part.floor += left > 0 ? 1 : 0;
+    left -= left > 0 ? 1 : 0;
+  }
+  return exact.map((part) => part.floor);
 }

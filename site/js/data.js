@@ -43,6 +43,29 @@ export function loadJSON(name) {
   return cache.get(name);
 }
 
+function fetchPlain(file) {
+  return fetch(`${file}.json`).then((response) => {
+    if (!response.ok) throw new LoadError(file, `The server answered ${response.status}.`);
+    return response.json();
+  });
+}
+
+/**
+ * Both score sets of one index file, whichever set the switch is on.
+ *
+ * @param {string} name file name without ".json", e.g. "search_index"
+ * @returns {Promise<null | {first: any, second: any, labels: [string, string]}>}
+ *   null where only the default set is deployed (or scorer.js has not run)
+ */
+export async function loadBothSets(name) {
+  const alternative = await (typeof window !== 'undefined' && window.scorerAlternative);
+  if (!alternative) return null;
+  const [first, second] = await Promise.all(
+    [fetchPlain(name), fetchPlain(name + alternative.suffix)],
+  );
+  return { first, second, labels: alternative.labels };
+}
+
 /** Forget everything loaded so far. For tests and the self-test page. */
 export function clearCache() {
   cache.clear();

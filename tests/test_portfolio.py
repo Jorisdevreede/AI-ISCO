@@ -141,6 +141,14 @@ def test_skill_record_keeps_a_rationale_when_there_is_one():
         "rationale": "because"}
 
 
+def test_skill_record_keeps_who_wrote_a_borrowed_rationale():
+    source = {"scorer": "gemini", "automation_risk": 9.0, "amplification_potential": 3.0}
+    scores = {"automation_risk": 7.4, "amplification_potential": 2.8,
+              "rationale": "because", "rationale_from": source}
+
+    assert skill_record({"uri": "u"}, scores)["rationale_from"] == source
+
+
 def test_collect_skill_info_keeps_the_first_title_a_uri_appears_with():
     occupations = [{"essential_skills": [{"uri": "u", "title": "first"}]},
                    {"optional_skills": [{"uri": "u", "title": "second"}]}]
@@ -264,6 +272,16 @@ def test_skill_entry_only_carries_a_rationale_when_there_is_one():
                         "amplification_potential": 2.0, "rationale": "r"})["r"] == "r"
 
 
+def test_skill_entry_marks_a_borrowed_rationale_with_its_writer_and_their_scores():
+    source = {"scorer": "gemini", "automation_risk": 9.04, "amplification_potential": 3.0}
+    entry = skill_entry({"title": "t", "automation_risk": 7.4, "amplification_potential": 2.8,
+                         "rationale": "r", "rationale_from": source})
+
+    assert entry["rf"] == {"s": "gemini", "a": 9.0, "m": 3.0}
+    assert "rf" not in skill_entry({"title": "t", "automation_risk": 1.0,
+                                    "amplification_potential": 2.0, "rationale": "r"})
+
+
 def test_build_skills_only_holds_referenced_skills():
     skill_info = {"used": {"title": "used", "automation_risk": 1.0,
                            "amplification_potential": 2.0},
@@ -291,3 +309,95 @@ def test_build_occupations_adds_adjacency_and_narrative_last():
     assert built[0]["n"] == {"adv": "move"}
     assert "n" not in built[1]
     assert built[1]["adj"] == []
+
+
+# --- one file per ISCO unit group ------------------------------------------
+
+def record(slug, code, essential=(), optional=(), adjacent=()):
+    """A compact occupation record, as the portfolio dataset carries it."""
+    return {"t": slug.replace("-", " ").title(), "s": slug, "c": code,
+            "se": list(essential), "so": list(optional),
+            "adj": [{"s": other} for other in adjacent]}
+
+
+def dataset(*records, skills=None, **meta):
+    """A portfolio dataset holding the given occupation records."""
+    every = {sid for r in records for sid in r["se"] + r["so"]}
+    return {"skills": skills or {sid: {"t": sid} for sid in every},
+            "occupations": list(records), **meta}
+
+
+@pytest.mark.parametrize(("code", "expected"), [
+    ("2512", True), ("251", False), ("25123", False), ("", False), ("abcd", False),
+])
+def test_only_a_four_digit_code_places_an_occupation_in_a_unit(code, expected):
+    assert portfolio.in_a_unit({"c": code}) is expected
+
+
+def test_build_units_maps_every_placed_slug_to_its_unit_group():
+    units = portfolio.build_units([record("welder", "7212"),
+                                   portfolio_record_without_a_code()])
+    assert units == {"welder": "7212"}
+
+
+def portfolio_record_without_a_code():
+    """An occupation the ESCO export left without an ISCO code."""
+    return record("archivist", "")
+
+
+def test_build_units_is_sorted_by_slug_so_two_builds_agree():
+    units = portfolio.build_units([record("welder", "7212"), record("actuary", "2120")])
+    assert list(units) == ["actuary", "welder"]
+
+
+def test_occupations_by_unit_groups_the_records_by_their_code():
+    units = portfolio.occupations_by_unit(
+        [record("a", "2512"), record("b", "2512"), record("c", "4132")])
+    assert sorted(units) == ["2512", "4132"]
+    assert [o["s"] for o in units["2512"]] == ["a", "b"]
+
+
+def test_neighbours_are_the_adjacent_jobs_from_another_unit_group():
+    members = [record("a", "2512", adjacent=["b", "c"])]
+    by_slug = {"b": record("b", "2512"), "c": record("c", "4132")}
+
+    neighbours = portfolio.neighbours_of(members, by_slug)
+
+    assert [o["s"] for o in neighbours] == ["c"]
+
+
+def test_an_adjacent_job_that_is_not_in_the_dataset_is_left_out():
+    members = [record("a", "2512", adjacent=["gone"])]
+    assert portfolio.neighbours_of(members, {}) == []
+
+
+def test_the_shard_carries_the_skills_of_its_jobs_and_of_their_neighbours():
+    data = dataset(record("a", "2512", essential=["s1"], optional=["s2"],
+                          adjacent=["b"]),
+                   record("b", "4132", essential=["s3"]))
+
+    shard = portfolio.build_unit_shards(data)["2512"]
+
+    assert sorted(shard["skills"]) == ["s1", "s2", "s3"]
+    assert [o["s"] for o in shard["occupations"]] == ["a"]
+    assert [o["s"] for o in shard["neighbours"]] == ["b"]
+
+
+def test_a_shard_has_the_dataset_s_own_shape():
+    data = dataset(record("a", "2512", essential=["s1"]), scheme="shares",
+                   model="jev-test")
+    assert list(data) == ["skills", "occupations", "scheme", "model"]
+    assert list(portfolio.build_unit_shards(data)["2512"]) == [
+        "skills", "occupations", "scheme", "model", "neighbours"]
+
+
+def test_a_dataset_without_a_scheme_makes_shards_without_one():
+    data = dataset(record("a", "2512", essential=["s1"]))
+    assert list(portfolio.build_unit_shards(data)["2512"]) == [
+        "skills", "occupations", "neighbours"]
+
+
+def test_one_shard_per_unit_group_keyed_by_the_code():
+    data = dataset(record("a", "2512"), record("b", "4132"),
+                   portfolio_record_without_a_code())
+    assert sorted(portfolio.build_unit_shards(data)) == ["2512", "4132"]

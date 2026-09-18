@@ -140,6 +140,37 @@ def test_main_exits_when_occupations_cannot_be_read(tmp_path, monkeypatch, capsy
     assert "ERROR: Cannot proceed without occupations data." in out
 
 
+OCCUPATION_HEADER = ["conceptType", "conceptUri", "iscoGroup", "preferredLabel",
+                     "description"]
+
+
+def test_main_counts_a_repeated_occupation_row_once(tmp_path, monkeypatch, capsys):
+    """The official download repeats four rows; the site must not show them twice."""
+    row = ["Occupation", "occ-1", "2511", "data steward", "looks after data"]
+    write_csv(tmp_path / "data" / "esco" / "occupations_en.csv",
+              OCCUPATION_HEADER, [row, list(row)])
+    monkeypatch.chdir(tmp_path)
+    ingest_esco.main()
+    assert "Total occupations: 1" in capsys.readouterr().out
+    written = json.loads((tmp_path / "data" / "esco_occupations.json").read_text())
+    assert [o["title"] for o in written] == ["data steward"]
+
+
+def test_main_exits_when_two_rows_claim_the_same_occupation(tmp_path, monkeypatch, capsys):
+    """Same URI, different content: a damaged download, not a repeat."""
+    write_csv(tmp_path / "data" / "esco" / "occupations_en.csv", OCCUPATION_HEADER,
+              [["Occupation", "occ-1", "2511", "data steward", "looks after data"],
+               ["Occupation", "occ-1", "2511", "data custodian", "looks after data"]])
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit) as exit_info:
+        ingest_esco.main()
+    out = capsys.readouterr().out
+    assert exit_info.value.code == 1
+    assert "share the concept URI occ-1" in out
+    assert "preferredLabel" in out
+    assert not (tmp_path / "data" / "esco_occupations.json").exists()
+
+
 def test_main_skips_the_statistics_when_nothing_survives_the_join(tmp_path, monkeypatch, capsys):
     """Rows without a conceptUri are dropped, which can leave both outputs empty."""
     write_csv(tmp_path / "data" / "esco" / "occupations_en.csv",

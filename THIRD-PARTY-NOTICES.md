@@ -6,10 +6,11 @@ This repository mixes original work with material from other parties. This file 
 
 Code written for this project:
 
-- `ingest_esco.py`, `score_skills.py`, `score_skills_typesafe.py`, `compare_skill_scores.py`, `aggregate_scores.py`, `generate_narratives.py`, `merge_narrative_shards.py`, `build_portfolio_data.py`
-- `site/explorer.html`, `site/portfolio.html`, `site/insights.html`, `site/scorer.js`
-- `site/index.html`, except the treemap layout functions noted under [karpathy/jobs](#karpathyjobs)
-- `README.md`, `pyproject.toml`, `.github/workflows/`
+- `ingest_esco.py`, `score_skills.py`, `score_skills_typesafe.py`, `score_skills_v2.py`, `compare_skill_scores.py`, `aggregate_scores.py`, `generate_narratives.py`, `merge_narrative_shards.py`, `build_portfolio_data.py`, `build_site_indexes.py` and the `aiisco/` package
+- Every page under `site/` (`index.html`, `job.html`, `groups.html`, `tree.html`, `skill.html`, `method.html`, `insights.html` and the `portfolio.html` and `explorer.html` redirects), `site/scorer.js`, `site/js/` and `site/css/`
+- `tests/`, `README.md`, `docs/`, `pyproject.toml`, `package.json`, `.github/workflows/`
+
+The treemap on `site/groups.html` uses `site/js/treemap-layout.js`, written for this project from the published algorithm (Bruls, Huizing and van Wijk, "Squarified Treemaps", 2000). Until September 2026 `site/index.html` carried a treemap layout taken from karpathy/jobs; that code is no longer in the site.
 
 ## Covered by CC BY 4.0 ([LICENSE-DATA](LICENSE-DATA))
 
@@ -25,7 +26,7 @@ The ESCO and ISCO-08 titles and descriptions embedded in those files are not par
 
 This publication uses the ESCO classification of the European Commission.
 
-The data in `site/` and `data/occupation_narratives.json` is a modified and adapted version of ESCO v1.2.1: the scores, quadrants, rationales and narratives are AI-generated additions made by this project and are not part of ESCO.
+The data in `site/` and `data/occupation_narratives.json` is a modified and adapted version of ESCO v1.2.1: the scores, skill classes, quadrants, occupation types, rationales and narratives are AI-generated additions made by this project and are not part of ESCO.
 
 ESCO is reusable under its own terms, not under CC BY 4.0 or the EUPL: "the ESCO classification can be downloaded, used, reproduced and reused for any purpose and by any interested party free of charge", provided its use is acknowledged and "any modified or adapted version of ESCO must be clearly indicated as such" ([ESCO download conditions](https://esco.ec.europa.eu/en/use-esco/download/privacy-statement), under Commission Decision 2011/833/EU). The European Commission cannot guarantee that the information in ESCO is accurate, up to date or complete, and is not liable for any consequence of its use, reuse or deployment.
 
@@ -50,13 +51,18 @@ This project started from [karpathy/jobs](https://github.com/karpathy/jobs). The
 - `score.py`, `make_prompt.py`, `build_site_data.py`, `make_csv.py`, `process.py`, `scrape.py`, `parse_detail.py`, `parse_occupations.py`
 - `prompt.md`, `scores.json`, `occupations.json`, `occupations.csv`, `occupational_outlook_handbook.html` and the 342 pages under `html/`
 
-The squarified treemap layout in `site/index.html` (the layout function and `worstAspect()`) is also taken from it.
-
 karpathy/jobs publishes no licence, so no licence is granted for these files here either. They are not covered by this repository's MIT or CC BY 4.0 grants, and the rights in them remain with their author. The ESCO pipeline and the published site do not depend on them.
 
 ### TypeSafe
 
-`score_skills_typesafe.py` calls the TypeSafe System One API through `typesafe-sdk` (MIT). This project is not affiliated with or endorsed by TypeSafe AI, Inc. No TypeSafe output is included in this repository: their customer agreement prohibits publishing benchmarks or performance information about the service.
+`score_skills_typesafe.py` and `score_skills_v2.py` call the TypeSafe System One API through `typesafe-sdk` (MIT). This project is not affiliated with or endorsed by TypeSafe AI, Inc.; "TypeSafe" and "jev" are their names.
+
+What their model returned is published here for reading and for checking the figures in the README and on the site:
+
+- the scoring-v2 run, which the site shows by default: `data/skill_scores_v2.json` (every answer with its probabilities), the `site/*_v2.json` files built from it and the per-skill answers under `site/skill_answers_v2/`
+- the original rubric scored by the same model: `data/skill_scores_typesafe.json` and the `site/*_typesafe.json` files built from it
+
+TypeSafe's customer agreement assigns the output to the customer, but those files are not covered by this repository's CC BY 4.0 grant: reuse them only as far as TypeSafe's own terms allow. Two things inside them are this project's own and are covered: the question wording in `site/rubric_v2.json` (MIT, as part of `aiisco/rubric_v2.py`), and the rationales inside `site/portfolio_data_v2.json` and `site/portfolio_data_typesafe.json`, which are the Gemini ones.
 
 ## Names and emblems
 

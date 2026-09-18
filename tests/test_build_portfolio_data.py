@@ -123,6 +123,62 @@ def test_unscored_skills_keep_null_scores_in_the_output(tmp_path, monkeypatch):
     assert "r" not in by_title["file records"]
 
 
+def strip_rationales(path):
+    """Make a score file look like a numbers-only scorer wrote it."""
+    entries = json.loads(path.read_text(encoding="utf-8"))
+    for entry in entries:
+        entry.pop("rationale", None)
+    path.write_text(json.dumps(entries), encoding="utf-8")
+
+
+def run_numbers_only(tmp_path, monkeypatch, inputs=INPUTS):
+    """A typesafe run whose scores carry no rationale, as the real ones do."""
+    (tmp_path / "data").mkdir()
+    shutil.copy(FIXTURES / "skill_scores_typesafe.json", tmp_path / "data")
+    strip_rationales(tmp_path / "data/skill_scores_typesafe.json")
+    run_main(tmp_path, monkeypatch, ["--scorer", "typesafe"],
+             inputs=[name for name in inputs if name != "skill_scores_typesafe.json"])
+    written = (tmp_path / "site/portfolio_data_typesafe.json").read_text(encoding="utf-8")
+    return {entry["t"]: entry for entry in json.loads(written)["skills"].values()}
+
+
+def test_a_numbers_only_scorer_borrows_the_published_rationale(tmp_path, monkeypatch, capsys):
+    by_title = run_numbers_only(tmp_path, monkeypatch)
+
+    typed = by_title["type documents"]
+    assert typed["r"] == "Templates and dictation cover most of it."
+    assert typed["rf"]["s"] == "gemini"
+    assert "Rationales borrowed from the gemini scores: 5" in capsys.readouterr().out
+
+
+def test_a_borrowed_rationale_says_which_scores_it_was_written_for(tmp_path, monkeypatch):
+    by_title = run_numbers_only(tmp_path, monkeypatch)
+    published = {entry["title"]: entry for entry in
+                 json.loads((FIXTURES / "skill_scores.json").read_text(encoding="utf-8"))}
+
+    source = by_title["type documents"]["rf"]
+    assert source["a"] == float(published["type documents"]["automation_risk"])
+    assert source["m"] == float(published["type documents"]["amplification_potential"])
+    assert "rf" not in by_title["file records"]  # nothing published to borrow
+    assert "r" not in by_title["file records"]
+
+
+def test_nothing_is_borrowed_when_the_published_scores_are_absent(
+        tmp_path, monkeypatch, capsys):
+    by_title = run_numbers_only(tmp_path, monkeypatch,
+                                inputs=("esco_occupations.json", "skill_scores_typesafe.json"))
+
+    assert all("r" not in entry and "rf" not in entry for entry in by_title.values())
+    assert "Rationales borrowed" not in capsys.readouterr().out
+
+
+def test_the_published_scorer_never_marks_a_rationale_as_borrowed(tmp_path, monkeypatch):
+    run_main(tmp_path, monkeypatch, [])
+
+    data = json.loads((tmp_path / "site/portfolio_data.json").read_text(encoding="utf-8"))
+    assert all("rf" not in entry for entry in data["skills"].values())
+
+
 def test_missing_narratives_file_is_only_a_warning(tmp_path, monkeypatch, capsys):
     run_main(tmp_path, monkeypatch, [], inputs=("esco_occupations.json", "skill_scores.json"))
     printed = capsys.readouterr().out
@@ -162,3 +218,54 @@ def test_a_run_without_any_scored_skill_still_writes_an_empty_dataset(
         {"skills": {}, "occupations": []}
     assert "  Occupations with adjacency: 0 / 0" in printed
     assert "    TRANSFORM   :    0 (  0.0%)" in printed
+
+
+# --- what the pages fetch, per scorer ---------------------------------------
+
+def shard_names(directory, pattern="*.json"):
+    """The names of the matching JSON files in a shard directory, sorted."""
+    return sorted(path.name for path in directory.glob(pattern)) \
+        if directory.exists() else []
+
+
+def test_the_published_scorer_writes_the_units_map_and_one_file_per_unit_group(
+        tmp_path, monkeypatch):
+    run_main(tmp_path, monkeypatch, [])
+
+    jobs = tmp_path / "site/jobs"
+    assert "units.json" in shard_names(jobs)
+    assert shard_names(jobs, "[0-9]*.json") == ["1412.json", "2423.json",
+                                                "2512.json", "2519.json",
+                                                "4132.json", "4412.json"]
+    assert json.loads((jobs / "units.json").read_text())["software-developer"] == "2512"
+
+
+def test_the_published_scorer_writes_the_rationale_shards(tmp_path, monkeypatch):
+    run_main(tmp_path, monkeypatch, [])
+
+    notes = tmp_path / "site/skill_notes"
+    assert shard_names(notes)
+    every = {}
+    for name in shard_names(notes):
+        every.update(json.loads((notes / name).read_text()))
+    data = json.loads((tmp_path / "site/portfolio_data.json").read_text())
+    with_text = {sid for sid, skill in data["skills"].items() if skill.get("r")}
+    assert set(every) == with_text
+
+
+def test_a_shard_never_carries_a_suffix_the_switch_does_not_offer(tmp_path,
+                                                                  monkeypatch):
+    run_main(tmp_path, monkeypatch, ["--scorer", "typesafe"])
+
+    assert shard_names(tmp_path / "site/jobs") == []
+    assert shard_names(tmp_path / "site/skill_notes") == []
+    assert (tmp_path / "site/portfolio_data_typesafe.json").exists()
+
+
+def test_the_run_reports_what_the_pages_will_fetch(tmp_path, monkeypatch, capsys):
+    run_main(tmp_path, monkeypatch, [])
+    printed = capsys.readouterr().out
+
+    assert "site/jobs/units.json" in printed
+    assert "jobs " in printed and "skill_notes " in printed
+    assert "files" in printed

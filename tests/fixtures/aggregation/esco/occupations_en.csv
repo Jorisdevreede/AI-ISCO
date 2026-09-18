@@ -1,0 +1,10 @@
+conceptType,conceptUri,iscoGroup,preferredLabel,altLabels,hiddenLabels,status
+Occupation,http://example.org/esco/occupation/o1,4132,data entry clerk,"keyboarder
+data typist",,released
+Occupation,http://example.org/esco/occupation/o2,1412,café manager,"coffee shop manager",,released
+Occupation,http://example.org/esco/occupation/o3,2512,software developer,"programmer
+coder",,released
+Occupation,http://example.org/esco/occupation/o5,,archivist,"records keeper",,released
+Occupation,http://example.org/esco/occupation/o6,4412,post sorter,"mail sorter",,released
+Occupation,http://example.org/esco/occupation/o7,2423,freelance consultant,,,released
+Occupation,http://example.org/esco/occupation/o8,2519,ai trainer,"model trainer",,released

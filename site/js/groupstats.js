@@ -3,8 +3,8 @@
 // Works on search_index.json rows, so the group page can slice, sort and
 // tabulate without loading the 13 MB portfolio file.
 
-import { formatScore, NOT_SCORED } from './format.js';
-import { QUADRANT_NAMES } from './quadrant.js';
+import { formatScore } from './format.js';
+import { SHARES, orderOf, schemeOfCode, typeLabel } from './scheme.js';
 
 /** The quadrant codes, in the order the mix bars show them. */
 export const QUADRANT_ORDER = ['TRANSFORM', 'STABLE', 'EVOLVE', 'SHRINK'];
@@ -17,6 +17,18 @@ export const TABLE_COLUMNS = [
   { key: 'm', label: 'Amplification', numeric: true },
   { key: 'q', label: 'Quadrant', numeric: false },
 ];
+
+/**
+ * The same columns, with the last one named for the scheme in use.
+ * @param {string} [scheme] 'quadrants' (default) or 'shares'
+ * @returns {Array<{key: string, label: string, numeric: boolean}>}
+ */
+export function tableColumns(scheme) {
+  if (scheme !== SHARES) return TABLE_COLUMNS;
+  return TABLE_COLUMNS.map((column) => (column.key === 'q'
+    ? { ...column, label: 'Type' }
+    : column));
+}
 
 /** Sort keys the ranked view offers. */
 export const SORTS = {
@@ -70,15 +82,31 @@ export function sortOccupations(rows, sortKey = 'automation', descending) {
   });
 }
 
+function orderOfRows(rows, scheme) {
+  if (scheme) return orderOf(scheme);
+  for (const row of rows) {
+    const found = schemeOfCode(row.q);
+    if (found) return orderOf(found);
+  }
+  return QUADRANT_ORDER;
+}
+
 /**
- * Quadrant counts and shares for a set of occupations.
+ * How a set of occupations splits over the classes of its scheme.
+ *
+ * With no `scheme` the rows decide: a set whose `q` holds type codes counts and
+ * orders the seven types, one whose `q` holds quadrant codes counts the four
+ * boxes, exactly as it always has.
+ *
  * @param {Array<{q: string}>} rows
+ * @param {string} [scheme] 'quadrants' or 'shares'
  * @returns {{total: number, counts: Object, shares: Object, order: string[]}}
  */
-export function quadrantMix(rows) {
+export function typeMix(rows, scheme) {
   const list = rows || [];
+  const order = orderOfRows(list, scheme);
   const counts = {};
-  for (const code of QUADRANT_ORDER) counts[code] = 0;
+  for (const code of order) counts[code] = 0;
   for (const row of list) {
     if (counts[row.q] === undefined) counts[row.q] = 0;
     counts[row.q] += 1;
@@ -87,26 +115,42 @@ export function quadrantMix(rows) {
   for (const [code, n] of Object.entries(counts)) {
     shares[code] = list.length ? n / list.length : 0;
   }
-  return { total: list.length, counts, shares, order: QUADRANT_ORDER };
+  return { total: list.length, counts, shares, order };
+}
+
+/**
+ * Quadrant counts and shares for a set of occupations. Kept as the name the
+ * pages already call; it is `typeMix` under another name.
+ * @param {Array<{q: string}>} rows
+ * @param {string} [scheme]
+ * @returns {{total: number, counts: Object, shares: Object, order: string[]}}
+ */
+export function quadrantMix(rows, scheme) {
+  return typeMix(rows, scheme);
 }
 
 /**
  * Rows for the accessible table alternative beside every canvas.
+ *
+ * The last cell names whichever class the row carries: a quadrant under the old
+ * sets, one of the seven types under a shares set. It never prints a bare code.
+ *
  * @param {Array<Object>} rows
+ * @param {string} [scheme] omit to let each row's own code decide
  * @returns {Array<{slug: string, title: string, cells: Array<{key: string, text: string, numeric: boolean}>}>}
  */
-export function tableRows(rows) {
+export function tableRows(rows, scheme) {
   const text = {
     t: (row) => String(row.t ?? ''),
     c: (row) => String(row.c ?? ''),
     a: (row) => formatScore(row.a),
     m: (row) => formatScore(row.m),
-    q: (row) => QUADRANT_NAMES[row.q] || NOT_SCORED,
+    q: (row) => typeLabel(row.q, scheme),
   };
   return (rows || []).map((row) => ({
     slug: row.s,
     title: String(row.t ?? ''),
-    cells: TABLE_COLUMNS.map((column) => ({
+    cells: tableColumns(scheme).map((column) => ({
       key: column.key,
       text: text[column.key](row),
       numeric: column.numeric,

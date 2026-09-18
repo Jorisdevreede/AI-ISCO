@@ -33,11 +33,12 @@ Decisions for rebuilding the AI-ISCO site around the questions visitors arrive w
 | `index.html` — **Find a job** | Search-first landing: one combobox, verified chips, recently viewed, "browse a sector". Loads only `search_index.json`. | the treemap as first page |
 | `job.html#<slug>` — the one canonical job page | Everything about one occupation. Every surface links here with a real `<a href>`. | `portfolio.html` (kept as a redirect for old links) |
 | `groups.html#g=<level>:<key>` — **Browse sectors** | Group overview at any ISCO level: quadrant mix, ranked list, scatter, treemap, table. | `index.html` treemap and `explorer.html` |
-| `skill.html#<skill_id>` — **Look up a skill** | Both scores, the rationale, which occupations need it. | new |
+| `tree.html#job=<slug>` — **Job tree** | The ISCO hierarchy as an expandable tree down to each job, with a pane showing the selected job's skills and quadrants. Added after the first build, at the owner's request. | new |
+| `skill.html#<skill_id>` — **Skill scores** | Every scored skill in one sortable table with its class, the method in plain words, and per skill: the scores, the model's answers, the rationale, and which occupations need it. First built as "Look up a skill"; renamed and widened with scoring v2. | new |
 | `insights.html` — **What we found** | The article, with every number computed from `stats.json`. | same page, no prose constants |
 | `method.html` — **How sure is this?** | Plain-language method and limits. | new |
 
-Navigation, same on every page: `Find a job` · `Browse sectors` · `Look up a skill` · `What we found` · `How sure is this?`
+Navigation, same on every page: `Find a job` · `Browse sectors` · `Job tree` · `Skill scores` · `What we found` · `How sure is this?`
 
 Deep links are hash-based so GitHub Pages serves them unchanged:
 
@@ -49,21 +50,34 @@ groups.html#g=major:2&view=ranked|scatter|treemap|table
 skill.html#59b27e7b
 ```
 
-`?scorer=typesafe` keeps working everywhere and is carried across links when present (see `site/scorer.js`).
+`?scorer=gemini` selects the older score set and is carried across links when present; `?scorer=typesafe`, from links shared before scoring v2, now lands on the default set (see `site/scorer.js`).
 
 In-page navigation uses `history.pushState`, never `replaceState`, so the browser's Back button walks the real trail. A job page opened cold shows `← All jobs in <unit group>` derived from the occupation itself.
 
 ## Decisions on the audit's open questions
 
-1. **Canonical scores: the published Gemini run.** The local second score set stays a local-only switch.
+1. **Canonical scores: the Gemini run.** It is the default everywhere. A second score set (same rubric, TypeSafe's jev model) sits behind the "Scores from" switch; it was local-only until its publication was cleared on 2026-09-18. *Superseded the same day by scoring v2, see the section below: the default is now the v2 set, Gemini is the alternative in the switch, and the same-rubric jev set serves only the method page's comparison.*
 2. **Keep the four quadrant names, hedge them.** A badge is a button that explains why the job landed there and how close it sits to a cut-off. A job within 0.5 of a cut-off on either axis is marked "near the line".
 3. **Demote "Evolution Potential".** It stays in the data. The UI calls it "AI exposure", never colours a first view by it, and never derives a health verdict from it. The "At Risk" banner goes; a job page never delivers a bad verdict without a next step.
 4. **"Someone else's profession" without new model calls.** `&for=other` switches headings, labels and the advice heading to neutral wording, stops writing to recently viewed, and adds a line saying the story below is addressed to the job holder. Third-person narratives need a model pass and are a later increment.
 5. **One source of truth.** `data.json` is regenerated from the same per-skill scores as `portfolio_data.json`. All new index files are built in one run from those two files.
 
+## Scoring v2 and the two schemes (added 2026-09-18)
+
+The pages above were built around one model: two scores per skill, four quadrants cut at 6. Scoring v2 ([scoring-v2.md](scoring-v2.md)) replaces that model for the default score set, and the site carries both:
+
+| | `quadrants` scheme | `shares` scheme |
+|---|---|---|
+| Score set | Gemini (no suffix), and jev on the same rubric (`_typesafe`) | jev on the v2 rubric (`_v2`), the default |
+| Per skill | automation and amplification, 1 to 10 | three probabilities (AI substitution, AI assistance, machine automation) and one of four classes |
+| Per occupation | one of four quadrants | four shares of the skill weight that sum to 1, and one of seven types |
+| "Near the line" | within 0.5 of a cut-off | moving any one share by 0.05 changes the type |
+
+A data file says which scheme it follows in `stats.scheme` (absent means `quadrants`). Every page reads that flag through `site/js/scheme.js` and renders accordingly; nothing about the quadrant rendering changed, so `?scorer=gemini` shows the site as it was. The v2 files add fields rather than rename them (`k`, `sh`, `nl`, `why`, `c`, `p`), and `site/rubric_v2.json` plus the `site/skill_answers_v2/` shards feed the Skill scores page. The exact shapes are in [scoring-v2.md](scoring-v2.md).
+
 ## Uncertainty copy
 
-Everything said about certainty must be computable from the published data. Never state or imply results from the private second scoring run: no agreement rates, correlations or counts from it, on the site or in the docs.
+Everything said about certainty must be computable from the published data, never typed into the prose. When this brief was written the second scoring run was private, so the pages quote only facts about the default score set. Now that both sets are published, the agreement between them is the better uncertainty evidence: the method page computes it from the two search indexes as it loads (`site/js/agreement.js`), and the README's Step 2b has the per-skill detail.
 
 What can be said, because it is true of the published data alone:
 - the scores are model estimates; nobody measured a real job; there is no ground truth here
@@ -72,17 +86,30 @@ What can be said, because it is true of the published data alone:
 
 Tone: never "at risk" as a standing label for someone's job; say "more exposed to automation". No urgency, countdowns or scarcity. High-automation jobs always show "What to do next".
 
-## Data files (built by `build_site_indexes.py`, all under `site/`)
+## Data files (all under `site/`; `<suffix>` is "" for Gemini and `_v2` for the scoring v2 set)
+
+Built by `build_site_indexes.py --scorer X`:
 
 | File | Shape | Budget |
 |---|---|---|
-| `search_index.json` | `[{"t","s","c","mg","a","m","q","alt":[...]}]` — title, slug, ISCO code, major group, scores, quadrant, ESCO alternative labels | ≤ 80 KB gzipped |
-| `groups.json` | keyed `"<level>:<code>"` → label, level, n, quadrant counts, automation and amplification mean/p10/p50/p90, top and bottom slugs, driving skills, children, parent | ≤ 150 KB gzipped |
-| `stats.json` | every number the pages quote: totals, quadrant counts and shares, near-the-line share, build date | tiny |
-| `skill_index.json` | `[{"id","t","a","m","ne","no"}]` — essential and optional occupation counts | ≤ 120 KB gzipped |
-| `skill_occupations.json` | `{"<skill_id>": {"e": [slug...], "o": [slug...]}}`, loaded only by `skill.html` | lazy |
+| `search_index<suffix>.json` | `[{"t","s","c","mg","a","m","q","alt":[...]}]` — title, slug, ISCO code, major group, scores, quadrant or type, ESCO alternative labels (round-robin fill, at most 12 per occupation); under `shares` also `"k"`, `"sh"`, `"nl"` | ≤ 260 KB gzipped |
+| `groups<suffix>.json` | keyed `"<level>:<code>"` → label, level, n, `near`, quadrant or type counts, automation and amplification mean/p10/p50/p90, top and bottom slugs, driving skills, children, parent; under `shares` also `mech` and `sh` | ≤ 150 KB gzipped |
+| `stats<suffix>.json` | every number the pages quote: totals, `scheme`, counts and shares, near-the-line share, build date | tiny |
+| `skill_index<suffix>.json` | `[{"id","t","a","m","ne","no"}]` — essential and optional occupation counts; under `shares` also `"k"`, `"c"`, `"p"`, `"ty"`, `"mo"` | ≤ 300 KB gzipped, 380 under `shares` |
+| `skill_occupations<suffix>.json` | `{"<skill_id>": {"e": [slug...], "o": [slug...]}}`, loaded only when a skill is open | lazy |
+| `rubric_v2.json` | the six questions exactly as asked, the class rules and the display formula, generated from `aiisco/rubric_v2.py` | tiny |
+| `skill_answers_v2/<xx>.json` | 256 shards keyed by the first two characters of the skill id: the model's answer distributions and confidences per skill | lazy, per skill |
 
-Sharding `portfolio_data.json` into one file per job is a later increment; until then `job.html` shows a loading state and an error state.
+Built by `build_portfolio_data.py --scorer X`, for the two scorers the switch offers:
+
+| File | Shape | Budget |
+|---|---|---|
+| `jobs/units.json` | `{"<slug>": "<4-digit ISCO unit group>"}` for every occupation; no suffix, identical whichever build writes it | ≈ 25 KB gzipped |
+| `jobs/<unit><suffix>.json` | the dataset restricted to one unit group: `occupations`, `skills`, `scheme` and `model` as in the full file, plus `neighbours` — the full records of every adjacent job in another unit group. `skills` covers both lists | one per unit group, lazy |
+| `skill_notes/<xx><suffix>.json` | 256 shards keyed like the answers: `{"<skill id>": {"r": rationale, "rf": who wrote it}}` | lazy, per skill |
+| `portfolio_data<suffix>.json` | the whole dataset, still published as the archive; no page fetches it | not fetched |
+
+No page loads `portfolio_data<suffix>.json`: `job.html` and `tree.html` read `jobs/units.json` then one `jobs/<unit>` file, and `skill.html` reads one `skill_notes/<xx>` shard per opened skill.
 
 ## Front-end code
 
@@ -94,7 +121,7 @@ Sharding `portfolio_data.json` into one file per job is a later increment; until
 
 ## Tests
 
-- `node --test tests/js/` for the pure modules.
+- `npm test` (`node --test tests/js/*.test.js`) for the pure modules.
 - `pytest tests/e2e/` with Playwright for the flows: find a job by a synonym and land on the right page; every chip opens the job it names; treemap → group → job → back to the group; neutral-wording link round-trips; group overview views and the table alternative; skill lookup → an occupation that needs it; keyboard-only path from landing to a job page; no horizontal scroll at 390 px; no console errors.
 - `pytest` for `build_site_indexes.py` against small synthetic fixtures.
 

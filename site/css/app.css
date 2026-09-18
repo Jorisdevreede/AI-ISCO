@@ -39,6 +39,29 @@
   --q-evolve: var(--green);
   --q-stable: var(--blue);
 
+  /* Two more accents, so the seven types of the shares scheme each get one.
+   * Every value below reaches at least 4.5:1 as text on --bg, --bg2, --bg3 and
+   * on its own 14% tint, and at least 4.5:1 for --bg as text on top of it. */
+  --purple: #c79bf0;
+  --teal: #4fd0c4;
+  --slate: #b9b9c8;
+
+  /* The seven occupation types (docs/scoring-v2.md). Hue is never the only
+   * signal: every place that uses one also prints the type's name. */
+  --type-automation-heavy: var(--red);
+  --type-transforming: var(--gold);
+  --type-augmented: var(--blue);
+  --type-mechanisable: var(--purple);
+  --type-insulated-physical: var(--green);
+  --type-insulated-people: var(--teal);
+  --type-mixed: var(--slate);
+
+  /* The four skill classes, and so the four segments of a shares bar. */
+  --class-substituted: var(--red);
+  --class-assisted: var(--blue);
+  --class-mechanised: var(--purple);
+  --class-insulated: var(--green);
+
   /* Scale */
   --space-1: 4px;
   --space-2: 8px;
@@ -87,6 +110,10 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
 .muted { color: var(--fg-muted); }
 .small { font-size: 0.8125rem; }
 .numeric { font-variant-numeric: tabular-nums; }
+
+/* Components below set a display, which would beat the user-agent rule for
+ * `hidden` and leave a hidden button or flex row on screen. */
+[hidden] { display: none !important; }
 
 .visually-hidden {
   position: absolute; width: 1px; height: 1px; margin: -1px;
@@ -179,7 +206,12 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   color: var(--fg-muted);
 }
 .site-attribution p { margin: 0 0 var(--space-2); }
-.site-attribution a { color: var(--fg); }
+.site-attribution a {
+  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
 
 /* --- buttons and chips --------------------------------------------------- */
 
@@ -231,12 +263,17 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
-.card + .card { margin-top: var(--space-3); }
+.card + .card,
+.card + .card-grid,
+.card-grid + .card { margin-top: var(--space-3); }
 .card-grid {
   display: grid;
   gap: var(--space-3);
   grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 }
+/* Inside a grid the gap does the spacing; a stacked-card margin would push the
+ * second card down and leave the row uneven. */
+.card-grid > .card { margin-top: 0; }
 
 /* --- combobox ------------------------------------------------------------ */
 
@@ -255,7 +292,7 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
 }
 .combobox input::placeholder { color: var(--fg-muted); }
 
-.combobox ul {
+.combobox [role="listbox"] {
   position: absolute;
   z-index: 20;
   left: 0;
@@ -270,7 +307,7 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
-.combobox li {
+.combobox [role="option"] {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -280,9 +317,9 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
-.combobox li.is-active, .combobox li:hover { background: rgba(255, 255, 255, 0.09); }
-.combobox li .code { font-family: var(--mono); font-size: 0.75rem; color: var(--fg-muted); }
-.combobox li .also { flex-basis: 100%; font-size: 0.75rem; color: var(--fg-muted); }
+.combobox [role="option"].is-active, .combobox [role="option"]:hover { background: rgba(255, 255, 255, 0.09); }
+.combobox [role="option"] .code { font-family: var(--mono); font-size: 0.75rem; color: var(--fg-muted); }
+.combobox [role="option"] .also { flex-basis: 100%; font-size: 0.75rem; color: var(--fg-muted); }
 
 /* --- quadrant badge and popover ------------------------------------------ */
 
@@ -307,6 +344,15 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
 .quadrant-badge[data-quadrant='SHRINK'] { color: var(--q-shrink); }
 .quadrant-badge[data-quadrant='EVOLVE'] { color: var(--q-evolve); }
 .quadrant-badge[data-quadrant='STABLE'] { color: var(--q-stable); }
+
+/* The same pill under the shares scheme: seven types instead of four boxes. */
+.type-badge[data-type='AUTOMATION_HEAVY'] { color: var(--type-automation-heavy); }
+.type-badge[data-type='TRANSFORMING'] { color: var(--type-transforming); }
+.type-badge[data-type='AUGMENTED'] { color: var(--type-augmented); }
+.type-badge[data-type='MECHANISABLE'] { color: var(--type-mechanisable); }
+.type-badge[data-type='INSULATED_PHYSICAL'] { color: var(--type-insulated-physical); }
+.type-badge[data-type='INSULATED_PEOPLE'] { color: var(--type-insulated-people); }
+.type-badge[data-type='MIXED'] { color: var(--type-mixed); }
 
 .quadrant-badge-near {
   font-weight: 500;
@@ -344,6 +390,186 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
 }
 .badge-popover h3 { margin-bottom: var(--space-2); font-size: 0.9375rem; }
 .badge-popover p { margin: 0 0 var(--space-2); color: var(--fg); }
+
+/* --- shares bar ---------------------------------------------------------- */
+
+/* What a job is made of, under the shares scheme: one stacked bar plus a legend
+ * in words. The bar alone is role="img" with the whole sentence as its
+ * accessible name, and every segment is also given a stripe angle, so the four
+ * parts stay apart without relying on hue. site/js/shares-bar.js builds it. */
+
+.shares { display: block; }
+
+.shares-bar {
+  display: flex;
+  width: 100%;
+  height: 14px;
+  overflow: hidden;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.shares-seg { display: block; height: 100%; min-width: 2px; }
+.shares-seg + .shares-seg { border-left: 1px solid var(--bg); }
+
+.shares-seg[data-class='S'] { background: var(--class-substituted); }
+.shares-seg[data-class='A'] {
+  background: repeating-linear-gradient(45deg, var(--class-assisted) 0 5px,
+    rgba(10, 10, 15, 0.22) 5px 8px);
+}
+.shares-seg[data-class='M'] {
+  background: repeating-linear-gradient(-45deg, var(--class-mechanised) 0 5px,
+    rgba(10, 10, 15, 0.22) 5px 8px);
+}
+.shares-seg[data-class='I'] {
+  background: repeating-linear-gradient(90deg, var(--class-insulated) 0 5px,
+    rgba(10, 10, 15, 0.22) 5px 8px);
+}
+
+.shares-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+.shares-legend li { display: flex; align-items: center; gap: var(--space-2); }
+
+/* The letter in the swatch is the shape half of "never colour alone": the
+ * legend reads S / A / M / I beside the class name even in monochrome. */
+.shares-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--bg);
+  border-radius: 4px;
+}
+/* Four shapes as well as four colours: rounded square, circle, square, pill. */
+.shares-key[data-class='S'] { background: var(--class-substituted); border-radius: 4px; }
+.shares-key[data-class='A'] { background: var(--class-assisted); border-radius: 50%; }
+.shares-key[data-class='M'] { background: var(--class-mechanised); border-radius: 0; }
+.shares-key[data-class='I'] {
+  background: var(--class-insulated);
+  width: 26px;
+  flex-basis: 26px;
+  border-radius: 999px;
+}
+
+.shares-label { color: var(--fg); }
+.shares-value { color: var(--fg-muted); font-weight: 600; }
+
+/* A list row has space for the bar and one line of words, not four. */
+.shares--compact .shares-bar { height: 8px; }
+.shares--compact .shares-line { margin: var(--space-1) 0 0; color: var(--fg-muted); }
+
+.shares-empty { margin: 0; }
+.shares + .shares { margin-top: var(--space-4); }
+
+@media (max-width: 480px) {
+  .shares-legend { gap: var(--space-1) var(--space-3); }
+}
+
+
+/* --- the seven types, in the places the four boxes are painted ------------ */
+
+/* Stop-gap. Each page stylesheet (groups.css, tree.css, pages.css) paints the
+ * four quadrant codes on its own bars, dots and cells; none of them knows the
+ * seven type codes yet, so under a shares set those shapes would come out
+ * colourless. These rules paint the same shapes for the seven codes until each
+ * page is adapted and can own its own. Colour is never the only signal: every
+ * one of these places prints the type's name beside the shape.
+ */
+
+[data-quadrant='AUTOMATION_HEAVY'] .mix-fill, [data-quadrant='AUTOMATION_HEAVY'] .diverge-fill,
+[data-quadrant='AUTOMATION_HEAVY'].tree-mix-fill, [data-quadrant='AUTOMATION_HEAVY'].tree-dot,
+.q-bar[data-quadrant='AUTOMATION_HEAVY'] { background: var(--type-automation-heavy); }
+.scatter .dot-point[data-quadrant='AUTOMATION_HEAVY'] { fill: var(--type-automation-heavy); }
+.tree-quad[data-quadrant='AUTOMATION_HEAVY'],
+.quad-cell[data-quadrant='AUTOMATION_HEAVY'] { color: var(--type-automation-heavy); }
+
+[data-quadrant='TRANSFORMING'] .mix-fill, [data-quadrant='TRANSFORMING'] .diverge-fill,
+[data-quadrant='TRANSFORMING'].tree-mix-fill, [data-quadrant='TRANSFORMING'].tree-dot,
+.q-bar[data-quadrant='TRANSFORMING'] { background: var(--type-transforming); }
+.scatter .dot-point[data-quadrant='TRANSFORMING'] { fill: var(--type-transforming); }
+.tree-quad[data-quadrant='TRANSFORMING'],
+.quad-cell[data-quadrant='TRANSFORMING'] { color: var(--type-transforming); }
+
+[data-quadrant='AUGMENTED'] .mix-fill, [data-quadrant='AUGMENTED'] .diverge-fill,
+[data-quadrant='AUGMENTED'].tree-mix-fill, [data-quadrant='AUGMENTED'].tree-dot,
+.q-bar[data-quadrant='AUGMENTED'] { background: var(--type-augmented); }
+.scatter .dot-point[data-quadrant='AUGMENTED'] { fill: var(--type-augmented); }
+.tree-quad[data-quadrant='AUGMENTED'],
+.quad-cell[data-quadrant='AUGMENTED'] { color: var(--type-augmented); }
+
+[data-quadrant='MECHANISABLE'] .mix-fill, [data-quadrant='MECHANISABLE'] .diverge-fill,
+[data-quadrant='MECHANISABLE'].tree-mix-fill, [data-quadrant='MECHANISABLE'].tree-dot,
+.q-bar[data-quadrant='MECHANISABLE'] { background: var(--type-mechanisable); }
+.scatter .dot-point[data-quadrant='MECHANISABLE'] { fill: var(--type-mechanisable); }
+.tree-quad[data-quadrant='MECHANISABLE'],
+.quad-cell[data-quadrant='MECHANISABLE'] { color: var(--type-mechanisable); }
+
+[data-quadrant='INSULATED_PHYSICAL'] .mix-fill, [data-quadrant='INSULATED_PHYSICAL'] .diverge-fill,
+[data-quadrant='INSULATED_PHYSICAL'].tree-mix-fill, [data-quadrant='INSULATED_PHYSICAL'].tree-dot,
+.q-bar[data-quadrant='INSULATED_PHYSICAL'] { background: var(--type-insulated-physical); }
+.scatter .dot-point[data-quadrant='INSULATED_PHYSICAL'] { fill: var(--type-insulated-physical); }
+.tree-quad[data-quadrant='INSULATED_PHYSICAL'],
+.quad-cell[data-quadrant='INSULATED_PHYSICAL'] { color: var(--type-insulated-physical); }
+
+[data-quadrant='INSULATED_PEOPLE'] .mix-fill, [data-quadrant='INSULATED_PEOPLE'] .diverge-fill,
+[data-quadrant='INSULATED_PEOPLE'].tree-mix-fill, [data-quadrant='INSULATED_PEOPLE'].tree-dot,
+.q-bar[data-quadrant='INSULATED_PEOPLE'] { background: var(--type-insulated-people); }
+.scatter .dot-point[data-quadrant='INSULATED_PEOPLE'] { fill: var(--type-insulated-people); }
+.tree-quad[data-quadrant='INSULATED_PEOPLE'],
+.quad-cell[data-quadrant='INSULATED_PEOPLE'] { color: var(--type-insulated-people); }
+
+[data-quadrant='MIXED'] .mix-fill, [data-quadrant='MIXED'] .diverge-fill,
+[data-quadrant='MIXED'].tree-mix-fill, [data-quadrant='MIXED'].tree-dot,
+.q-bar[data-quadrant='MIXED'] { background: var(--type-mixed); }
+.scatter .dot-point[data-quadrant='MIXED'] { fill: var(--type-mixed); }
+.tree-quad[data-quadrant='MIXED'],
+.quad-cell[data-quadrant='MIXED'] { color: var(--type-mixed); }
+
+/* --- info note ----------------------------------------------------------- */
+
+/* The "i" after a text that needs a word about where it came from
+ * (site/js/info-note.js). 24px is the smallest allowed touch target. */
+.info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  vertical-align: middle;
+  font: italic 700 0.8125rem/1 Georgia, 'Times New Roman', serif;
+  color: var(--blue);
+  background: transparent;
+  border: 1px solid var(--blue);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.info-button:hover,
+.info-button[aria-expanded="true"] { color: var(--bg); background: var(--blue); }
+.info-note-text {
+  display: block;
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8125rem;
+  font-style: normal;
+  line-height: 1.55;
+  color: var(--fg);
+  background: var(--bg3);
+  border-left: 3px solid var(--blue);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
 
 /* --- tabs ---------------------------------------------------------------- */
 

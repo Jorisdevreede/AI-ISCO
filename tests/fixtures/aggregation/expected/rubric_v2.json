@@ -1,0 +1,160 @@
+{
+  "model": "jev-test",
+  "preamble": "Consider a current general-purpose AI system: a large language model that reads and writes text, code, tables and documents, interprets images, searches and retrieves information, and calls other software. It runs on ordinary computers. It has no body, no hands, no eyes in a room and no physical presence. It can control other software; it cannot control machinery, vehicles, tools or materials unless that machinery is already computer-controlled and exposed through software. Assume a competent worker in the role has this system available, along with the software and computer hardware they already use, and no other new physical equipment. ",
+  "questions": [
+    {
+      "id": "digital_output",
+      "kind": "yesno",
+      "label": "Digital output",
+      "instructions": "Is the thing this skill produces an artefact that exists as text, code, numbers, images, audio, or a document or record - rather than a change in the physical world, a change in another person, or a physical act performed in a place?",
+      "options": [
+        {
+          "name": "true",
+          "text": "What the worker hands over is information: a written document, a decision recorded in a system, a drawing or model, a calculation, a piece of code, an image, a plan, a diagnosis, an answer."
+        },
+        {
+          "name": "false",
+          "text": "What the worker hands over is a physical change - an object made, moved, repaired, cut, cleaned or installed; a body treated; a vehicle or machine operated - or an effect on another person that happens in their presence."
+        }
+      ],
+      "knowledge": null
+    },
+    {
+      "id": "ai_substitution",
+      "kind": "levels",
+      "label": "AI substitution",
+      "instructions": "Consider a current general-purpose AI system: a large language model that reads and writes text, code, tables and documents, interprets images, searches and retrieves information, and calls other software. It runs on ordinary computers. It has no body, no hands, no eyes in a room and no physical presence. It can control other software; it cannot control machinery, vehicles, tools or materials unless that machinery is already computer-controlled and exposed through software. Assume a competent worker in the role has this system available, along with the software and computer hardware they already use, and no other new physical equipment. How much of the work of this skill can that system carry out itself, from the inputs a worker would give it to the finished result?",
+      "levels": [
+        "None of it. The system cannot produce any part of the result, because the work happens in the physical world, in someone's presence, or depends on information the system cannot be given.",
+        "A minor part. The system can draft, look up or summarise something the worker then uses, but the worker still does the work and produces the result themselves.",
+        "About half. The system produces a usable first version of the result, and the worker completes it, corrects it and takes it the rest of the way.",
+        "Nearly all of it, under supervision. The system produces the finished result, and a qualified person reads it, checks it and signs it off before it is used.",
+        "All of it, unsupervised. The system produces the finished result and it is used as it stands, without a person reading it first."
+      ],
+      "knowledge": {
+        "instructions": "Consider a current general-purpose AI system: a large language model that reads and writes text, code, tables and documents, interprets images, searches and retrieves information, and calls other software. It runs on ordinary computers. It has no body, no hands, no eyes in a room and no physical presence. It can control other software; it cannot control machinery, vehicles, tools or materials unless that machinery is already computer-controlled and exposed through software. Assume a competent worker in the role has this system available, along with the software and computer hardware they already use, and no other new physical equipment. The item below is a body of knowledge that workers apply, not an activity. Do not judge whether the system can recite these facts - assume it can. Judge the work that people use this knowledge to do. How much of that work can the system carry out itself?",
+        "levels": [
+          "None of it. This knowledge is applied by acting physically on things or people, and the system cannot act.",
+          "A minor part. The system can supply the relevant facts, and a person still does the work of applying them.",
+          "About half. The system applies this knowledge to produce a first answer, and a person judges whether it fits the case in front of them.",
+          "Nearly all of it, under supervision. The system applies this knowledge to real cases and produces the decision or document, which a qualified person approves.",
+          "All of it, unsupervised. The system applies this knowledge to real cases and the result is acted on without a person reviewing it."
+        ]
+      }
+    },
+    {
+      "id": "mechanical",
+      "kind": "levels",
+      "label": "Machine automation",
+      "instructions": "Set aside artificial intelligence entirely. Think only about machines: production equipment, robots, conveyors, automated inspection rigs, vehicles that drive themselves, plant that runs a process on its own. Count only physical equipment that moves, shapes, joins, carries, sorts, fills, processes or inspects material things: production lines, CNC machines, robots, conveyors, automated storage, process plant, farm machinery, self-driving vehicles, automated checkouts. Software, apps, online services, navigation systems and artificial intelligence are not machinery here and belong to a different question. Work whose job is to tend, feed or monitor such equipment counts as mechanised work - that is what level 3 describes. A human ability or performance - perceiving, singing, judging, caring, persuading - is not mechanised merely because some device can do something similar; answer for how the work this skill belongs to is actually carried out in equipped workplaces. How much of the work of this skill can machinery like that do, in workplaces that can afford it?",
+      "levels": [
+        "None of it. There is no machine that does this work; it is carried out by a person deciding or interacting, not by equipment running.",
+        "A small part. Machinery helps with one step - lifting, moving, measuring - and the worker does the rest by hand.",
+        "About half. Machinery performs the repetitive core of the work while a person sets it up, feeds it, watches it and handles what it cannot.",
+        "Nearly all of it. A machine performs the work while a person monitors it, intervenes when it stops and deals with exceptions.",
+        "All of it. Equipment performs this work continuously without a person present, and workplaces that have installed it no longer employ anyone to do it by hand."
+      ],
+      "knowledge": {
+        "instructions": "The item below is a body of knowledge that workers apply, not an activity. Do not judge whether machines embody this knowledge or could recite it - judge the work that people use it to do. Set aside artificial intelligence entirely. Think only about machines: production equipment, robots, conveyors, automated inspection rigs, vehicles that drive themselves, plant that runs a process on its own. Count only physical equipment that moves, shapes, joins, carries, sorts, fills, processes or inspects material things: production lines, CNC machines, robots, conveyors, automated storage, process plant, farm machinery, self-driving vehicles, automated checkouts. Software, apps, online services, navigation systems and artificial intelligence are not machinery here and belong to a different question. Work whose job is to tend, feed or monitor such equipment counts as mechanised work - that is what level 3 describes. A human ability or performance - perceiving, singing, judging, caring, persuading - is not mechanised merely because some device can do something similar; answer for how the work this skill belongs to is actually carried out in equipped workplaces. How much of the work that people apply this knowledge to can machinery like that do, in workplaces that can afford it?",
+        "levels": [
+          "None of it. There is no machine that does the work this knowledge is applied to; it is carried out by a person deciding or interacting, not by equipment running.",
+          "A small part. Machinery helps with one step of that work - lifting, moving, measuring - and the worker does the rest by hand.",
+          "About half. Machinery performs the repetitive core of that work while a person sets it up, feeds it, watches it and handles what it cannot.",
+          "Nearly all of it. A machine performs that work while a person monitors it, intervenes when it stops and deals with exceptions.",
+          "All of it. Equipment performs that work continuously without a person present, and workplaces that have installed it no longer employ anyone to do it by hand."
+        ]
+      }
+    },
+    {
+      "id": "complementarity",
+      "kind": "levels",
+      "label": "AI assistance",
+      "instructions": "Consider a current general-purpose AI system: a large language model that reads and writes text, code, tables and documents, interprets images, searches and retrieves information, and calls other software. It runs on ordinary computers. It has no body, no hands, no eyes in a room and no physical presence. It can control other software; it cannot control machinery, vehicles, tools or materials unless that machinery is already computer-controlled and exposed through software. Assume a competent worker in the role has this system available, along with the software and computer hardware they already use, and no other new physical equipment. Now assume the work stays with the person and the system only assists. Judge how much of this work is affected, not how impressive the assistance sounds: a large improvement to one small part of the work is a lower level than a clear improvement across most of it. How much better does the work get?",
+      "levels": [
+        "No difference. The person works the same way at the same pace. There is nothing in this work the system can take part in.",
+        "A little, on a minor part. The system saves some time on something small - a lookup, some typing, a bit of formatting or tidying - and the work as a whole takes about as long as it did.",
+        "A clear gain on part of the work. Drafting, searching or checking is now noticeably faster or noticeably better because the system does it, but the core of this work still takes the person as long as it always did.",
+        "A clear gain across most of the work. Most of what this work consists of, not one part of it, goes noticeably faster or comes out noticeably better with the system available.",
+        "A change in what the person can take on. They get through several times as much of this work as before, or they now do work that was previously too slow or too expensive to attempt at all."
+      ],
+      "knowledge": null
+    },
+    {
+      "id": "mode",
+      "kind": "choice",
+      "label": "How it is exercised",
+      "instructions": "How is the work of this skill mainly carried out? Choose the way it is mostly done.",
+      "options": [
+        {
+          "name": "through_software",
+          "text": "The worker does this at a computer, in a system, a document or an application. The work is reading and writing information."
+        },
+        {
+          "name": "on_things",
+          "text": "The worker does this with their hands, with tools, machines, materials or vehicles, in a physical place."
+        },
+        {
+          "name": "with_people",
+          "text": "The worker does this in the presence of other people, by talking with them, examining them, caring for them, teaching them or persuading them."
+        },
+        {
+          "name": "on_paper_in_place",
+          "text": "The worker does this by hand on paper or on a form, at a site or on the move, away from a computer."
+        },
+        {
+          "name": "directing_others",
+          "text": "The worker does this by deciding and instructing, and other people carry it out."
+        }
+      ],
+      "knowledge": null
+    },
+    {
+      "id": "deployment",
+      "kind": "choice",
+      "label": "Deployment",
+      "instructions": "Where does software that does this work stand in the real world today - not what is possible in principle, but what organisations are actually using?",
+      "options": [
+        {
+          "name": "routine",
+          "text": "Organisations already run software that does this work, and it is ordinary rather than remarkable to find it in use."
+        },
+        {
+          "name": "available",
+          "text": "Products that do this work can be bought today, and some organisations use them, but most doing this work still do it without such software."
+        },
+        {
+          "name": "demonstrated",
+          "text": "It has been shown to work in research, in demonstrations or in pilots, but there is no product an ordinary organisation can buy and run."
+        },
+        {
+          "name": "not_shown",
+          "text": "Nobody has shown software doing this work to a standard that would be accepted in a workplace."
+        }
+      ],
+      "knowledge": null
+    }
+  ],
+  "classes": [
+    {
+      "code": "S",
+      "name": "Substituted",
+      "rule": "SUB >= 0.5"
+    },
+    {
+      "code": "A",
+      "name": "Assisted",
+      "rule": "COMP >= 0.5, and not already substituted"
+    },
+    {
+      "code": "M",
+      "name": "Mechanised",
+      "rule": "MECH >= 0.5, and neither substituted nor assisted"
+    },
+    {
+      "code": "I",
+      "name": "Insulated",
+      "rule": "none of the above"
+    }
+  ],
+  "display": "1.5 + 2.0 * position"
+}

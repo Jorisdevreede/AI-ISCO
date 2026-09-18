@@ -22,6 +22,11 @@ def occupations(portfolio):
 
 
 @pytest.fixture(scope="module")
+def skills(portfolio):
+    return portfolio["skills"]
+
+
+@pytest.fixture(scope="module")
 def labels():
     return {"2": "Professionals", "25": "ICT professionals", "251": "Developers",
             "2512": "Software developers", "3": "Technicians"}
@@ -243,11 +248,13 @@ def test_build_skill_occupations_lists_slugs_in_order(occupations):
     (1.0, 5.9, True), (1.0, 1.0, False),
 ])
 def test_is_near_line_on_either_axis(auto, amp, near):
-    assert ix.is_near_line({"ar": auto, "ap": amp}, 6) is near
+    context = ix.StatsContext(built="2026-09-18", threshold=6)
+    assert ix.is_near_line({"ar": auto, "ap": amp}, context) is near
 
 
-def test_build_stats_counts_shares_and_the_near_line_band(occupations):
-    stats = ix.build_stats(occupations, 12, "2026-09-18", 6)
+def test_build_stats_counts_shares_and_the_near_line_band(occupations, skills):
+    stats = ix.build_stats(occupations, skills,
+                           ix.StatsContext(built="2026-09-18", threshold=6))
     assert stats["built"] == "2026-09-18"
     assert stats["threshold"] == 6
     assert stats["occupations"] == 6
@@ -262,3 +269,84 @@ def test_build_stats_counts_shares_and_the_near_line_band(occupations):
 def test_budgets_cover_every_output():
     assert set(ix.BUDGET_GZ_KB) == {"search_index", "groups", "stats",
                                     "skill_index", "skill_occupations"}
+
+
+# --- rationale shards -------------------------------------------------------
+
+def test_a_skill_note_keeps_the_rationale_and_who_wrote_it():
+    assert ix.skill_note({"t": "x", "a": 1.0, "r": "because", "rf": {"s": "gemini"}}) \
+        == {"r": "because", "rf": {"s": "gemini"}}
+
+
+def test_a_skill_note_without_a_borrowed_rationale_says_only_the_text():
+    assert ix.skill_note({"t": "x", "r": "because"}) == {"r": "because"}
+
+
+def test_a_skill_with_nothing_to_say_has_no_note():
+    assert ix.skill_note({"t": "x", "a": 1.0}) == {}
+
+
+def test_skill_notes_are_sharded_by_the_first_two_characters_of_the_id():
+    shards = ix.build_skill_notes({"aa000001": {"r": "one"}, "aa000002": {"r": "two"},
+                                   "bb000003": {"r": "three"}})
+    assert sorted(shards) == ["aa", "bb"]
+    assert shards["aa"] == {"aa000001": {"r": "one"}, "aa000002": {"r": "two"}}
+
+
+def test_a_shard_with_no_rationale_in_it_is_not_written_at_all():
+    assert ix.build_skill_notes({"aa000001": {"t": "x"}}) == {}
+
+
+def test_skill_notes_come_out_in_a_stable_order():
+    shards = ix.build_skill_notes({"aa000002": {"r": "two"}, "aa000001": {"r": "one"}})
+    assert list(shards["aa"]) == ["aa000001", "aa000002"]
+
+
+# --- how many alternative labels a search row may carry ---------------------
+
+def test_alt_candidates_stop_at_the_cap_per_occupation():
+    by_slug = {"a": [f"label {i}" for i in range(20)]}
+    candidates = ix.alt_candidates([{"s": "a"}], by_slug, cap=3)
+    assert [c[2] for c in candidates] == ["label 0", "label 1", "label 2"]
+
+
+def test_the_cap_is_the_one_the_contract_names():
+    assert ix.MAX_ALT_LABELS == 12
+
+
+def test_the_fill_is_round_robin_so_every_job_gets_its_best_label_first():
+    by_slug = {"a": ["one", "two"], "b": ["three"]}
+    ranks = [c[0] for c in ix.alt_candidates([{"s": "a"}, {"s": "b"}], by_slug)]
+    assert ranks == [0, 0, 1]
+
+
+# --- how many occupations of a group sit near a cut-off ---------------------
+
+def test_near_the_line_counts_by_the_scheme_in_force():
+    under_quadrants = [{"ar": 6.0, "ap": 1.0}, {"ar": 1.0, "ap": 1.0}]
+    assert ix.near_the_line(under_quadrants, ix.SCHEME_QUADRANTS) == 1
+    under_shares = [{"nl": True}, {"nl": False}, {"nl": True}]
+    assert ix.near_the_line(under_shares, ix.SCHEME_SHARES) == 2
+
+
+def test_every_group_says_how_many_of_its_jobs_are_near_a_cut_off(occupations, labels):
+    groups = ix.build_groups(occupations, labels, {})
+    assert groups["all"]["near"] == ix.near_the_line(occupations,
+                                                     ix.SCHEME_QUADRANTS)
+    assert all("near" in group for group in groups.values())
+
+
+# --- shard sizes ------------------------------------------------------------
+
+def test_size_summary_reports_the_median_the_p90_the_max_and_the_total():
+    summary = ix.size_summary([1024, 2048, 3072, 4096])
+    assert summary["median"] == 2.5
+    assert summary["max"] == 4.0
+    assert summary["total"] == 10.0
+
+
+def test_shard_report_names_the_family_and_counts_its_files():
+    line = ix.shard_report("jobs_v2", [1024, 2048], [512, 1024])
+    assert line.startswith("jobs_v2")
+    assert "2 files" in line
+    assert "total 3 KB raw, 2 KB gz" in line

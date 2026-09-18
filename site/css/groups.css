@@ -1,0 +1,499 @@
+/* groups.html — the group overview. Page-specific rules only; tokens, nav,
+ * cards, tabs, tables and the combobox come from css/app.css.
+ *
+ * Rules kept here: nothing may scroll the page sideways at 390px (wide things
+ * get their own scroll box), every class is named in text as well as coloured,
+ * and the two dots of the ranked plot differ in shape, not only in colour.
+ *
+ * Two schemes share these rules. A row painted for the four boxes carries
+ * `data-quadrant`, one painted for the seven types carries `data-type`, so the
+ * type rules can be wider — seven full names need a label column the four box
+ * names never did — without moving anything on the quadrant sets.
+ */
+
+/* --- header --------------------------------------------------------------- */
+
+.crumbs { margin: 0 0 var(--space-3); }
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+.crumbs li { display: flex; align-items: center; gap: var(--space-2); }
+.crumbs li + li::before { content: '/'; color: var(--fg-muted); }
+.crumbs a { display: inline-flex; align-items: center; min-height: var(--tap); }
+.crumbs [aria-current='page'] { color: var(--fg); font-weight: 600; }
+
+.group-head { margin-bottom: var(--space-5); }
+.group-head h1 { margin-bottom: var(--space-1); }
+.group-subtitle { margin-bottom: var(--space-3); }
+
+.group-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.picker-row {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  margin-bottom: var(--space-4);
+}
+.picker label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+
+.section-heading {
+  margin-bottom: var(--space-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.children-list { margin: 0; padding: 0; list-style: none; }
+.children-list li { display: flex; }
+.children-list .chip { text-decoration: none; }
+.children-list .chip .count { color: var(--fg-muted); font-size: 0.75rem; }
+
+/* --- how this group splits ------------------------------------------------ */
+
+.mix-layout {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+}
+@media (max-width: 700px) {
+  .mix-layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mix-bars { margin: 0; padding: 0; list-style: none; }
+.mix-bars li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+.mix-name { font-size: 0.875rem; font-weight: 600; }
+.mix-track {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.mix-fill { display: block; height: 100%; border-radius: 999px; }
+.mix-figure {
+  grid-column: 2;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.mix-caveat {
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--bg3);
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+}
+
+[data-quadrant='TRANSFORM'] .mix-fill, [data-quadrant='TRANSFORM'] .diverge-fill {
+  background: var(--q-transform);
+}
+[data-quadrant='STABLE'] .mix-fill, [data-quadrant='STABLE'] .diverge-fill {
+  background: var(--q-stable);
+}
+[data-quadrant='EVOLVE'] .mix-fill, [data-quadrant='EVOLVE'] .diverge-fill {
+  background: var(--q-evolve);
+}
+[data-quadrant='SHRINK'] .mix-fill, [data-quadrant='SHRINK'] .diverge-fill {
+  background: var(--q-shrink);
+}
+
+/* The seven types, in the same shapes. Every one of these rows prints the
+ * type's full name beside the bar, so hue is never the only signal. */
+[data-type='AUTOMATION_HEAVY'] .mix-fill, [data-type='AUTOMATION_HEAVY'] .diverge-fill {
+  background: var(--type-automation-heavy);
+}
+[data-type='TRANSFORMING'] .mix-fill, [data-type='TRANSFORMING'] .diverge-fill {
+  background: var(--type-transforming);
+}
+[data-type='AUGMENTED'] .mix-fill, [data-type='AUGMENTED'] .diverge-fill {
+  background: var(--type-augmented);
+}
+[data-type='MECHANISABLE'] .mix-fill, [data-type='MECHANISABLE'] .diverge-fill {
+  background: var(--type-mechanisable);
+}
+[data-type='INSULATED_PHYSICAL'] .mix-fill, [data-type='INSULATED_PHYSICAL'] .diverge-fill {
+  background: var(--type-insulated-physical);
+}
+[data-type='INSULATED_PEOPLE'] .mix-fill, [data-type='INSULATED_PEOPLE'] .diverge-fill {
+  background: var(--type-insulated-people);
+}
+[data-type='MIXED'] .mix-fill, [data-type='MIXED'] .diverge-fill {
+  background: var(--type-mixed);
+}
+
+/* The four skill classes, for the share comparison's diverging bars. */
+[data-class='S'] .diverge-fill { background: var(--class-substituted); }
+[data-class='A'] .diverge-fill { background: var(--class-assisted); }
+[data-class='M'] .diverge-fill { background: var(--class-mechanised); }
+[data-class='I'] .diverge-fill { background: var(--class-insulated); }
+
+/* Seven full names need more room than four did: give the type rows a wider
+ * label column, never break a name inside a word, and stack the row on a phone
+ * rather than squeezing the name into a column it cannot fit. */
+.mix-bars li[data-type], .diverge li[data-type], .diverge li[data-class] {
+  grid-template-columns: minmax(0, 12.5rem) minmax(0, 1fr);
+}
+.mix-bars li[data-type] .mix-name,
+.diverge li[data-type] .mix-name,
+.diverge li[data-class] .mix-name {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+@media (max-width: 700px) {
+  .mix-bars li[data-type], .diverge li[data-type], .diverge li[data-class] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mix-bars li[data-type] .mix-figure,
+  .diverge li[data-type] .diverge-figure,
+  .diverge li[data-class] .diverge-figure {
+    grid-column: 1;
+  }
+}
+
+/* --- what this group is made of ------------------------------------------ */
+
+.mean-shares { margin-bottom: var(--space-5); }
+.mean-shares .shares-bar { height: 22px; }
+.mean-shares-line { margin: var(--space-3) 0 0; font-size: 0.875rem; }
+
+/* --- views ---------------------------------------------------------------- */
+
+.view-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.view-toolbar label { font-size: 0.8125rem; color: var(--fg-muted); }
+.view-toolbar select {
+  min-height: var(--tap);
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--fg);
+  background: var(--bg3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+
+.view-summary { margin: 0 0 var(--space-3); color: var(--fg-muted); font-size: 0.8125rem; }
+
+#panel { min-height: 240px; }
+#panel:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+/* --- ranked --------------------------------------------------------------- */
+
+.dot-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+.dot-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
+
+.ranked { margin: 0; padding: 0; list-style: none; }
+.ranked li { border-bottom: 1px solid var(--line); }
+.ranked a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-2);
+  color: var(--fg);
+  text-decoration: none;
+}
+.ranked a:hover, .ranked a:focus-visible { background: rgba(255, 255, 255, 0.05); }
+@media (min-width: 701px) {
+  .ranked a { grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) 10rem; align-items: center; }
+}
+.ranked-title { font-size: 0.9375rem; }
+.ranked-code { color: var(--fg-muted); font-size: 0.75rem; font-family: var(--mono); }
+.ranked-scores {
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dot-legend .dot { position: static; transform: none; margin: 0; }
+.dot-legend .dot--amp { transform: rotate(45deg); }
+
+.dot-track {
+  display: block;
+  position: relative;
+  height: 18px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+  border-radius: 999px;
+}
+.dot-track::before {
+  content: '';
+  position: absolute;
+  left: 55.55%;                    /* the cut-off of 6 on a 1-10 axis */
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-strong);
+}
+.dot {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  transform: translateY(-50%);
+}
+.dot--auto { background: var(--gold); border-radius: 50%; }
+.dot--amp {
+  background: var(--q-evolve);
+  transform: translateY(-50%) rotate(45deg);
+  border-radius: 2px;
+}
+
+/* Under the shares scheme a row carries its four shares instead of two dots:
+ * the bar, its one-line sentence, and the type's short name at the right. */
+.class-legend { margin: 0 0 var(--space-3); }
+.ranked--shares a { align-items: start; }
+.ranked--shares .shares { min-width: 0; padding-top: 2px; }
+.ranked-type { font-size: 0.8125rem; font-weight: 600; }
+
+/* "Show 50 more" under a list that would otherwise be 114,000 px tall. */
+.ranked-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+.ranked-more p { margin: 0; flex: 1 1 100%; }
+[data-type='AUTOMATION_HEAVY'].ranked-type { color: var(--type-automation-heavy); }
+[data-type='TRANSFORMING'].ranked-type { color: var(--type-transforming); }
+[data-type='AUGMENTED'].ranked-type { color: var(--type-augmented); }
+[data-type='MECHANISABLE'].ranked-type { color: var(--type-mechanisable); }
+[data-type='INSULATED_PHYSICAL'].ranked-type { color: var(--type-insulated-physical); }
+[data-type='INSULATED_PEOPLE'].ranked-type { color: var(--type-insulated-people); }
+[data-type='MIXED'].ranked-type { color: var(--type-mixed); }
+
+/* --- scatter -------------------------------------------------------------- */
+
+.scatter-wrap { max-width: 520px; }
+.scatter {
+  width: 100%;
+  height: auto;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  touch-action: manipulation;
+}
+.scatter .grid-line { stroke: var(--line); stroke-width: 1; }
+.scatter .cut-line { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 4; }
+/* The type rules, under the dots rather than over them: they are context. */
+.scatter .rule-line { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 5; }
+.scatter .rule-text { fill: #9a9aa8; font-size: 10px; font-family: var(--font); }
+
+/* The two axes settle three of the seven types. The rest of the plot is tinted
+ * and named, so no one reads a region off a line that does not decide it. */
+.scatter .undecided { fill: rgba(255, 255, 255, 0.035); }
+.scatter .region-text {
+  fill: #c9c9d6;
+  font-size: 10px;
+  font-family: var(--font);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  /* a halo, so a name stays readable where it crosses a dot */
+  stroke: var(--bg2);
+  stroke-width: 3;
+  paint-order: stroke;
+}
+.scatter .region-quiet { font-weight: 500; fill: #9a9aa8; }
+
+/* The chart keeps its 420-unit box on a phone, so its lettering shrinks with
+ * it. These two labels are the ones a reader has to take meaning from. */
+@media (max-width: 700px) {
+  .scatter .region-text { font-size: 12px; }
+  .scatter .rule-text { font-size: 11px; }
+}
+.scatter .axis-text { fill: #9a9aa8; font-size: 11px; font-family: var(--font); }
+.scatter .quad-text { fill: #9a9aa8; font-size: 10px; font-family: var(--font); letter-spacing: 0.06em; }
+.scatter .dot-point { fill-opacity: 0.75; }
+.scatter .dot-point[data-quadrant='TRANSFORM'] { fill: #e8b93b; }
+.scatter .dot-point[data-quadrant='STABLE'] { fill: #6aa9e8; }
+.scatter .dot-point[data-quadrant='EVOLVE'] { fill: #55c077; }
+.scatter .dot-point[data-quadrant='SHRINK'] { fill: #ef6a5e; }
+.scatter .dot-marker { fill: none; stroke: #ffffff; stroke-width: 2; }
+
+/* The seven types differ by outline as well as by hue, and the legend below
+ * the chart repeats both beside the type's name. */
+.scatter .dot-point[data-type='AUTOMATION_HEAVY'] { fill: var(--type-automation-heavy); }
+.scatter .dot-point[data-type='TRANSFORMING'] { fill: var(--type-transforming); }
+.scatter .dot-point[data-type='AUGMENTED'] { fill: var(--type-augmented); }
+.scatter .dot-point[data-type='MECHANISABLE'] { fill: var(--type-mechanisable); }
+.scatter .dot-point[data-type='INSULATED_PHYSICAL'] { fill: var(--type-insulated-physical); }
+.scatter .dot-point[data-type='INSULATED_PEOPLE'] { fill: var(--type-insulated-people); }
+.scatter .dot-point[data-type='MIXED'] { fill: var(--type-mixed); }
+
+.type-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+.type-legend li { display: flex; align-items: center; gap: var(--space-2); }
+.legend-mark { width: 16px; height: 16px; flex: 0 0 16px; }
+[data-type='AUTOMATION_HEAVY'] .legend-mark { fill: var(--type-automation-heavy); }
+[data-type='TRANSFORMING'] .legend-mark { fill: var(--type-transforming); }
+[data-type='AUGMENTED'] .legend-mark { fill: var(--type-augmented); }
+[data-type='MECHANISABLE'] .legend-mark { fill: var(--type-mechanisable); }
+[data-type='INSULATED_PHYSICAL'] .legend-mark { fill: var(--type-insulated-physical); }
+[data-type='INSULATED_PEOPLE'] .legend-mark { fill: var(--type-insulated-people); }
+[data-type='MIXED'] .legend-mark { fill: var(--type-mixed); }
+
+/* --- treemap -------------------------------------------------------------- */
+
+.treemap-wrap { position: relative; }
+#treemap-canvas {
+  display: block;
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.chart-caption {
+  margin: var(--space-2) 0 0;
+  min-height: 2.4em;
+  font-size: 0.8125rem;
+  color: var(--fg);
+}
+.chart-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.chart-note { margin: var(--space-3) 0 0; max-width: 62ch; }
+
+/* --- table ---------------------------------------------------------------- */
+
+th .th-sort {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--fg-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+th .th-sort:hover { color: var(--fg); }
+
+/* Ten columns do not fit a phone, and a table that wraps every heading onto
+ * four lines reads worse than one that scrolls: the shares table keeps its
+ * cells on one line and scrolls inside .table-scroll. */
+.table--wide th, .table--wide td { white-space: nowrap; }
+
+/* WCAG 2.2 target size: a table of 869 job links is 869 targets 17 px tall
+ * unless the link fills the row. The cell padding does the rest. */
+.table-scroll td a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+/* --- lists ---------------------------------------------------------------- */
+
+.job-list { margin: 0; padding: 0; list-style: none; }
+.job-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--line);
+}
+.job-list a { min-height: var(--tap); display: inline-flex; align-items: center; }
+.job-list .scores { color: var(--fg-muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+
+/* A row that carries a shares bar needs the bar on its own line. */
+.job-list li.job-row { display: block; padding: var(--space-2) 0; }
+.job-list li.job-row .shares { margin-top: var(--space-1); }
+
+.skill-columns {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+}
+
+/* --- comparison ----------------------------------------------------------- */
+
+.compare-columns {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+}
+.diverge { margin: 0; padding: 0; list-style: none; }
+.diverge li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+.diverge-track {
+  position: relative;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-sm);
+}
+.diverge-track::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--line-strong);
+}
+.diverge-fill { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+.diverge-figure { grid-column: 2; font-size: 0.8125rem; color: var(--fg-muted); }
+
+.medians { font-size: 0.8125rem; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+.compare-shares { margin-bottom: var(--space-4); }
+
+/* --- states --------------------------------------------------------------- */
+
+.empty-note { color: var(--fg-muted); }

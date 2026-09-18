@@ -373,6 +373,58 @@ def test_build_occupations_skips_rows_without_a_concept_uri(index):
     assert [o["uri"] for o in esco.build_occupations(rows, index)] == [OCC + "deep"]
 
 
+def occupation_row(uri, label="data steward", description="looks after data",
+                   modified="2025-07-31T09:38:59.122Z"):
+    """One row of occupations_en.csv, as DictReader hands it over."""
+    return {"conceptUri": uri, "preferredLabel": label, "description": description,
+            "iscoGroup": "2511", "modifiedDate": modified}
+
+
+def test_a_row_repeated_byte_for_byte_makes_one_occupation(index):
+    """ESCO v1.2.1 ships four occupations twice; they are one job each."""
+    row = occupation_row(OCC + "deep")
+    occupations = esco.build_occupations([row, dict(row)], index)
+    assert [o["uri"] for o in occupations] == [OCC + "deep"]
+
+
+def test_a_repeat_edited_on_another_day_is_still_one_occupation(index):
+    """The real four differ only in modifiedDate, which the join never reads."""
+    rows = [occupation_row(OCC + "deep"),
+            occupation_row(OCC + "deep", modified="2025-11-26T10:02:16.164Z")]
+    assert len(esco.build_occupations(rows, index)) == 1
+
+
+def test_the_repeat_does_not_count_its_skills_twice(index):
+    row = occupation_row(OCC + "occ-01")
+    once = esco.count_usage(esco.build_occupations([row], index))
+    twice = esco.count_usage(esco.build_occupations([row, dict(row)], index))
+    assert once == twice
+
+
+def test_two_rows_sharing_a_uri_but_differing_stop_the_ingest(index):
+    rows = [occupation_row(OCC + "deep"),
+            occupation_row(OCC + "deep", label="data custodian")]
+    with pytest.raises(ValueError, match="share the concept URI") as clash:
+        esco.build_occupations(rows, index)
+    assert "preferredLabel" in str(clash.value)
+
+
+def test_the_kept_row_is_the_first_one_in_csv_order(index):
+    rows = [occupation_row(OCC + "a"), occupation_row(OCC + "b"),
+            occupation_row(OCC + "a")]
+    assert [o["uri"] for o in esco.build_occupations(rows, index)] == [
+        OCC + "a", OCC + "b"]
+
+
+def test_differing_fields_names_every_content_column_that_disagrees():
+    assert esco.differing_fields({"a": 1, "b": 2}, {"a": 1, "c": 3}) == ["b", "c"]
+
+
+def test_differing_fields_ignores_the_edit_timestamp():
+    assert esco.differing_fields({"a": 1, "modifiedDate": "monday"},
+                                 {"a": 1, "modifiedDate": "friday"}) == []
+
+
 def test_count_usage_counts_every_listing_including_duplicates():
     occupations = [
         {"essential_skills": [{"uri": SKL + "s1"}, {"uri": SKL + "s1"}], "optional_skills": []},

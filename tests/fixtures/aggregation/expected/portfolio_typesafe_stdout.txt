@@ -3,6 +3,7 @@ Portfolio data builder
   Occupations loaded: 9
   Skill scores loaded: 17
   Skills with valid scores: 17
+  Rationales borrowed from the gemini scores: 0
   Occupation narratives loaded: 3
   Unique skills across occupations: 15
   Short IDs generated: 15

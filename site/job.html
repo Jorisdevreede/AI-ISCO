@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Will AI change this job? — AI-ISCO</title>
+<meta name="description" content="How AI could change one occupation: what its skills are made of, the scores behind that, what changes in the work, and where to go next.">
+<meta property="og:site_name" content="AI-ISCO">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Will AI change this job? — AI-ISCO">
+<meta property="og:description" content="How AI could change one occupation: what its skills are made of, the scores behind that, what changes in the work, and where to go next.">
+<meta property="og:url" content="https://jorisdevreede.github.io/AI-ISCO/job.html">
+<meta property="og:image" content="https://jorisdevreede.github.io/AI-ISCO/card.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/job.css">
+</head>
+<body>
+
+<!-- Must be static markup: scorer.js looks this element up by id. -->
+<nav id="site-nav"></nav>
+
+<main id="main" class="page job-page">
+
+  <div class="job-topbar">
+    <p id="job-back" class="job-back"></p>
+    <div class="job-finder">
+      <label for="job-find" class="small muted">Find another job</label>
+      <div class="combobox">
+        <input id="job-find" type="text" placeholder="Type a job title" spellcheck="false">
+        <ul id="job-find-list"></ul>
+      </div>
+      <p id="job-find-status" class="visually-hidden" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <p id="job-loading" class="loading" role="status" aria-live="polite" hidden></p>
+  <div id="job-error"></div>
+
+  <header class="job-head">
+    <h1 id="job-title" tabindex="-1">Will AI change this job?</h1>
+    <p id="job-meta" class="job-meta"></p>
+    <div id="job-tools" class="job-tools" hidden>
+      <a id="job-framing" class="button button--quiet" href="index.html"></a>
+      <button id="job-copy" class="button button--quiet" type="button">Copy link</button>
+      <p id="job-copy-status" class="small muted" role="status" aria-live="polite"></p>
+    </div>
+    <p id="job-note" class="job-note" hidden></p>
+  </header>
+
+  <div id="job-intro" class="job-intro"></div>
+
+  <article id="job-article" hidden>
+
+    <section class="card">
+      <h2 id="scores-heading"></h2>
+      <p id="scores-intro" class="small muted"></p>
+      <div id="job-shares" class="job-shares" hidden></div>
+      <div id="score-list" class="score-grid"></div>
+      <details id="job-numbers" class="job-numbers" hidden>
+        <summary>The numbers behind this</summary>
+        <div id="job-numbers-body"></div>
+      </details>
+    </section>
+
+    <div id="advice-top"></div>
+
+    <section class="card">
+      <h2 id="scatter-heading"></h2>
+      <p id="scatter-intro" class="small muted"></p>
+      <div class="scatter-wrap">
+        <canvas id="scatter" role="img" aria-label="Skill scatter plot"></canvas>
+        <div id="scatter-tip" class="scatter-tip" hidden aria-hidden="true"></div>
+      </div>
+      <p id="scatter-classes" class="scatter-legend scatter-classes" hidden></p>
+      <p class="scatter-legend">
+        <span><span class="legend-dot legend-dot--essential"></span>Essential to the job</span>
+        <span><span class="legend-dot"></span>Optional</span>
+        <span id="scatter-threshold"></span>
+      </p>
+      <button id="scatter-toggle" class="button button--quiet" type="button"
+              aria-expanded="false" aria-controls="scatter-table-wrap">View as table</button>
+      <div id="scatter-table-wrap" class="table-scroll" hidden>
+        <table>
+          <caption id="scatter-caption"></caption>
+          <thead>
+            <tr id="scatter-head"></tr>
+          </thead>
+          <tbody id="scatter-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="skill-columns" class="skill-columns"></div>
+
+    <p id="stays-human" class="stays-human small muted" hidden></p>
+
+    <section class="card">
+      <h2 id="cards-heading"></h2>
+      <p class="small muted"><span id="cards-writer">Each rationale is what the model wrote while it scored that skill.</span> <span id="cards-key"></span></p>
+      <div id="cards-list"></div>
+    </section>
+
+    <section id="sec-story" class="card">
+      <h2 id="story-heading"></h2>
+      <p id="story-note" class="job-note" hidden></p>
+      <p id="story-facts" class="story-facts"></p>
+      <div id="story-text" class="story-text"></div>
+    </section>
+
+    <section id="sec-tasks" class="card">
+      <h2 id="tasks-heading"></h2>
+      <div id="tasks-grid" class="card-grid"></div>
+    </section>
+
+    <section id="sec-week" class="card">
+      <h2 id="week-heading"></h2>
+      <div id="week-bars"></div>
+    </section>
+
+    <div id="advice-bottom"></div>
+
+    <section class="card">
+      <h2 id="paths-heading"></h2>
+      <p id="paths-intro" class="small muted"></p>
+      <div id="paths-grid" class="path-grid"></div>
+      <h3 id="sideways-heading"></h3>
+      <p id="sideways-note" class="small muted"></p>
+      <div id="sideways-grid" class="path-grid"></div>
+      <div id="paths-needle" class="paths-needle" hidden></div>
+    </section>
+
+    <section class="card">
+      <h2 id="learn-heading"></h2>
+      <p id="learn-intro" class="small muted"></p>
+      <ul id="learn-list" class="learn-list"></ul>
+    </section>
+
+  </article>
+</main>
+
+<script src="scorer.js" defer></script>
+<script type="module" src="js/pages/job.js"></script>
+</body>
+</html>

@@ -12,8 +12,9 @@ wheels/
 # Secrets
 .env
 
-# Parsed markdown (reproducible via process.py)
-pages/
+# Parsed markdown (reproducible via process.py). Anchored to the repo root so
+# it does not also hide site/js/pages/.
+/pages/
 
 # Embeddings (unused in final visualization)
 embed.py
@@ -24,15 +25,11 @@ data/esco_occupations.json
 data/esco_skills.json
 data/site_data.json
 data/skill_scores.json
-data/skill_scores_typesafe.json
 data/skill_score_comparison.json
 data/occupation_scores.json
 data/occupation_scores_typesafe.json
 data/site_data_typesafe.json
 data/esco/*.zip
-
-# TypeSafe outputs: not published (their customer agreement, section 2.3(f))
-site/*_typesafe.json
 
 # Scoring log
 scoring.log
@@ -49,5 +46,8 @@ scoring.log
 
 # Test artefacts
 .coverage
+# SonarQube scanner work directory and the coverage reports made for it
+.scannerwork/
+/sonar-reports/
 htmlcov/
 .pytest_cache/

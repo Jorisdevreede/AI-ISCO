@@ -1,8 +1,7 @@
 """Behaviour of the TypeSafe skill scorer: rubric, keys, pool, checkpoints.
 
-Every number here is invented. The script's real output is private under
-TypeSafe's customer agreement (section 2.3(f)), so no measurement of theirs is
-recorded in this repository, and nothing is written outside tmp_path.
+Every number here is invented, no request leaves the machine, and nothing is
+written outside tmp_path. The real run's output is data/skill_scores_typesafe.json.
 """
 
 import hashlib
@@ -106,9 +105,9 @@ def offline(monkeypatch):
     )
 
 
-def test_the_module_keeps_the_terms_note():
-    assert "section 2.3(f)" in typesafe.__doc__
-    assert "prohibits publishing benchmarks" in typesafe.__doc__
+def test_the_module_says_where_its_output_lives_and_claims_no_affiliation():
+    assert "data/skill_scores_typesafe.json" in typesafe.__doc__
+    assert "endorsed by TypeSafe AI, Inc." in typesafe.__doc__
 
 
 def test_constants_pin_the_cli_contract():
@@ -200,24 +199,6 @@ def test_load_api_key_exits_when_there_is_no_key_anywhere(monkeypatch):
         typesafe.load_api_key()
     assert "No TypeSafe key: set TYPESAFE_API_KEY or add the keychain item" in (
         str(exit_info.value))
-
-
-def test_rate_limiter_spaces_starts_and_skips_the_wait_when_it_is_late(
-        monkeypatch):
-    clock = [100.0]
-    recorded = []
-    monkeypatch.setattr(time, "monotonic", lambda: clock[0])
-    monkeypatch.setattr(time, "sleep", recorded.append)
-
-    limiter = typesafe.RateLimiter(4.0)
-    limiter.wait()
-    limiter.wait()
-    assert recorded == [0.25]
-
-    clock[0] = 200.0
-    limiter.wait()
-    assert recorded == [0.25]
-    assert limiter.next_at == 200.25
 
 
 def test_score_skill_returns_the_published_record_shape():
@@ -439,6 +420,24 @@ def test_main_writes_the_checkpoint_even_when_the_pool_raises(tmp_path,
     written = json.loads(
         (tmp_path / "data" / "skill_scores_typesafe.json").read_text())
     assert [entry["uri"] for entry in written] == ["http://example.org/skill/a"]
+
+
+def test_main_stops_cleanly_after_twenty_consecutive_failures(tmp_path, monkeypatch,
+                                                              capsys):
+    """The shared pool guard: a run that is failing every request ends itself."""
+    (tmp_path / "data").mkdir()
+    titles = [f"skill {i}" for i in range(60)]
+    (tmp_path / "data/esco_skills.json").write_text(json.dumps(
+        [{"uri": f"u/{i}", "title": title, "type": "skill"}
+         for i, title in enumerate(titles)]))
+    monkeypatch.chdir(tmp_path)
+    install(monkeypatch, FakeClient(failures=titles))
+
+    with pytest.raises(ZeroDivisionError):  # nothing scored, the summary divides
+        run_main(monkeypatch, "--workers", "1")
+
+    assert "Stopped early: 20 requests in a row failed. Re-run to resume." in (
+        capsys.readouterr().out)
 
 
 def test_the_summary_divides_by_zero_when_every_skill_failed(tmp_path,

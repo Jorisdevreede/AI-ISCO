@@ -1,10 +1,15 @@
-// The quadrant badge and its popover. Thin DOM module.
+// The class badge and its popover. Thin DOM module.
 //
 // The badge is a real <button>, so it is reachable by keyboard and announced as
 // pressable. Its popover carries the only uncertainty wording the site is
-// allowed to use, which quadrant.js owns.
+// allowed to use, which quadrant.js owns for the four boxes and scheme.js for
+// the seven types.
+//
+// Two entry points, one body: renderQuadrantBadge is the four-box badge exactly
+// as it has always rendered, renderTypeBadge follows the active scheme.
 
-import { QUADRANT_NAMES, explainQuadrant, isNearLine } from './quadrant.js';
+import { QUADRANT_NAMES } from './quadrant.js';
+import { QUADRANTS, explain, isNear, schemeOfCode, typeShortLabel } from './scheme.js';
 import { withScorer } from './urlstate.js';
 
 let badgeCount = 0;
@@ -12,8 +17,11 @@ let badgeCount = 0;
 /** Where "How we scored this" points. */
 export const METHOD_URL = 'method.html';
 
-function buildPopover(id, job, search) {
-  const explanation = explainQuadrant(job);
+function schemeFor(job, scheme) {
+  return scheme || schemeOfCode(job && job.q) || QUADRANTS;
+}
+
+function buildPopover(id, explanation, search) {
   const popover = document.createElement('div');
   popover.id = id;
   popover.className = 'badge-popover';
@@ -36,20 +44,30 @@ function buildPopover(id, job, search) {
   return popover;
 }
 
-function buildButton(job, popoverId) {
+function labelButton(button, job, scheme) {
+  if (scheme === QUADRANTS) {
+    button.className = 'quadrant-badge';
+    button.dataset.quadrant = job.q || '';
+    return QUADRANT_NAMES[job.q] || 'Not scored';
+  }
+  button.className = 'quadrant-badge type-badge';
+  button.dataset.type = job.q || '';
+  return typeShortLabel(job.q, scheme);
+}
+
+function buildButton(job, popoverId, scheme) {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'quadrant-badge';
-  button.dataset.quadrant = job.q || '';
+  const label = labelButton(button, job, scheme);
   button.setAttribute('aria-expanded', 'false');
   button.setAttribute('aria-controls', popoverId);
 
   const name = document.createElement('span');
   name.className = 'quadrant-badge-name';
-  name.textContent = QUADRANT_NAMES[job.q] || 'Not scored';
+  name.textContent = label;
   button.appendChild(name);
 
-  if (isNearLine(job.a, job.m)) {
+  if (isNear(job, scheme)) {
     const marker = document.createElement('span');
     marker.className = 'quadrant-badge-near';
     marker.textContent = 'near the line';
@@ -63,14 +81,6 @@ function buildButton(job, popoverId) {
   return button;
 }
 
-/**
- * A quadrant badge with an explaining popover.
- *
- * @param {{t?: string, a: number, m: number, q?: string}} job
- * @param {{search?: string}} [options] `search` defaults to location.search and
- *   carries ?scorer= onto the method link
- * @returns {HTMLElement} a wrapper holding the button and its popover
- */
 // Open popovers, so ONE document listener can close them on an outside press
 // however many badges a page renders.
 const openBadges = new Map();
@@ -104,15 +114,42 @@ function wireBadge(wrapper, button, popover) {
   bindOutsideClose();
 }
 
-export function renderQuadrantBadge(job, { search } = {}) {
+function renderBadge(job, scheme, search) {
   badgeCount += 1;
   const query = search === undefined ? window.location.search : search;
   const popoverId = `quadrant-popover-${badgeCount}`;
   const wrapper = document.createElement('span');
   wrapper.className = 'quadrant-badge-wrap';
-  const popover = buildPopover(popoverId, job, query);
-  const button = buildButton(job, popoverId);
+  const popover = buildPopover(popoverId, explain(job, scheme), query);
+  const button = buildButton(job, popoverId, scheme);
   wireBadge(wrapper, button, popover);
   wrapper.append(button, popover);
   return wrapper;
+}
+
+/**
+ * A quadrant badge with an explaining popover. Four boxes only: a job from a
+ * shares set renders as "Not scored" here, which is what renderTypeBadge is for.
+ *
+ * @param {{t?: string, a: number, m: number, q?: string}} job
+ * @param {{search?: string}} [options] `search` defaults to location.search and
+ *   carries ?scorer= onto the method link
+ * @returns {HTMLElement} a wrapper holding the button and its popover
+ */
+export function renderQuadrantBadge(job, { search } = {}) {
+  return renderBadge(job, QUADRANTS, search);
+}
+
+/**
+ * The badge of whichever scheme the active set uses: the quadrant badge under
+ * `quadrants`, a type badge explained from the job's own shares under `shares`.
+ * Same button, same popover, same keyboard behaviour.
+ *
+ * @param {{t?: string, q?: string, a?: number, m?: number, sh?: number[], nl?: boolean}} job
+ * @param {{scheme?: string, search?: string}} [options] `scheme` may be left out
+ *   when `job.q` carries a code, which resolves the scheme on its own
+ * @returns {HTMLElement} a wrapper holding the button and its popover
+ */
+export function renderTypeBadge(job, { scheme, search } = {}) {
+  return renderBadge(job, schemeFor(job, scheme), search);
 }
