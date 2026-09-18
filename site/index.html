@@ -180,6 +180,7 @@ canvas#canvas { display: block; cursor: default; }
     <a href="insights.html">Insights</a>
   </div>
 </nav>
+<script src="scorer.js"></script>
 <div id="wrapper">
 <div id="header">
   <div class="intro">
@@ -723,7 +724,7 @@ document.getElementById("colorToggle").addEventListener("click", (e) => {
 });
 
 // === Load ===
-fetch("data.json")
+scorerFetch("data")
   .then(r => r.json())
   .then(d => {
     allData = d;

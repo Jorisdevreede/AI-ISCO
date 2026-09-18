@@ -613,6 +613,7 @@ a:hover { text-decoration: underline; }
     <a href="insights.html">Insights</a>
   </div>
 </nav>
+<script src="scorer.js"></script>
 <div id="explorer-wrapper">
   <div id="explorer-header">
     <h1>ISCO Occupation Explorer</h1>
@@ -673,7 +674,7 @@ a:hover { text-decoration: underline; }
   let sortKey = 'name';
 
   // --- Load data ---
-  fetch('data.json')
+  scorerFetch('data')
     .then(r => r.json())
     .then(data => {
       allOccupations = data;

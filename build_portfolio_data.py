@@ -6,10 +6,15 @@ mappings from data/esco_occupations.json. Computes Jaccard-based adjacency
 between occupations, identifies gap skills, and outputs a deduplicated
 compact JSON to site/portfolio_data.json.
 
+With --scorer typesafe it reads data/skill_scores_typesafe.json and writes
+site/portfolio_data_typesafe.json, leaving the Gemini file untouched.
+
 Usage:
     uv run python build_portfolio_data.py
+    uv run python build_portfolio_data.py --scorer typesafe
 """
 
+import argparse
 import hashlib
 import json
 import os
@@ -18,7 +23,6 @@ import sys
 from collections import defaultdict
 
 DATA_DIR = "data"
-OUT_PATH = os.path.join("site", "portfolio_data.json")
 
 ESSENTIAL_WEIGHT = 2.0
 OPTIONAL_WEIGHT = 1.0
@@ -223,7 +227,20 @@ def compute_adjacency(occ_data_list):
 # Main
 # ---------------------------------------------------------------------------
 
+def scorer_suffix():
+    """File suffix for the chosen scorer: "" for the published Gemini scores."""
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--scorer", choices=["gemini", "typesafe"], default="gemini",
+                        help="Which skill scores to build from (default: gemini). "
+                             "typesafe reads skill_scores_typesafe.json and writes "
+                             "*_typesafe.json, leaving the Gemini files untouched.")
+    args = parser.parse_args()
+    return "" if args.scorer == "gemini" else f"_{args.scorer}"
+
+
 def main():
+    suffix = scorer_suffix()
+    out_path = os.path.join("site", f"portfolio_data{suffix}.json")
     print("Portfolio data builder")
     print("=" * 60)
 
@@ -231,7 +248,7 @@ def main():
     # 1. Load input data
     # ------------------------------------------------------------------
     occupations = load_json("esco_occupations.json")
-    skill_scores_list = load_json("skill_scores.json")
+    skill_scores_list = load_json(f"skill_scores{suffix}.json")
 
     print(f"  Occupations loaded: {len(occupations)}")
     print(f"  Skill scores loaded: {len(skill_scores_list)}")
@@ -449,10 +466,10 @@ def main():
     }
 
     os.makedirs("site", exist_ok=True)
-    with open(OUT_PATH, "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, separators=(",", ":"))
 
-    file_size = os.path.getsize(OUT_PATH)
+    file_size = os.path.getsize(out_path)
 
     # ------------------------------------------------------------------
     # 8. Stats
@@ -460,7 +477,7 @@ def main():
     print(f"\n{'=' * 60}")
     print("Output summary")
     print(f"{'=' * 60}")
-    print(f"  Output file: {OUT_PATH}")
+    print(f"  Output file: {out_path}")
     print(f"  File size: {file_size:,} bytes ({file_size / 1024 / 1024:.2f} MB)")
     print(f"  Skills: {len(skills_dict)}")
     print(f"  Occupations: {len(occ_output)}")

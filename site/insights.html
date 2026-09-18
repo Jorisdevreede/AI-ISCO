@@ -405,6 +405,7 @@ a:hover { text-decoration: underline; }
     <a href="insights.html" class="nav-active">Insights</a>
   </div>
 </nav>
+<script src="scorer.js"></script>
 <div id="wrapper">
   <div id="content">
     <div class="loading">Loading occupation data...</div>
@@ -418,8 +419,8 @@ a:hover { text-decoration: underline; }
 const QCOLORS = { TRANSFORM: '#d4a017', SHRINK: '#e04040', EVOLVE: '#4a90d9', STABLE: '#3ca55c' };
 
 Promise.all([
-  fetch('data.json').then(r => r.json()),
-  fetch('portfolio_data.json').then(r => r.json())
+  scorerFetch('data').then(r => r.json()),
+  scorerFetch('portfolio_data').then(r => r.json())
 ]).then(([data, portfolio]) => {
   // Build narrative lookup by slug
   const narrativeMap = {};

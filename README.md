@@ -1,15 +1,63 @@
 # AI-ISCO: Job Evolution Explorer
 
+[![Live site](https://img.shields.io/badge/live-jorisdevreede.github.io%2FAI--ISCO-2ea44f)](https://jorisdevreede.github.io/AI-ISCO/)
+[![Deploy to GitHub Pages](https://github.com/Jorisdevreede/AI-ISCO/actions/workflows/pages.yml/badge.svg)](https://github.com/Jorisdevreede/AI-ISCO/actions/workflows/pages.yml)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![ESCO v1.2.1](https://img.shields.io/badge/data-ESCO%20v1.2.1-003399)
+
 **Live:** [jorisdevreede.github.io/AI-ISCO](https://jorisdevreede.github.io/AI-ISCO/)
 
 A deep analysis of how AI reshapes 3,000+ European occupations — not by guessing at the job level, but by scoring every individual skill on two dimensions and generating rich AI evolution narratives for each occupation.
+
+```bash
+git clone https://github.com/Jorisdevreede/AI-ISCO.git && cd AI-ISCO
+python3 -m http.server 8000 --directory site    # no install, no API key → http://localhost:8000
+```
+
+## TL;DR
+
+**The problem.** Most "AI and jobs" analyses give a whole occupation one exposure number. That hides what actually changes inside the job: which parts AI takes over, and which parts it makes more valuable.
+
+**The solution.** AI-ISCO scores every one of the 13,939 ESCO skills on two independent axes, then rolls them up to 3,043 occupations:
 
 - **Automation Risk (1-10):** How likely is AI to replace this skill entirely?
 - **Amplification Potential (1-10):** How much can AI supercharge a human doing this skill?
 
 Jobs where both scores are high don't just disappear — they **transform** into something better. That's the core insight.
 
+| Why AI-ISCO | What you get |
+|---|---|
+| Skill-level scoring | 13,939 skills scored, aggregated with essential skills weighted 2x, so you can see *which* skills drive an occupation's score |
+| Two axes, four quadrants | TRANSFORM, SHRINK, EVOLVE, STABLE instead of a single "exposure" number |
+| A story per occupation | 3,039 evolution narratives with time savings, a rebalanced work week, timeline and career advice |
+| Career moves | Adjacent occupations by skill overlap, plus the gap skills to learn |
+| A second scorer you can run yourself | The same rubric through a different kind of model, for your own private comparison ([Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy)) |
+| No build step | Static pages in vanilla JS, served from `site/` |
+
 Inspired by [karpathy/jobs](https://github.com/karpathy/jobs). Built on [ESCO](https://esco.ec.europa.eu/) by the European Commission.
+
+## Quick start
+
+Browse the published analysis locally. The scored data is committed, so this needs no install and no API key:
+
+```bash
+git clone https://github.com/Jorisdevreede/AI-ISCO.git
+cd AI-ISCO
+python3 -m http.server 8000 --directory site
+# open http://localhost:8000
+```
+
+Re-run part of the analysis yourself. This scores a 300-skill sample with the optional TypeSafe scorer and compares it, privately, with the published scores (read the note in [Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy) before sharing any of it):
+
+```bash
+uv sync
+uv run python ingest_esco.py                           # ESCO CSVs → data/esco_skills.json
+echo "TYPESAFE_API_KEY=your_key_here" >> .env
+uv run python score_skills_typesafe.py --sample 300
+uv run python compare_skill_scores.py
+```
+
+The full pipeline, including the Gemini scoring and the narratives, is under [Setup](#setup).
 
 ## Data foundation
 
@@ -38,9 +86,16 @@ Built on [ESCO v1.2.1](https://esco.ec.europa.eu/) (European Skills, Competences
 ```
 ESCO CSVs ─→ ingest_esco.py ─→ esco_occupations.json + esco_skills.json
                                          │
-                               score_skills.py (LLM scores each skill on 2 axes)
-                                         │
-                               skill_scores.json (13,939 skills scored)
+                                         ├──────────────────────────────┐
+                                         │                              │
+                               score_skills.py              score_skills_typesafe.py
+                               (Gemini scores each          (optional: TypeSafe, same
+                                skill on 2 axes)             rubric as typed judgments)
+                                         │                              │
+                               skill_scores.json            skill_scores_typesafe.json
+                               (13,939 skills scored)                   │
+                                         │                  (private: gitignored, and
+                                         │                   not part of the site build)
                                          │
                      aggregate_scores.py (weighted avg per occupation)
                                          │
@@ -90,6 +145,56 @@ Each skill also receives a **rationale** explaining both scores in the context o
 - **Batching:** 10 skills per LLM call (configurable with `--batch-size`)
 - **Resume:** Automatically skips already-scored skills; incremental checkpointing after each batch
 - **Retry:** Exponential backoff on 402/429/5xx errors
+
+### Step 2b (experiment): the same rubric as typed judgments (`score_skills_typesafe.py`)
+
+An optional second scorer that asks [TypeSafe](https://typesafe.ai)'s System One API instead of a generative LLM. It applies the same rubric: each skill is one request carrying two `Score` questions, one per axis, whose levels are the five rubric bands above. The answer arrives typed, as a probability distribution over the bands, and the 1-10 value is the probability-weighted band centre (1.5, 3.5 … 9.5). ESCO knowledge items ("types of sugars") get their own automation question, asking whether AI takes over the work the knowledge is applied in rather than whether AI can recall it.
+
+```python
+QUESTIONS = {
+    "automation": Score(
+        instructions="How likely is it that AI will automate the skill described in `skill` within the next 5 to 10 years?",
+        criteria=AUTOMATION_LEVELS,       # the five rubric bands, each a standalone description
+    ),
+    "amplification": Score(instructions=..., criteria=AMPLIFICATION_LEVELS),
+}
+response = client.system_one(state={"skill": {...}}, questions=QUESTIONS, model=DEFAULT_MODEL)
+```
+
+> **No TypeSafe results are published here, on purpose.** TypeSafe's customer agreement (section 2.3(f)) prohibits publishing benchmarks or performance information about their service. This repository therefore contains the code only: no TypeSafe scores, no comparison with the Gemini scores, no timings and no cost figures. `data/skill_scores_typesafe.json` and `site/*_typesafe.json` are gitignored. If you run this yourself, keep the output and anything `compare_skill_scores.py` prints private unless TypeSafe has agreed otherwise in writing. This project is not affiliated with or endorsed by TypeSafe AI, Inc.
+
+How the two scorers differ in shape:
+
+| | `score_skills.py` | `score_skills_typesafe.py` |
+|---|---|---|
+| Model | Gemini Flash via OpenRouter (generative) | TypeSafe System One (judgments only, no text) |
+| Request shape | 10 skills per call, JSON array back | 1 skill per call, two typed answers back |
+| Output handling | Strip code fences, fix trailing commas, `json.loads`, retry on malformed output | None, the SDK returns typed objects |
+| Score | Integer 1-10 | Continuous, plus per-band probabilities and a confidence per axis |
+| Rationale text | Yes, 1-2 sentences per skill | No |
+| On the published site | Yes | No |
+
+**Commands:**
+
+```bash
+uv run python score_skills_typesafe.py                      # all skills, resumes from the checkpoint
+uv run python score_skills_typesafe.py --sample 300         # fixed random sample (--seed to vary it)
+uv run python score_skills_typesafe.py --start 0 --end 50   # a slice
+uv run python score_skills_typesafe.py --workers 6 --rps 15 # concurrency and request starts per second
+uv run python score_skills_typesafe.py --force              # ignore the checkpoint and re-score
+
+uv run python compare_skill_scores.py                       # private comparison with the Gemini scores
+uv run python compare_skill_scores.py --occupations         # plus occupation roll-up and quadrant table
+
+uv run python aggregate_scores.py --scorer typesafe         # local site data: site/data_typesafe.json
+uv run python build_portfolio_data.py --scorer typesafe     # local site data: site/portfolio_data_typesafe.json
+```
+
+- **Output:** `data/skill_scores_typesafe.json` (gitignored), same fields as `skill_scores.json` plus `automation_probs`, `amplification_probs`, a confidence per axis and the model version
+- **Resume:** checkpoints every 250 skills and on exit; re-running skips what is already scored
+- **Rate limit:** keep `--rps` under the limit in TypeSafe's own documentation; the SDK retries with backoff on 429
+- **Key:** `TYPESAFE_API_KEY` in `.env`, or the macOS keychain item `typesafe-api-key`. Never commit it
+- **Seeing it in the site:** once the two `_typesafe` site files exist locally, a "Scores from" switch appears in the navigation bar (see [The frontend](#the-frontend))
 
 ### Step 3: Aggregate to occupations (`aggregate_scores.py`)
 
@@ -156,7 +261,9 @@ Distribution across 3,043 occupations:
 
 ## The frontend
 
-Three single-page applications — pure vanilla JS, no framework, no build step.
+Four static pages — pure vanilla JS, no framework, no build step.
+
+`site/scorer.js` lets a local checkout show a second set of scores. When `site/data_typesafe.json` and `site/portfolio_data_typesafe.json` exist (they are gitignored, so not on the published site), a **Scores from** switch appears in the navigation bar, remembers the choice across pages, and can be set with `?scorer=typesafe`. A banner then notes that the narratives and skill rationales were written from the Gemini scores. Without those files the pages load `data.json` and `portfolio_data.json` exactly as before.
 
 ### Job Explorer ([index.html](https://jorisdevreede.github.io/AI-ISCO/))
 
@@ -188,22 +295,35 @@ List-based browse and search interface with expandable detail rows:
 - **Sort** by any column
 - **Detail panel** with full narrative, automated/amplified tasks, career advice, rebalanced week, and applicable AI tools
 
+### Insights ([insights.html](https://jorisdevreede.github.io/AI-ISCO/insights.html))
+
+Aggregated findings across all occupations, written up as a newspaper-style article.
+
 ## Setup
 
 ```bash
 uv sync
 ```
 
-Requires an OpenRouter API key in `.env`:
+Browsing the site needs no key. The pipeline steps that call a model read their key from `.env`:
+
 ```
-OPENROUTER_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here     # score_skills.py, generate_narratives.py
+TYPESAFE_API_KEY=your_key_here       # score_skills_typesafe.py (experiment only)
 ```
+
+| Way in | Command | When |
+|---|---|---|
+| Just look | `python3 -m http.server 8000 --directory site` | No install, no key |
+| uv (recommended) | `uv sync` | Running any pipeline step |
+| pip | `pip install httpx python-dotenv beautifulsoup4 typesafe-sdk` | No uv available; then run the scripts with `python` instead of `uv run python` |
 
 ### Full pipeline (from scratch)
 
 ```bash
 uv run python ingest_esco.py              # Parse ESCO CSVs → JSON (~seconds)
 uv run python score_skills.py             # LLM-score all 13,939 skills (~hours, resumable)
+uv run python score_skills_typesafe.py    # Optional second scorer (resumable); see Step 2b
 uv run python aggregate_scores.py         # Aggregate to occupation level (~seconds)
 uv run python generate_narratives.py      # Generate evolution narratives (~hours, resumable)
 uv run python build_portfolio_data.py     # Build portfolio adjacency data (~minutes)
@@ -211,7 +331,7 @@ uv run python build_portfolio_data.py     # Build portfolio adjacency data (~min
 
 ### Resume after interruption
 
-Both `score_skills.py` and `generate_narratives.py` auto-resume from checkpoints — just re-run them. Use `--force` to regenerate already-processed items.
+`score_skills.py`, `score_skills_typesafe.py` and `generate_narratives.py` auto-resume from checkpoints — just re-run them. Use `--force` to regenerate already-processed items.
 
 ### Parallel narrative generation
 
@@ -245,15 +365,18 @@ git push origin master
 |------|---------|
 | `ingest_esco.py` | Parse ESCO v1.2.1 CSVs into structured JSON |
 | `score_skills.py` | Dual-axis LLM scoring of all 13,939 skills |
+| `score_skills_typesafe.py` | Experiment: the same rubric scored as typed judgments with TypeSafe |
+| `compare_skill_scores.py` | Private comparison of the TypeSafe scores with the published scores (do not publish its output) |
 | `aggregate_scores.py` | Weighted skill→occupation aggregation + quadrant assignment |
 | `generate_narratives.py` | LLM-generated AI evolution narratives for each occupation |
 | `merge_narrative_shards.py` | Consolidate parallel narrative shards |
 | `build_portfolio_data.py` | Jaccard adjacency, gap skills, compressed portfolio data |
+| `site/scorer.js` | Picks which score files the pages load; shows a "Scores from" switch only when a local second set exists |
 | `site/index.html` | Drill-down treemap explorer |
 | `site/portfolio.html` | Skill Portfolio Analyzer with narratives |
 | `site/explorer.html` | ISCO occupation explorer with search/filter |
 | `data/esco/` | Raw ESCO v1.2.1 CSV files |
-| `data/skill_scores.json` | All 13,939 skills scored on both axes |
+| `data/skill_scores.json` | All 13,939 skills scored on both axes (generated, not committed) |
 | `data/occupation_narratives.json` | 3,039 occupation evolution narratives |
 
 ## Stack
@@ -262,5 +385,45 @@ git push origin master
 - **Visualization:** Canvas-based treemap and scatter plots
 - **Backend:** Python 3.10+ with [uv](https://github.com/astral-sh/uv)
 - **LLM API:** OpenRouter (Gemini Flash via `google/gemini-3-flash-preview`)
+- **Judgment API (optional experiment):** TypeSafe System One, model version pinned in the script
 - **Hosting:** GitHub Pages via Actions
-- **Dependencies:** httpx, python-dotenv, beautifulsoup4
+- **Dependencies:** httpx, python-dotenv, beautifulsoup4, typesafe-sdk
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `ERROR: data/skill_scores.json not found.` from `aggregate_scores.py` or `build_portfolio_data.py` | The per-skill scores are a generated file and are not committed | Run `score_skills.py` first |
+| `FileNotFoundError: … data/esco_skills.json` | The ingested ESCO JSON is generated, not committed | Run `uv run python ingest_esco.py` |
+| Every batch prints `Parse error: 'OPENROUTER_API_KEY', retrying…` | `.env` is missing the key; the lookup error is caught by the parse-retry handler, so it looks like a bad model response | Add `OPENROUTER_API_KEY` to `.env` |
+| `No TypeSafe key: set TYPESAFE_API_KEY or add the keychain item 'typesafe-api-key'.` | `score_skills_typesafe.py` found neither | Add `TYPESAFE_API_KEY` to `.env` |
+| `site/data.json` shows up as modified in `git status` after a local experiment | `aggregate_scores.py` copies its result straight into `site/data.json`, the file the live site serves | Check `git diff --stat site/` before committing; only commit it when you mean to publish new scores. `--scorer typesafe` writes to separate `_typesafe` files and leaves the published ones alone |
+| Rate-limit errors from TypeSafe | Too many requests a minute | Lower `--rps`; the SDK already retries with backoff |
+| `compare_skill_scores.py` matches fewer skills than were scored | It can only compare skills that appear in `site/portfolio_data.json` | Expected; the rest are skipped |
+
+## Limitations
+
+- **The scores are model judgments, not measurements.** There is no human-labelled ground truth in this repo.
+- **The rubric is ambiguous about machines.** "Automation" can mean AI software or AI plus industrial machinery, and the published scores are not consistent about it ("sift powder" 9, "polish stone by hand" 2).
+- **Quadrants are a hard cut at 6.** An occupation at 5.9 and one at 6.1 get different labels, so occupations near the threshold are less settled than the label suggests.
+- **Narratives are LLM-generated** for 3,039 of the 3,043 occupations. Time savings, timelines and the rebalanced week are estimates, not forecasts.
+- **English labels only.** The pipeline reads the `_en` ESCO files.
+- **The per-skill Gemini scores are not committed.** They survive only in compressed form inside `site/portfolio_data.json`, so re-aggregating from scratch means re-scoring.
+- **The optional TypeSafe scorer returns scores only,** no rationale text, and its results cannot be published here (see Step 2b).
+
+## FAQ
+
+**Do I need an API key?**
+Not to browse. The scored data is committed, so `python3 -m http.server 8000 --directory site` is enough. Keys are only for re-running the model steps.
+
+**Why score skills instead of occupations?**
+An occupation-level number cannot tell you which part of the job changes. Scoring the 13,939 skills and rolling them up (essential skills weighted 2x) shows which skills pull an occupation towards automation and which towards amplification, and it is what makes the Skill Portfolio Analyzer possible.
+
+**Which scorer produced the numbers on the site?**
+Gemini Flash, via `score_skills.py`. The published site shows nothing else.
+
+**Why are there no TypeSafe scores or comparisons in this repo?**
+TypeSafe's customer agreement prohibits publishing benchmarks or performance information about their service, so only the code is here. You can run it for your own private evaluation; see [Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy).
+
+**How is Evolution Potential calculated?**
+`(automation_risk × amplification_potential) / 10`, on the occupation-level weighted averages.

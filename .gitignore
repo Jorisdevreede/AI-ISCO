@@ -24,8 +24,15 @@ data/esco_occupations.json
 data/esco_skills.json
 data/site_data.json
 data/skill_scores.json
+data/skill_scores_typesafe.json
+data/skill_score_comparison.json
 data/occupation_scores.json
+data/occupation_scores_typesafe.json
+data/site_data_typesafe.json
 data/esco/*.zip
+
+# TypeSafe outputs: not published (their customer agreement, section 2.3(f))
+site/*_typesafe.json
 
 # Scoring log
 scoring.log

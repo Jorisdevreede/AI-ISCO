@@ -9,11 +9,17 @@ via data/esco_occupations.json, and computes weighted averages
 Outputs:
   - data/occupation_scores.json  (full occupation-level scores)
   - data/site_data.json          (compact format for treemap frontend)
+  - site/data.json               (copy of site_data.json served by the frontend)
+
+With --scorer typesafe it reads data/skill_scores_typesafe.json and writes the
+same three files with a _typesafe suffix, leaving the Gemini files untouched.
 
 Usage:
     uv run python aggregate_scores.py
+    uv run python aggregate_scores.py --scorer typesafe
 """
 
+import argparse
 import json
 import os
 import re
@@ -73,7 +79,19 @@ def get_sub_major_group(isco_code, hierarchy):
     return ""
 
 
+def scorer_suffix():
+    """File suffix for the chosen scorer: "" for the published Gemini scores."""
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--scorer", choices=["gemini", "typesafe"], default="gemini",
+                        help="Which skill scores to build from (default: gemini). "
+                             "typesafe reads skill_scores_typesafe.json and writes "
+                             "*_typesafe.json, leaving the Gemini files untouched.")
+    args = parser.parse_args()
+    return "" if args.scorer == "gemini" else f"_{args.scorer}"
+
+
 def main():
+    suffix = scorer_suffix()
     print("Occupation score aggregation")
     print("=" * 60)
 
@@ -82,7 +100,7 @@ def main():
     # ------------------------------------------------------------------
     occupations = load_json("esco_occupations.json")
     skills_meta = load_json("esco_skills.json")
-    skill_scores_list = load_json("skill_scores.json")
+    skill_scores_list = load_json(f"skill_scores{suffix}.json")
 
     print(f"  Occupations: {len(occupations)}")
     print(f"  Skills (metadata): {len(skills_meta)}")
@@ -202,7 +220,7 @@ def main():
     # ------------------------------------------------------------------
     os.makedirs(DATA_DIR, exist_ok=True)
 
-    occ_path = os.path.join(DATA_DIR, "occupation_scores.json")
+    occ_path = os.path.join(DATA_DIR, f"occupation_scores{suffix}.json")
     with open(occ_path, "w", encoding="utf-8") as f:
         json.dump(occ_results, f, indent=2, ensure_ascii=False)
     print(f"Wrote {len(occ_results)} occupations to {occ_path}")
@@ -256,7 +274,7 @@ def main():
             "top_skills": top_skills,
         })
 
-    site_path = os.path.join(DATA_DIR, "site_data.json")
+    site_path = os.path.join(DATA_DIR, f"site_data{suffix}.json")
     with open(site_path, "w", encoding="utf-8") as f:
         json.dump(site_data, f, indent=2, ensure_ascii=False)
     print(f"Wrote {len(site_data)} occupations to {site_path}")
@@ -264,8 +282,9 @@ def main():
     # Also copy to site/data.json for the frontend
     import shutil
     os.makedirs("site", exist_ok=True)
-    shutil.copy(site_path, os.path.join("site", "data.json"))
-    print(f"Copied to site/data.json")
+    frontend_path = os.path.join("site", f"data{suffix}.json")
+    shutil.copy(site_path, frontend_path)
+    print(f"Copied to {frontend_path}")
 
     # ------------------------------------------------------------------
     # 5. Summary statistics

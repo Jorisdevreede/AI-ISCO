@@ -1005,6 +1005,7 @@ body.embed-mode #analysis { display: block; }
     <a href="insights.html">Insights</a>
   </div>
 </nav>
+<script src="scorer.js"></script>
 <div id="wrapper">
 
   <!-- Hero Stats (populated by JS after data load) -->
@@ -1168,7 +1169,7 @@ let selectedOcc = null;        // currently selected occupation
 // ============================================================
 // Load data
 // ============================================================
-fetch('portfolio_data.json')
+scorerFetch('portfolio_data')
   .then(r => {
     if (!r.ok) throw new Error('Failed to load portfolio_data.json');
     return r.json();
