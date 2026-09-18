@@ -1,0 +1,261 @@
+[
+  {
+    "uri": "http://example.org/esco/occupation/o1",
+    "title": "Data entry clerk",
+    "isco_code": "4132",
+    "isco_group": "Numerical and material recording clerks",
+    "hierarchy": [
+      "Clerical support workers",
+      "Numerical and material recording clerks",
+      "Numerical clerks",
+      "Data entry clerks"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/a1",
+        "title": "type documents"
+      },
+      {
+        "uri": "http://example.org/esco/skill/a2",
+        "title": "scan invoices"
+      },
+      {
+        "uri": "http://example.org/esco/skill/a3",
+        "title": "file records"
+      },
+      {
+        "uri": "http://example.org/esco/skill/a4",
+        "title": "sort post"
+      },
+      {
+        "uri": "http://example.org/esco/skill/a5",
+        "title": "copy ledgers"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b1",
+        "title": "advise clients"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b2",
+        "title": "design systems"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b3",
+        "title": "négocier contracts"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b4",
+        "title": "train staff"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b5",
+        "title": "plan budgets"
+      }
+    ],
+    "optional_skills": [
+      {
+        "uri": "http://example.org/esco/skill/c1",
+        "title": "unscored task"
+      },
+      {
+        "uri": "http://example.org/esco/skill/c2",
+        "title": "café service"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o2",
+    "title": "Café manager",
+    "isco_code": "1412",
+    "isco_group": "Hospitality managers",
+    "hierarchy": [
+      "Managers",
+      "Hospitality, retail and other services managers"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/b1",
+        "title": "advise clients"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b2",
+        "title": "design systems"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b4",
+        "title": "train staff"
+      },
+      {
+        "uri": "http://example.org/esco/skill/c2",
+        "title": "café service"
+      }
+    ],
+    "optional_skills": [
+      {
+        "uri": "http://example.org/esco/skill/a1",
+        "title": "type documents"
+      },
+      {
+        "uri": "http://example.org/esco/skill/c1",
+        "title": "unscored task"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o3",
+    "title": "Software developer",
+    "isco_code": "2512",
+    "isco_group": "Software developers",
+    "hierarchy": [
+      "Professionals",
+      "Science and engineering professionals",
+      "Software and applications developers"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/b1",
+        "title": "advise clients"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b2",
+        "title": "design systems"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b3",
+        "title": "négocier contracts"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b5",
+        "title": "plan budgets"
+      }
+    ],
+    "optional_skills": [
+      {
+        "uri": "http://example.org/esco/skill/a2",
+        "title": "scan invoices"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o4",
+    "title": "Unscored helper",
+    "isco_code": "9999",
+    "isco_group": "Elementary occupations",
+    "hierarchy": [
+      "Elementary occupations"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/c1",
+        "title": "unscored task"
+      },
+      {
+        "uri": "http://example.org/esco/skill/c3",
+        "title": "obsolete task"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o5",
+    "title": "Archivist",
+    "isco_code": "",
+    "isco_group": "",
+    "hierarchy": [],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/a3",
+        "title": "file records"
+      },
+      {
+        "uri": "http://example.org/esco/skill/a4",
+        "title": "sort post"
+      }
+    ],
+    "optional_skills": []
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o6",
+    "title": "Post sorter",
+    "isco_code": "4412",
+    "isco_group": "Postal clerks",
+    "hierarchy": [
+      "Clerical support workers"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/a1",
+        "title": "type documents"
+      },
+      {
+        "uri": "http://example.org/esco/skill/a2",
+        "title": "scan invoices"
+      },
+      {
+        "uri": "http://example.org/esco/skill/a3",
+        "title": "file records"
+      },
+      {
+        "uri": "http://example.org/esco/skill/a4",
+        "title": "sort post"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o7",
+    "title": "Freelance consultant",
+    "isco_code": "2423",
+    "isco_group": "Business professionals",
+    "hierarchy": [
+      "Professionals",
+      "Business and administration professionals"
+    ],
+    "essential_skills": [],
+    "optional_skills": [
+      {
+        "uri": "http://example.org/esco/skill/b1",
+        "title": "advise clients"
+      },
+      {
+        "uri": "http://example.org/esco/skill/b3",
+        "title": "négocier contracts"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o8",
+    "title": "AI trainer",
+    "isco_code": "2519",
+    "isco_group": "Software developers",
+    "hierarchy": [
+      "Professionals",
+      "Science and engineering professionals"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/d1",
+        "title": "curate datasets"
+      },
+      {
+        "uri": "http://example.org/esco/skill/d2",
+        "title": "tune models"
+      }
+    ],
+    "optional_skills": []
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o9",
+    "title": "Ghost worker",
+    "isco_code": "9629",
+    "isco_group": "Elementary occupations",
+    "hierarchy": [
+      "Elementary occupations"
+    ],
+    "essential_skills": [
+      {
+        "uri": "http://example.org/esco/skill/c1",
+        "title": "unscored task"
+      }
+    ],
+    "optional_skills": []
+  }
+]

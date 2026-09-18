@@ -1,0 +1,167 @@
+[
+ {
+  "uri": "http://example.org/esco/skill/a1",
+  "title": "type documents",
+  "gemini_automation": 9.0,
+  "typesafe_automation": 8.2,
+  "automation_confidence": 0.91,
+  "gemini_amplification": 2.0,
+  "typesafe_amplification": 2.6,
+  "amplification_confidence": 0.88,
+  "gemini_rationale": "Templates and dictation cover most of it."
+ },
+ {
+  "uri": "http://example.org/esco/skill/a2",
+  "title": "scan invoices",
+  "gemini_automation": 8.5,
+  "typesafe_automation": 7.8,
+  "automation_confidence": 0.72,
+  "gemini_amplification": 2.1,
+  "typesafe_amplification": 3.0,
+  "amplification_confidence": 0.66,
+  "gemini_rationale": "OCR does the reading."
+ },
+ {
+  "uri": "http://example.org/esco/skill/a3",
+  "title": "file records",
+  "gemini_automation": 8.0,
+  "typesafe_automation": 6.9,
+  "automation_confidence": 0.55,
+  "gemini_amplification": 2.4,
+  "typesafe_amplification": 3.4,
+  "amplification_confidence": 0.8,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/a4",
+  "title": "sort post",
+  "gemini_automation": 7.4,
+  "typesafe_automation": 4.8,
+  "automation_confidence": 0.45,
+  "gemini_amplification": 2.6,
+  "typesafe_amplification": 3.1,
+  "amplification_confidence": 0.52,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/a5",
+  "title": "copy ledgers",
+  "gemini_automation": 7.0,
+  "typesafe_automation": 7.6,
+  "automation_confidence": 0.86,
+  "gemini_amplification": 2.8,
+  "typesafe_amplification": 2.2,
+  "amplification_confidence": 0.9,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/b1",
+  "title": "advise clients",
+  "gemini_automation": 2.0,
+  "typesafe_automation": 3.1,
+  "automation_confidence": 0.68,
+  "gemini_amplification": 9.0,
+  "typesafe_amplification": 8.2,
+  "amplification_confidence": 0.93,
+  "gemini_rationale": "Judgement and trust stay human."
+ },
+ {
+  "uri": "http://example.org/esco/skill/b2",
+  "title": "design systems",
+  "gemini_automation": 2.3,
+  "typesafe_automation": 2.8,
+  "automation_confidence": 0.79,
+  "gemini_amplification": 8.5,
+  "typesafe_amplification": 8.9,
+  "amplification_confidence": 0.71,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/b3",
+  "title": "négocier contracts",
+  "gemini_automation": 2.4,
+  "typesafe_automation": 3.6,
+  "automation_confidence": 0.48,
+  "gemini_amplification": 8.0,
+  "typesafe_amplification": 7.2,
+  "amplification_confidence": 0.61,
+  "gemini_rationale": "Accented on purpose."
+ },
+ {
+  "uri": "http://example.org/esco/skill/b4",
+  "title": "train staff",
+  "gemini_automation": 2.6,
+  "typesafe_automation": 4.2,
+  "automation_confidence": 0.83,
+  "gemini_amplification": 7.5,
+  "typesafe_amplification": 6.8,
+  "amplification_confidence": 0.58,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/b5",
+  "title": "plan budgets",
+  "gemini_automation": 2.8,
+  "typesafe_automation": 3.9,
+  "automation_confidence": 0.9,
+  "gemini_amplification": 7.1,
+  "typesafe_amplification": 6.1,
+  "amplification_confidence": 0.77,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/c2",
+  "title": "café service",
+  "gemini_automation": 5.0,
+  "typesafe_automation": 5.8,
+  "automation_confidence": 0.62,
+  "gemini_amplification": 6.0,
+  "typesafe_amplification": 5.2,
+  "amplification_confidence": 0.51,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/d1",
+  "title": "curate datasets",
+  "gemini_automation": 8.0,
+  "typesafe_automation": 7.1,
+  "automation_confidence": 0.88,
+  "gemini_amplification": 8.6,
+  "typesafe_amplification": 8.1,
+  "amplification_confidence": 0.86,
+  "gemini_rationale": "Both axes at once."
+ },
+ {
+  "uri": "http://example.org/esco/skill/d2",
+  "title": "tune models",
+  "gemini_automation": 7.0,
+  "typesafe_automation": 6.4,
+  "automation_confidence": 0.75,
+  "gemini_amplification": 9.4,
+  "typesafe_amplification": 8.8,
+  "amplification_confidence": 0.92,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/x1",
+  "title": "file records",
+  "gemini_automation": 8.0,
+  "typesafe_automation": 6.5,
+  "automation_confidence": 0.7,
+  "gemini_amplification": 2.4,
+  "typesafe_amplification": 3.2,
+  "amplification_confidence": 0.7,
+  "gemini_rationale": ""
+ },
+ {
+  "uri": "http://example.org/esco/skill/c3",
+  "title": "plan budgets",
+  "gemini_automation": 2.8,
+  "typesafe_automation": 4.1,
+  "automation_confidence": 0.65,
+  "gemini_amplification": 7.1,
+  "typesafe_amplification": 6.3,
+  "amplification_confidence": 0.65,
+  "gemini_rationale": ""
+ }
+]

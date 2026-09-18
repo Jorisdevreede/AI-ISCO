@@ -19,344 +19,271 @@ Usage:
     uv run python aggregate_scores.py --scorer typesafe
 """
 
-import argparse
-import json
 import os
-import re
-import sys
+import shutil
 from collections import defaultdict
 
+from aiisco.jsonio import load_json, write_json
+from aiisco.rollup import (
+    ESSENTIAL_WEIGHT,  # noqa: F401  re-exported: compare_skill_scores.py imports it here
+    OPTIONAL_WEIGHT,  # noqa: F401
+    QUADRANT_THRESHOLD,  # noqa: F401
+    QUADRANTS,
+    assign_quadrant,
+    evolution_potential,
+    get_sub_major_group,
+    hierarchy_level,
+    index_skill_scores,
+    scored_skills,
+    scorer_suffix,
+    slugify,
+    weighted_averages,
+)
+
 DATA_DIR = "data"
+SITE_DIR = "site"
 
-ESSENTIAL_WEIGHT = 2.0
-OPTIONAL_WEIGHT = 1.0
-QUADRANT_THRESHOLD = 6
+TOP_SKILLS_PER_AXIS = 5
+TOP_SITE_SKILLS = 10
+TOP_LIST_SIZE = 10
 
-
-def slugify(title):
-    """Convert a title to a URL-friendly slug."""
-    slug = title.lower().strip()
-    slug = re.sub(r"[^a-z0-9\s-]", "", slug)
-    slug = re.sub(r"[\s-]+", "-", slug)
-    return slug.strip("-")
-
-
-def load_json(filename):
-    """Load a JSON file from DATA_DIR."""
-    path = os.path.join(DATA_DIR, filename)
-    if not os.path.exists(path):
-        print(f"ERROR: {path} not found.")
-        sys.exit(1)
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
+TOP_LISTS = (
+    ("highest evolution potential", "evolution_potential",
+     (("evol", "evolution_potential"), ("auto", "automation_risk"),
+      ("amp", "amplification_potential"))),
+    ("highest automation risk", "automation_risk",
+     (("auto", "automation_risk"), ("amp", "amplification_potential"))),
+    ("highest amplification potential", "amplification_potential",
+     (("amp", "amplification_potential"), ("auto", "automation_risk"))),
+)
 
 
-def assign_quadrant(auto, amp):
-    """Assign quadrant based on automation_risk and amplification_potential."""
-    if auto >= QUADRANT_THRESHOLD and amp >= QUADRANT_THRESHOLD:
-        return "TRANSFORM"
-    elif auto >= QUADRANT_THRESHOLD and amp < QUADRANT_THRESHOLD:
-        return "SHRINK"
-    elif auto < QUADRANT_THRESHOLD and amp >= QUADRANT_THRESHOLD:
-        return "EVOLVE"
-    else:
-        return "STABLE"
+# ---------------------------------------------------------------------------
+# Input
+# ---------------------------------------------------------------------------
 
-
-def get_sub_major_group(isco_code, hierarchy):
-    """Extract the ISCO sub-major group (2-digit level) label.
-
-    The hierarchy list goes from broadest to most specific.
-    The sub-major group is the 2-digit level, which is typically
-    the second element in the hierarchy (after the 1-digit major group).
-    Falls back to the first hierarchy element or the isco_group.
-    """
-    # Try to find a 2-digit group from hierarchy
-    if len(hierarchy) >= 2:
-        return hierarchy[1]
-    if len(hierarchy) >= 1:
-        return hierarchy[0]
-    return ""
-
-
-def scorer_suffix():
-    """File suffix for the chosen scorer: "" for the published Gemini scores."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--scorer", choices=["gemini", "typesafe"], default="gemini",
-                        help="Which skill scores to build from (default: gemini). "
-                             "typesafe reads skill_scores_typesafe.json and writes "
-                             "*_typesafe.json, leaving the Gemini files untouched.")
-    args = parser.parse_args()
-    return "" if args.scorer == "gemini" else f"_{args.scorer}"
-
-
-def main():
-    suffix = scorer_suffix()
-    print("Occupation score aggregation")
-    print("=" * 60)
-
-    # ------------------------------------------------------------------
-    # 1. Load input data
-    # ------------------------------------------------------------------
-    occupations = load_json("esco_occupations.json")
-    skills_meta = load_json("esco_skills.json")
-    skill_scores_list = load_json(f"skill_scores{suffix}.json")
-
+def load_inputs(suffix):
+    """Load the occupations and the per-skill scores of the chosen scorer."""
+    occupations = load_json(os.path.join(DATA_DIR, "esco_occupations.json"))
+    skills_meta = load_json(os.path.join(DATA_DIR, "esco_skills.json"))
+    raw_scores = load_json(os.path.join(DATA_DIR, f"skill_scores{suffix}.json"))
     print(f"  Occupations: {len(occupations)}")
     print(f"  Skills (metadata): {len(skills_meta)}")
-    print(f"  Skills (scored): {len(skill_scores_list)}")
-
-    # Build skill_scores lookup: uri -> {automation_risk, amplification_potential}
-    skill_scores = {}
-    for s in skill_scores_list:
-        uri = s.get("uri", "")
-        if uri and s.get("automation_risk") is not None and s.get("amplification_potential") is not None:
-            skill_scores[uri] = {
-                "automation_risk": float(s["automation_risk"]),
-                "amplification_potential": float(s["amplification_potential"]),
-                "title": s.get("title", ""),
-            }
-
+    print(f"  Skills (scored): {len(raw_scores)}")
+    skill_scores = index_skill_scores(raw_scores, lambda e: {"title": e.get("title", "")})
     print(f"  Skills with valid scores: {len(skill_scores)}")
+    return occupations, skill_scores
 
-    # ------------------------------------------------------------------
-    # 2. Aggregate to occupation level
-    # ------------------------------------------------------------------
-    occ_results = []
 
-    for occ in occupations:
-        uri = occ.get("uri", "")
-        title = occ.get("title", "")
-        isco_code = occ.get("isco_code", "")
-        isco_group = occ.get("isco_group", "")
-        hierarchy = occ.get("hierarchy", [])
+# ---------------------------------------------------------------------------
+# Occupation-level scores
+# ---------------------------------------------------------------------------
 
-        essential_skills = occ.get("essential_skills", [])
-        optional_skills = occ.get("optional_skills", [])
-        num_skills_total = len(essential_skills) + len(optional_skills)
+def skill_rows(occ, skill_scores):
+    """One row per scored skill of the occupation, essential skills first."""
+    rows = []
+    for skill, score, weight, relation in scored_skills(
+            occ, lambda s: skill_scores.get(s.get("uri", ""))):
+        rows.append({"title": score["title"] or skill.get("title", ""),
+                     "auto": score["automation_risk"],
+                     "amp": score["amplification_potential"],
+                     "weight": weight,
+                     "relation": relation})
+    return rows
 
-        # Collect weighted scores
-        auto_weighted_sum = 0.0
-        amp_weighted_sum = 0.0
-        total_weight = 0.0
-        num_scored = 0
 
-        # Track individual skill scores for top-N lists
-        skill_auto_scores = []
-        skill_amp_scores = []
+def top_skills(rows, axis, limit=TOP_SKILLS_PER_AXIS):
+    """The highest-scoring skills on one axis, highest first."""
+    ranked = [{"title": row["title"], "score": row[axis], "relation": row["relation"]}
+              for row in rows]
+    ranked.sort(key=lambda entry: -entry["score"])
+    return ranked[:limit]
 
-        for skill in essential_skills:
-            skill_uri = skill.get("uri", "")
-            if skill_uri in skill_scores:
-                sc = skill_scores[skill_uri]
-                auto_weighted_sum += sc["automation_risk"] * ESSENTIAL_WEIGHT
-                amp_weighted_sum += sc["amplification_potential"] * ESSENTIAL_WEIGHT
-                total_weight += ESSENTIAL_WEIGHT
-                num_scored += 1
-                skill_auto_scores.append({
-                    "title": sc["title"] or skill.get("title", ""),
-                    "score": sc["automation_risk"],
-                    "relation": "essential",
-                })
-                skill_amp_scores.append({
-                    "title": sc["title"] or skill.get("title", ""),
-                    "score": sc["amplification_potential"],
-                    "relation": "essential",
-                })
 
-        for skill in optional_skills:
-            skill_uri = skill.get("uri", "")
-            if skill_uri in skill_scores:
-                sc = skill_scores[skill_uri]
-                auto_weighted_sum += sc["automation_risk"] * OPTIONAL_WEIGHT
-                amp_weighted_sum += sc["amplification_potential"] * OPTIONAL_WEIGHT
-                total_weight += OPTIONAL_WEIGHT
-                num_scored += 1
-                skill_auto_scores.append({
-                    "title": sc["title"] or skill.get("title", ""),
-                    "score": sc["automation_risk"],
-                    "relation": "optional",
-                })
-                skill_amp_scores.append({
-                    "title": sc["title"] or skill.get("title", ""),
-                    "score": sc["amplification_potential"],
-                    "relation": "optional",
-                })
+def occupation_record(occ, skill_scores):
+    """Full occupation-level record, or None when no skill of it was scored."""
+    rows = skill_rows(occ, skill_scores)
+    averages = weighted_averages([(r["auto"], r["amp"], r["weight"]) for r in rows])
+    if averages is None:
+        return None
+    auto_avg, amp_avg = averages
+    return {
+        "uri": occ.get("uri", ""),
+        "title": occ.get("title", ""),
+        "isco_code": occ.get("isco_code", ""),
+        "isco_group": occ.get("isco_group", ""),
+        "hierarchy": occ.get("hierarchy", []),
+        "automation_risk": auto_avg,
+        "amplification_potential": amp_avg,
+        "evolution_potential": evolution_potential(auto_avg, amp_avg),
+        "quadrant": assign_quadrant(auto_avg, amp_avg),
+        "num_skills_scored": len(rows),
+        "num_skills_total": (len(occ.get("essential_skills", []))
+                             + len(occ.get("optional_skills", []))),
+        "top_automated_skills": top_skills(rows, "auto"),
+        "top_amplified_skills": top_skills(rows, "amp"),
+    }
 
-        if total_weight == 0:
-            continue
 
-        auto_avg = round(auto_weighted_sum / total_weight, 1)
-        amp_avg = round(amp_weighted_sum / total_weight, 1)
-        evolution = round((auto_avg * amp_avg) / 10, 1)
-        quadrant = assign_quadrant(auto_avg, amp_avg)
+def aggregate(occupations, skill_scores):
+    """Occupation records for every occupation with at least one scored skill."""
+    records = [occupation_record(occ, skill_scores) for occ in occupations]
+    results = [record for record in records if record is not None]
+    print(f"\nAggregated scores for {len(results)} occupations")
+    return results
 
-        # Top 5 skills by automation risk and amplification potential
-        skill_auto_scores.sort(key=lambda x: -x["score"])
-        skill_amp_scores.sort(key=lambda x: -x["score"])
-        top_automated = skill_auto_scores[:5]
-        top_amplified = skill_amp_scores[:5]
 
-        occ_results.append({
-            "uri": uri,
-            "title": title,
-            "isco_code": isco_code,
-            "isco_group": isco_group,
-            "hierarchy": hierarchy,
-            "automation_risk": auto_avg,
-            "amplification_potential": amp_avg,
-            "evolution_potential": evolution,
-            "quadrant": quadrant,
-            "num_skills_scored": num_scored,
-            "num_skills_total": num_skills_total,
-            "top_automated_skills": top_automated,
-            "top_amplified_skills": top_amplified,
-        })
+# ---------------------------------------------------------------------------
+# Site data
+# ---------------------------------------------------------------------------
 
-    print(f"\nAggregated scores for {len(occ_results)} occupations")
+def merged_top_skills(occ):
+    """Both top lists merged into one, each skill carrying both of its scores."""
+    auto_by_title = {s["title"]: s["score"] for s in occ["top_automated_skills"]}
+    amp_by_title = {s["title"]: s["score"] for s in occ["top_amplified_skills"]}
+    merged = {}
+    for skill in occ["top_automated_skills"] + occ["top_amplified_skills"]:
+        title = skill["title"]
+        if title not in merged:
+            merged[title] = {"title": title, "auto": auto_by_title.get(title),
+                             "amp": amp_by_title.get(title)}
+        if len(merged) >= TOP_SITE_SKILLS:
+            break
+    return list(merged.values())
 
-    # ------------------------------------------------------------------
-    # 3. Write occupation_scores.json
-    # ------------------------------------------------------------------
+
+def site_record(occ, source):
+    """The compact record the treemap frontend reads for one occupation."""
+    hierarchy = source.get("hierarchy", [])
+    return {
+        "title": occ["title"],
+        "slug": slugify(occ["title"]),
+        "category": get_sub_major_group(occ["hierarchy"]),
+        "major_group": hierarchy_level(hierarchy, 0),
+        "sub_major_group": hierarchy_level(hierarchy, 1),
+        "minor_group": hierarchy_level(hierarchy, 2),
+        "unit_group": hierarchy_level(hierarchy, 3),
+        "isco_code": occ["isco_code"],
+        "automation_risk": occ["automation_risk"],
+        "amplification_potential": occ["amplification_potential"],
+        "evolution_potential": occ["evolution_potential"],
+        "quadrant": occ["quadrant"],
+        "num_skills": occ["num_skills_total"],
+        "num_essential_skills": len(source["essential_skills"]),
+        "top_skills": merged_top_skills(occ),
+    }
+
+
+def build_site_data(occ_results, occupations):
+    """Compact records for the frontend, one per aggregated occupation."""
+    by_uri = {occ["uri"]: occ for occ in occupations}
+    return [site_record(occ, by_uri[occ["uri"]]) for occ in occ_results]
+
+
+# ---------------------------------------------------------------------------
+# Output
+# ---------------------------------------------------------------------------
+
+def write_outputs(occ_results, site_data, suffix):
+    """Write both data files and publish the site data where the frontend reads it."""
     os.makedirs(DATA_DIR, exist_ok=True)
-
     occ_path = os.path.join(DATA_DIR, f"occupation_scores{suffix}.json")
-    with open(occ_path, "w", encoding="utf-8") as f:
-        json.dump(occ_results, f, indent=2, ensure_ascii=False)
+    write_json(occ_path, occ_results)
     print(f"Wrote {len(occ_results)} occupations to {occ_path}")
-
-    # ------------------------------------------------------------------
-    # 4. Build and write site_data.json
-    # ------------------------------------------------------------------
-    # Pre-build lookup for essential skill counts
-    occ_by_uri = {o["uri"]: o for o in occupations}
-
-    site_data = []
-    for occ in occ_results:
-        category = get_sub_major_group(occ["isco_code"], occ["hierarchy"])
-
-        # Merge top skills into a combined top list
-        auto_by_title = {s["title"]: s["score"] for s in occ["top_automated_skills"]}
-        amp_by_title = {s["title"]: s["score"] for s in occ["top_amplified_skills"]}
-
-        seen = set()
-        top_skills = []
-        for s in occ["top_automated_skills"] + occ["top_amplified_skills"]:
-            if s["title"] not in seen:
-                seen.add(s["title"])
-                top_skills.append({
-                    "title": s["title"],
-                    "auto": auto_by_title.get(s["title"]),
-                    "amp": amp_by_title.get(s["title"]),
-                })
-            if len(top_skills) >= 10:
-                break
-
-        orig = occ_by_uri.get(occ["uri"])
-        num_essential = len(orig["essential_skills"]) if orig else 0
-
-        hierarchy = orig.get("hierarchy", []) if orig else []
-        site_data.append({
-            "title": occ["title"],
-            "slug": slugify(occ["title"]),
-            "category": category,
-            "major_group": hierarchy[0] if len(hierarchy) >= 1 else "",
-            "sub_major_group": hierarchy[1] if len(hierarchy) >= 2 else "",
-            "minor_group": hierarchy[2] if len(hierarchy) >= 3 else "",
-            "unit_group": hierarchy[3] if len(hierarchy) >= 4 else "",
-            "isco_code": occ["isco_code"],
-            "automation_risk": occ["automation_risk"],
-            "amplification_potential": occ["amplification_potential"],
-            "evolution_potential": occ["evolution_potential"],
-            "quadrant": occ["quadrant"],
-            "num_skills": occ["num_skills_total"],
-            "num_essential_skills": num_essential,
-            "top_skills": top_skills,
-        })
-
     site_path = os.path.join(DATA_DIR, f"site_data{suffix}.json")
-    with open(site_path, "w", encoding="utf-8") as f:
-        json.dump(site_data, f, indent=2, ensure_ascii=False)
+    write_json(site_path, site_data)
     print(f"Wrote {len(site_data)} occupations to {site_path}")
+    publish(site_path, suffix)
 
-    # Also copy to site/data.json for the frontend
-    import shutil
-    os.makedirs("site", exist_ok=True)
-    frontend_path = os.path.join("site", f"data{suffix}.json")
+
+def publish(site_path, suffix):
+    """Copy the site data into site/, the file the live frontend fetches."""
+    os.makedirs(SITE_DIR, exist_ok=True)
+    frontend_path = os.path.join(SITE_DIR, f"data{suffix}.json")
     shutil.copy(site_path, frontend_path)
     print(f"Copied to {frontend_path}")
 
-    # ------------------------------------------------------------------
-    # 5. Summary statistics
-    # ------------------------------------------------------------------
-    print(f"\n{'='*60}")
-    print("Summary statistics")
-    print(f"{'='*60}")
 
-    # Distribution by quadrant
-    quadrant_counts = defaultdict(int)
+# ---------------------------------------------------------------------------
+# Summary statistics
+# ---------------------------------------------------------------------------
+
+def print_quadrant_distribution(occ_results):
+    """Print how many occupations fell into each quadrant."""
+    counts = defaultdict(int)
     for occ in occ_results:
-        quadrant_counts[occ["quadrant"]] += 1
+        counts[occ["quadrant"]] += 1
     print("\nDistribution by quadrant:")
-    for q in ["TRANSFORM", "SHRINK", "EVOLVE", "STABLE"]:
-        count = quadrant_counts.get(q, 0)
-        pct = count / len(occ_results) * 100 if occ_results else 0
-        bar = "#" * int(pct / 2)
-        print(f"  {q:12s}: {count:4d} ({pct:5.1f}%) {bar}")
+    for quadrant in QUADRANTS:
+        found = counts.get(quadrant, 0)
+        pct = found / len(occ_results) * 100 if occ_results else 0
+        print(f"  {quadrant:12s}: {found:4d} ({pct:5.1f}%) {'#' * int(pct / 2)}")
 
-    # Average scores by ISCO major group (1-digit)
-    major_groups = defaultdict(list)
+
+def average(group, key):
+    """Mean of one score over a group of occupations."""
+    return sum(occ[key] for occ in group) / len(group)
+
+
+def major_group_row(major, group):
+    """One row of the table of average scores per ISCO major group."""
+    label = group[0]["hierarchy"][0] if group[0]["hierarchy"] else ""
+    return (f"  {major:6s} {len(group):5d} {average(group, 'automation_risk'):6.1f} "
+            f"{average(group, 'amplification_potential'):6.1f} "
+            f"{average(group, 'evolution_potential'):6.1f}  {label}")
+
+
+def print_major_group_averages(occ_results):
+    """Print the average scores per 1-digit ISCO major group."""
+    groups = defaultdict(list)
     for occ in occ_results:
-        code = occ["isco_code"]
-        if code:
-            major = code[0]
-        else:
-            major = "?"
-        major_groups[major].append(occ)
-
+        groups[occ["isco_code"][0] if occ["isco_code"] else "?"].append(occ)
     print("\nAverage scores by ISCO major group:")
     print(f"  {'Group':6s} {'Count':>5s} {'Auto':>6s} {'Amp':>6s} {'Evol':>6s}  Label")
     print(f"  {'-'*5:6s} {'-'*5:>5s} {'-'*5:>6s} {'-'*5:>6s} {'-'*5:>6s}  {'-'*20}")
-    for major in sorted(major_groups.keys()):
-        group = major_groups[major]
-        avg_auto = sum(o["automation_risk"] for o in group) / len(group)
-        avg_amp = sum(o["amplification_potential"] for o in group) / len(group)
-        avg_evol = sum(o["evolution_potential"] for o in group) / len(group)
-        # Get a representative label from hierarchy
-        label = ""
-        if group[0]["hierarchy"]:
-            label = group[0]["hierarchy"][0]
-        print(f"  {major:6s} {len(group):5d} {avg_auto:6.1f} {avg_amp:6.1f} {avg_evol:6.1f}  {label}")
+    for major in sorted(groups.keys()):
+        print(major_group_row(major, groups[major]))
 
-    # Top 10 by evolution potential
-    sorted_by_evol = sorted(occ_results, key=lambda x: -x["evolution_potential"])
-    print("\nTop 10 highest evolution potential:")
-    for i, occ in enumerate(sorted_by_evol[:10], 1):
-        print(f"  {i:2d}. {occ['title'][:50]:52s} "
-              f"evol={occ['evolution_potential']:4.1f}  "
-              f"auto={occ['automation_risk']:4.1f}  "
-              f"amp={occ['amplification_potential']:4.1f}  "
-              f"[{occ['quadrant']}]")
 
-    # Top 10 by automation risk
-    sorted_by_auto = sorted(occ_results, key=lambda x: -x["automation_risk"])
-    print("\nTop 10 highest automation risk:")
-    for i, occ in enumerate(sorted_by_auto[:10], 1):
-        print(f"  {i:2d}. {occ['title'][:50]:52s} "
-              f"auto={occ['automation_risk']:4.1f}  "
-              f"amp={occ['amplification_potential']:4.1f}  "
-              f"[{occ['quadrant']}]")
+def ranked_by(occ_results, key):
+    """The occupations sorted by one score, highest first."""
+    return sorted(occ_results, key=lambda occ: -occ[key])
 
-    # Top 10 by amplification potential
-    sorted_by_amp = sorted(occ_results, key=lambda x: -x["amplification_potential"])
-    print("\nTop 10 highest amplification potential:")
-    for i, occ in enumerate(sorted_by_amp[:10], 1):
-        print(f"  {i:2d}. {occ['title'][:50]:52s} "
-              f"amp={occ['amplification_potential']:4.1f}  "
-              f"auto={occ['automation_risk']:4.1f}  "
-              f"[{occ['quadrant']}]")
 
-    print(f"\nDone.")
+def top_list_row(rank, occ, fields):
+    """One row of a top-10 table, showing the fields that table leads with."""
+    scores = "  ".join(f"{label}={occ[field]:4.1f}" for label, field in fields)
+    return f"  {rank:2d}. {occ['title'][:50]:52s} {scores}  [{occ['quadrant']}]"
+
+
+def print_top_lists(occ_results):
+    """Print the three top-10 tables, one per axis."""
+    for heading, key, fields in TOP_LISTS:
+        print(f"\nTop {TOP_LIST_SIZE} {heading}:")
+        for rank, occ in enumerate(ranked_by(occ_results, key)[:TOP_LIST_SIZE], 1):
+            print(top_list_row(rank, occ, fields))
+
+
+def print_summary(occ_results):
+    """Print the summary the operator reads to sanity-check a run."""
+    print(f"\n{'='*60}")
+    print("Summary statistics")
+    print(f"{'='*60}")
+    print_quadrant_distribution(occ_results)
+    print_major_group_averages(occ_results)
+    print_top_lists(occ_results)
+    print("\nDone.")
+
+
+def main():
+    """Aggregate to occupation level for the scorer named on the command line."""
+    suffix = scorer_suffix(__doc__.split("\n\n")[0])
+    print("Occupation score aggregation")
+    print("=" * 60)
+    occupations, skill_scores = load_inputs(suffix)
+    occ_results = aggregate(occupations, skill_scores)
+    write_outputs(occ_results, build_site_data(occ_results, occupations), suffix)
+    print_summary(occ_results)
 
 
 if __name__ == "__main__":

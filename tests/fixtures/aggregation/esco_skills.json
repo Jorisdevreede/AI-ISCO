@@ -1,0 +1,77 @@
+[
+  {
+    "uri": "http://example.org/esco/skill/a1",
+    "title": "type documents",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/a2",
+    "title": "scan invoices",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/a3",
+    "title": "file records",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/a4",
+    "title": "sort post",
+    "type": "knowledge"
+  },
+  {
+    "uri": "http://example.org/esco/skill/a5",
+    "title": "copy ledgers",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/b1",
+    "title": "advise clients",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/b2",
+    "title": "design systems",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/b3",
+    "title": "négocier contracts",
+    "type": "knowledge"
+  },
+  {
+    "uri": "http://example.org/esco/skill/b4",
+    "title": "train staff",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/b5",
+    "title": "plan budgets",
+    "type": "knowledge"
+  },
+  {
+    "uri": "http://example.org/esco/skill/c1",
+    "title": "unscored task",
+    "type": ""
+  },
+  {
+    "uri": "http://example.org/esco/skill/c2",
+    "title": "café service",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/c3",
+    "title": "obsolete task",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/d1",
+    "title": "curate datasets",
+    "type": "skill/competence"
+  },
+  {
+    "uri": "http://example.org/esco/skill/d2",
+    "title": "tune models",
+    "type": "skill/competence"
+  }
+]
