@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How sure is this? — AI-ISCO</title>
+<meta name="description" content="What was scored, how a job gets its two scores, where the lines are hard, and what these numbers are not.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/pages.css">
+<link rel="preload" href="stats.json" as="fetch" crossorigin>
+</head>
+<body>
+
+<!-- Must be static markup: scorer.js looks this element up by id. -->
+<nav id="site-nav"></nav>
+
+<main id="main" class="page prose">
+  <h1>How sure is this?</h1>
+  <p class="method-lede">
+    Not very, and we would rather say so up front. Everything on this site is one
+    language model's estimate of what AI could do to a list of skills. It is a way to
+    think about the shape of a job, not a measurement of anyone's job.
+  </p>
+
+  <p id="method-status" class="loading" role="status" aria-live="polite"></p>
+  <div id="method-error"></div>
+
+  <section aria-labelledby="scored-heading">
+    <h2 id="scored-heading">What was scored</h2>
+    <p>
+      All <strong data-stat="skills">&mdash;</strong> skills in the ESCO classification were
+      scored, one at a time. A language model read the skill's own ESCO description and gave
+      it two numbers from 1 to 10:
+    </p>
+    <ul>
+      <li>
+        <strong>Automation risk</strong> &mdash; how much of this skill a machine could take
+        over.
+      </li>
+      <li>
+        <strong>Amplification</strong> &mdash; how much more a person could do with AI helping
+        them do it.
+      </li>
+    </ul>
+    <p>
+      Both numbers are about the skill as ESCO describes it. No workplace was observed, no
+      worker was asked, and no employment data went into them.
+    </p>
+  </section>
+
+  <section aria-labelledby="rollup-heading">
+    <h2 id="rollup-heading">How a job gets its two scores</h2>
+    <p>
+      An occupation in ESCO is a list of skills, split into essential and optional ones. Its
+      two scores are the weighted average of its skills' scores, with essential skills
+      counting double. That is the whole calculation. There is no separate model pass for
+      occupations, which is why the same <strong data-stat="occupations">&mdash;</strong>
+      occupations come out the same everywhere on this site.
+    </p>
+    <p>
+      An occupation with no scored skills gets no scores at all, and shows as
+      &ldquo;Not scored&rdquo; rather than as a zero or a question mark.
+    </p>
+  </section>
+
+  <section aria-labelledby="boxes-heading">
+    <h2 id="boxes-heading">What the four boxes mean</h2>
+    <p>
+      The two averages are compared with one cut-off, <strong data-stat="threshold">&mdash;</strong>,
+      on both axes. That gives four boxes. The cut-off is hard: a job at 5.9 and a job at 6.1
+      land in different boxes although almost nothing separates them.
+    </p>
+    <div class="table-scroll">
+      <table id="quadrant-table">
+        <caption>The four boxes, and how many occupations are in each.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Box</th>
+            <th scope="col">When a job lands here</th>
+            <th scope="col" class="numeric">Occupations</th>
+            <th scope="col" class="numeric">Share</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="line-heading">
+    <h2 id="line-heading">How many jobs sit near a line</h2>
+    <p>
+      Because the cut-off is hard, the honest question is how many occupations sit close
+      enough to it that a small change in the scores would move them.
+    </p>
+    <p class="method-figure">
+      <strong class="figure-value" data-stat="nearLineCount">&mdash;</strong>
+      <span class="figure-note">
+        occupations &mdash; <span data-stat="nearLineShare">&mdash;</span> of the
+        <span data-stat="occupations">&mdash;</span> scored &mdash; sit within
+        <span data-stat="nearLineDistance">&mdash;</span> of a cut-off on one of the two axes.
+        Those jobs carry a &ldquo;near the line&rdquo; marker wherever they appear.
+      </span>
+    </p>
+  </section>
+
+  <section aria-labelledby="means-heading">
+    <h2 id="means-heading">What this means for you</h2>
+    <p>
+      Trust the direction and the ranking more than the box. That one job scores higher on
+      automation risk than another is the sturdier part of this data; which side of a line
+      each one fell is the fragile part.
+    </p>
+    <p>
+      If your job sits near a line, the honest answer is that it could go either way. And a
+      0.2 difference between two jobs is not a difference worth acting on.
+    </p>
+  </section>
+
+  <section aria-labelledby="not-heading">
+    <h2 id="not-heading">What these scores are not</h2>
+    <ul>
+      <li>They are not a measurement. Nobody watched a real job being done.</li>
+      <li>
+        There is no ground truth here. Nothing was checked against an outcome, because there
+        is no dataset of what AI has actually done to these occupations.
+      </li>
+      <li>
+        They are not a forecast of employment. Nothing here says how many people will be
+        doing a job, what it will pay, or when anything happens.
+      </li>
+      <li>
+        They are not advice about a person. An occupation is an average of a skill list; the
+        job you actually do is not.
+      </li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="better-heading">
+    <h2 id="better-heading">What would make this better</h2>
+    <ul>
+      <li>
+        <strong>Task-level time studies.</strong> Real measurements of how long the tasks in a
+        job take, and which of them AI tools shorten, would replace the estimate with an
+        observation.
+      </li>
+      <li>
+        <strong>Employer data on what AI actually replaced.</strong> Which tasks moved to a
+        tool, and what the people who used to do them do now.
+      </li>
+      <li>
+        <strong>A rubric that separates &ldquo;a machine already does this&rdquo; from
+        &ldquo;AI could do this&rdquo;.</strong> Today both push the automation score up, and
+        they are very different claims about a job.
+      </li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="sources-heading">
+    <h2 id="sources-heading">Where the data comes from</h2>
+    <dl class="source-list">
+      <dt><a href="https://esco.ec.europa.eu/en">ESCO v1.2.1</a></dt>
+      <dd>
+        The European Commission's classification of occupations and skills. Every occupation,
+        skill, description and essential/optional relation on this site comes from ESCO. The
+        scores do not.
+      </dd>
+      <dt><a href="https://ilostat.ilo.org/methods/concepts-and-definitions/classification-occupation/">ISCO-08</a></dt>
+      <dd>
+        The ILO's International Standard Classification of Occupations, which ESCO follows.
+        It supplies the major, sub-major, minor and unit groups used to browse sectors.
+      </dd>
+      <dt><a href="https://deepmind.google/technologies/gemini/flash/">Google Gemini Flash</a></dt>
+      <dd>
+        The language model that read each skill description and produced the two scores and
+        the written rationale shown on every skill page.
+      </dd>
+    </dl>
+    <p class="muted small">
+      Scores built <span data-stat="built">&mdash;</span>. The counts on this page are read
+      from the site's own <code>stats.json</code> at load, so they cannot drift from what the
+      rest of the site shows.
+    </p>
+  </section>
+</main>
+
+<script src="scorer.js" defer></script>
+<script type="module" src="js/pages/method.js"></script>
+</body>
+</html>

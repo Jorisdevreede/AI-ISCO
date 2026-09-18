@@ -1,0 +1,345 @@
+/* job.html — the one canonical job page.
+ *
+ * Page-specific rules only; tokens, cards, tables, badge and combobox come from
+ * css/app.css. Two rules this file exists to keep:
+ *   - nothing is wider than its column at 390px (the old narrative card was
+ *     716px wide in a 390px viewport), so every grid uses
+ *     minmax(min(<ideal>, 100%), 1fr) and every score bar can shrink to zero;
+ *   - ESCO titles are stored lower case; only the first letter is raised, so
+ *     "nurse responsible for general care" does not become title case.
+ */
+
+.job-page { max-width: 1100px; }
+
+/* One rhythm between the sections of the article, whatever element they are. */
+#job-article > * + * { margin-top: var(--space-3); }
+#job-article > div:empty { display: none; }
+
+/* --- top bar: back link and the compact finder ---------------------------- */
+
+.job-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.job-back { margin: 0; font-size: 0.875rem; }
+.job-back a { color: var(--fg-muted); text-decoration: none; }
+.job-back a:hover { color: var(--fg); text-decoration: underline; }
+
+.job-finder { width: min(320px, 100%); }
+.job-finder label { display: block; margin-bottom: var(--space-1); }
+.job-finder .combobox input { min-height: 40px; font-size: 0.9375rem; }
+
+/* --- title block ---------------------------------------------------------- */
+
+.job-head { margin-bottom: var(--space-5); }
+.job-head h1 { margin-bottom: var(--space-2); }
+.job-head h1::first-letter { text-transform: uppercase; }
+.job-head h1:focus-visible { outline-offset: 4px; }
+
+.job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-3);
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+}
+.job-meta .job-meta-sep { color: var(--line-strong); }
+
+.job-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.job-tools .button { font-size: 0.8125rem; }
+.job-tools p { margin: 0; }
+
+.job-note {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--fg);
+  background: rgba(106, 169, 232, 0.10);
+  border-left: 3px solid var(--blue);
+  border-radius: var(--radius-sm);
+}
+
+/* --- scores --------------------------------------------------------------- */
+
+.score-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  margin-bottom: var(--space-3);
+}
+
+.score-card {
+  min-width: 0;
+  padding: var(--space-3);
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.score-label { margin: 0 0 var(--space-1); font-size: 0.875rem; font-weight: 600; }
+.score-value { margin: 0; font-size: 1.75rem; font-weight: 650; line-height: 1.1; }
+.score-value.is-missing { font-size: 1rem; color: var(--fg-muted); }
+.score-card--auto .score-value { color: var(--red); }
+.score-card--amp .score-value { color: var(--blue); }
+
+.score-bar {
+  height: 6px;
+  margin: var(--space-2) 0;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.score-fill { height: 100%; border-radius: 999px; }
+.score-card--auto .score-fill { background: var(--red); }
+.score-card--amp .score-fill { background: var(--blue); }
+.score-hint { margin: 0; font-size: 0.8125rem; color: var(--fg-muted); }
+
+/* --- what to do next ------------------------------------------------------ */
+
+.card--advice {
+  background: rgba(232, 185, 59, 0.09);
+  border-color: rgba(232, 185, 59, 0.40);
+}
+.card--advice h2 { color: var(--gold); }
+.card--advice p:last-child { margin-bottom: 0; }
+
+/* --- scatter -------------------------------------------------------------- */
+
+.scatter-wrap { position: relative; width: 100%; margin-bottom: var(--space-3); }
+.scatter-wrap canvas { display: block; width: 100%; border-radius: var(--radius-sm); }
+
+.scatter-tip {
+  position: absolute;
+  z-index: 10;
+  max-width: 220px;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  background: var(--bg3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+.scatter-tip strong { display: block; font-weight: 600; }
+
+.scatter-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+.scatter-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--fg-muted);
+  border-radius: 50%;
+}
+.legend-dot--essential { background: var(--fg-muted); }
+
+#scatter-table-wrap { margin-top: var(--space-3); }
+
+/* --- skill lists ---------------------------------------------------------- */
+
+.skill-columns {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+}
+.skill-columns > .card { margin-top: 0; min-width: 0; }
+
+.skill-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.skill-list li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.875rem;
+}
+.skill-list li:last-child { border-bottom: 0; }
+.skill-list a { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+.sk-score { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; }
+.sk-score--auto { color: var(--red); }
+.sk-score--amp { color: var(--blue); }
+.sk-score--muted { color: var(--fg-muted); font-weight: 400; }
+
+/* --- skill cards with rationales ------------------------------------------ */
+
+.skill-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg3);
+}
+.skill-card + .skill-card { margin-top: var(--space-2); }
+/* display:list-item keeps the disclosure triangle Chrome drops from a flex
+ * summary; the flex row lives in a span inside it. */
+.skill-card > summary {
+  display: list-item;
+  list-style-position: inside;
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.skill-card > summary::marker { color: var(--fg-muted); }
+.skill-card .sc-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: calc(100% - 1.4rem);
+  vertical-align: top;
+}
+.skill-card .sc-name { flex: 1 1 60%; min-width: 0; overflow-wrap: anywhere; }
+.skill-card-body { padding: 0 var(--space-3) var(--space-3); }
+.skill-card-body p { margin: 0 0 var(--space-2); font-size: 0.875rem; }
+.skill-card-body p:last-child { margin-bottom: 0; }
+
+/* --- the narrative -------------------------------------------------------- */
+
+.story-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.story-fact {
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.75rem;
+  color: var(--gold);
+  background: rgba(232, 185, 59, 0.12);
+  border: 1px solid rgba(232, 185, 59, 0.30);
+  border-radius: 999px;
+}
+.story-text p:last-child { margin-bottom: 0; }
+
+.ai-list { min-width: 0; }
+.ai-list h3 { margin-bottom: var(--space-2); font-size: 0.9375rem; }
+.ai-list ul { margin: 0; padding-left: 1.1rem; font-size: 0.875rem; }
+.ai-list li { margin-bottom: var(--space-1); overflow-wrap: anywhere; }
+
+.week-block + .week-block { margin-top: var(--space-4); }
+.week-block h3 { margin-bottom: var(--space-2); font-size: 0.9375rem; }
+.week-bar {
+  display: flex;
+  width: 100%;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg3);
+}
+.week-seg { min-width: 2px; height: 100%; }
+.week-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+.week-legend li { display: flex; align-items: center; gap: var(--space-2); }
+.week-swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+/* --- paths and skills to learn -------------------------------------------- */
+
+.path-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  margin-bottom: var(--space-4);
+}
+
+.path-card {
+  display: block;
+  min-width: 0;
+  padding: var(--space-3);
+  color: var(--fg);
+  text-decoration: none;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.path-card:hover { color: var(--fg); border-color: var(--line-strong); }
+.path-title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+.path-title::first-letter { text-transform: uppercase; }
+.path-card:hover .path-title { text-decoration: underline; }
+
+/* A rectangle, not a pill: the honest labels are long enough to wrap. */
+.path-tag {
+  display: inline-block;
+  margin: var(--space-2) 0;
+  padding: 2px var(--space-2);
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid currentColor;
+}
+.path-tag[data-kind='better'] { color: var(--green); background: rgba(85, 192, 119, 0.12); }
+.path-tag[data-kind='trade'] { color: var(--gold); background: rgba(232, 185, 59, 0.12); }
+.path-tag[data-kind='sideways'] { color: var(--fg-muted); background: rgba(255, 255, 255, 0.06); }
+.path-tag[data-kind='exposed'] { color: var(--red); background: rgba(239, 106, 94, 0.12); }
+.path-tag[data-kind='unknown'] { color: var(--fg-muted); background: rgba(255, 255, 255, 0.06); }
+
+.path-stats {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.learn-list { margin: 0; padding: 0; list-style: none; }
+.learn-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.875rem;
+}
+.learn-list li:last-child { border-bottom: 0; }
+.learn-amp {
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  font-weight: 650;
+  color: var(--blue);
+  font-variant-numeric: tabular-nums;
+}
+.learn-from { flex-basis: 100%; font-size: 0.8125rem; color: var(--fg-muted); }
+
+/* --- prompt and not-found states ------------------------------------------ */
+
+.job-intro ul { margin: 0 0 var(--space-4); padding-left: 1.1rem; }
+.job-intro .chip-row { margin-bottom: var(--space-4); }
+
+@media (max-width: 640px) {
+  .job-topbar { flex-direction: column; align-items: stretch; }
+  .skill-list { max-height: 260px; }
+}

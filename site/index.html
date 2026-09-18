@@ -1,754 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI-ISCO: Job Evolution Explorer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find a job — AI-ISCO</title>
+<meta name="description" content="Search European occupations and see how much of the work AI could automate and how much it could amplify. Model estimates, not forecasts.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/app.css">
+<link rel="preload" href="search_index.json" as="fetch" crossorigin>
 <style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+/* Page-specific rules for the landing page only. Shared components and tokens
+   live in css/app.css; nothing here may be needed by another page. */
 
-:root {
-  --bg: #0a0a0f;
-  --bg2: #12121a;
-  --fg: #e0e0e8;
-  --fg2: #888894;
-  --gold: #d4a017;
-  --red: #e04040;
-  --blue: #4a90d9;
-  --green: #3ca55c;
-}
+.hero { padding: var(--space-6) 0 var(--space-2); }
+.hero h1 { max-width: 20ch; }
+.hero-sub { max-width: 62ch; font-size: 1.0625rem; color: var(--fg-muted); }
 
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-}
+.hero-label { display: block; margin-bottom: var(--space-2); font-size: 0.875rem; font-weight: 600; }
 
-#wrapper {
-  max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
-  padding-bottom: 60px;
-}
+/* The hint line sits between the input and the floating list, so a "+ N more"
+   or "no job called X" message is never covered by the results. */
+.combobox li .title { font-weight: 550; }
+.combobox li .meta { font-size: 0.75rem; color: var(--fg-muted); }
 
-#header {
-  padding: 20px 28px 16px;
-}
+.search-hint { margin: var(--space-3) 0 0; font-size: 0.875rem; color: var(--fg-muted); }
+.search-hint p { margin: 0 0 var(--space-2); }
+.search-hint p:last-child { margin-bottom: 0; }
 
-.intro { margin-bottom: 18px; }
-.intro h1 {
-  font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
-  margin-bottom: 12px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+/* The nearest-titles list lives inside .combobox so the results list stays
+   anchored below it, which means it inherits the floating listbox rules from
+   app.css. Put it back in the flow. */
+.search-hint .nearest-list {
+  position: static;
+  max-height: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  overflow: visible;
+  list-style: none;
+  background: none;
+  border: 0;
+  box-shadow: none;
 }
-.intro h1 a { font-size: 13px; font-weight: 400; color: var(--fg2); text-decoration: none; }
-.intro h1 a:hover { text-decoration: underline; }
-/* --- Nav Bar --- */
-#site-nav {
-  display: flex;
+.search-hint .nearest-list li {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  cursor: auto;
+}
+.search-hint .nearest-list a {
+  display: inline-flex;
   align-items: center;
-  height: 48px;
-  background: var(--bg2);
-  padding: 0 28px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  gap: var(--space-2);
+  min-height: var(--tap);
 }
-.nav-brand {
-  font-size: 15px;
-  font-weight: 700;
+
+.section { margin-top: var(--space-6); }
+.section h2 {
+  margin-bottom: var(--space-3);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.recent-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.recent-item {
+  display: inline-flex;
+  align-items: center;
+  padding-left: var(--space-3);
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.recent-item a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: var(--space-1) 0;
+  font-size: 0.875rem;
   color: var(--fg);
   text-decoration: none;
-  letter-spacing: -0.02em;
-  margin-right: 32px;
 }
-.nav-brand:hover { text-decoration: none; color: var(--fg); }
-.nav-links {
-  display: flex;
-  gap: 4px;
+.recent-item a:hover { text-decoration: underline; }
+.recent-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  margin-left: var(--space-1);
+  font: inherit;
+  color: var(--fg-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
 }
-.nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--fg2);
-  text-decoration: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-}
-.nav-links a:hover { color: var(--fg); background: rgba(255,255,255,0.05); text-decoration: none; }
-.nav-links a.nav-active {
-  color: #d4a017;
-  background: rgba(212,160,23,0.1);
-}
-.intro p { font-size: 15px; line-height: 1.6; color: var(--fg2); margin-bottom: 8px; }
-.intro a { color: var(--fg2); }
-.intro strong, .intro b { color: var(--fg); font-weight: 600; }
+.recent-remove:hover { color: var(--fg); background: rgba(255, 255, 255, 0.08); }
 
-.quadrant-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px;
-  margin: 12px 0; font-size: 13px; line-height: 1.5;
-}
-.quadrant-grid .q-item { display: flex; align-items: center; gap: 8px; }
-.quadrant-grid .q-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-.quadrant-grid .q-label { font-weight: 600; color: var(--fg); }
-.quadrant-grid .q-desc { color: var(--fg2); }
-
-.controls-row {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;
-}
-.color-toggle { display: flex; gap: 4px; }
-.color-toggle button {
-  padding: 6px 14px; font-size: 12px; font-weight: 500;
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;
-  background: transparent; color: var(--fg2); cursor: pointer; transition: all 0.15s;
-}
-.color-toggle button.active { background: rgba(255,255,255,0.08); color: var(--fg); border-color: rgba(255,255,255,0.2); }
-.color-toggle button:hover:not(.active) { background: rgba(255,255,255,0.04); }
-
-.gradient-legend { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--fg2); }
-.gradient-legend canvas { border-radius: 2px; }
-.gradient-legend .quadrant-swatches { display: flex; gap: 10px; align-items: center; }
-.gradient-legend .q-swatch { display: flex; align-items: center; gap: 4px; }
-.gradient-legend .q-swatch-dot { width: 8px; height: 8px; border-radius: 2px; }
-
-/* Breadcrumb */
-#breadcrumb {
-  display: flex; align-items: center; gap: 6px; padding: 0 28px 12px;
-  font-size: 13px; flex-wrap: wrap;
-}
-#breadcrumb .bc-item {
-  color: var(--blue); cursor: pointer; text-decoration: none;
-  padding: 3px 8px; border-radius: 4px; transition: background 0.15s;
-}
-#breadcrumb .bc-item:hover { background: rgba(74,144,217,0.12); }
-#breadcrumb .bc-sep { color: var(--fg2); }
-#breadcrumb .bc-current { color: var(--fg); font-weight: 600; cursor: default; }
-#breadcrumb .bc-current:hover { background: none; }
-
-/* Stats row */
-.stats-row {
-  display: flex; flex-wrap: wrap; gap: 20px 28px; align-items: flex-start;
-  margin-bottom: 12px; padding: 0 28px;
-}
-.stat-section { display: flex; flex-direction: column; gap: 5px; }
-.stat-section h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg2); }
-.stat-big { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
-.stat-label { font-size: 11px; color: var(--fg2); }
-
-.tier-bar { display: flex; flex-direction: column; gap: 3px; }
-.tier-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-.tier-color { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-.tier-name { flex: 1; color: var(--fg2); white-space: nowrap; }
-.tier-count { text-align: right; white-space: nowrap; }
-.tier-pct { text-align: right; width: 30px; color: var(--fg2); font-size: 11px; }
-
-canvas#canvas { display: block; cursor: default; }
-
-#tooltip {
-  position: fixed; pointer-events: none; background: var(--bg2);
-  border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
-  padding: 12px 16px; font-size: 13px; line-height: 1.5;
-  max-width: 380px; opacity: 0; transition: opacity 0.12s; z-index: 20;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-}
-#tooltip.visible { opacity: 1; }
-#tooltip .tt-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; color: #fff; }
-#tooltip .tt-sub { font-size: 11px; color: var(--fg2); margin-bottom: 8px; }
-#tooltip .tt-scores { margin-bottom: 8px; }
-#tooltip .tt-score-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 4px; }
-#tooltip .tt-score-label { width: 110px; flex-shrink: 0; color: var(--fg2); }
-#tooltip .tt-score-val { width: 30px; flex-shrink: 0; font-weight: 600; }
-#tooltip .tt-score-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-#tooltip .tt-score-fill { height: 100%; border-radius: 2px; }
-#tooltip .tt-quadrant-badge {
-  display: inline-block; padding: 2px 8px; border-radius: 3px;
-  font-size: 11px; font-weight: 600; margin-bottom: 8px;
-}
-#tooltip .tt-skills { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; }
-#tooltip .tt-skills-title { font-size: 11px; color: var(--fg2); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-#tooltip .tt-skill-row { display: flex; align-items: center; gap: 6px; font-size: 11px; margin-bottom: 2px; }
-#tooltip .tt-skill-name { flex: 1; color: var(--fg); }
-#tooltip .tt-skill-scores { color: var(--fg2); white-space: nowrap; }
+.more-links { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-7); }
+.error-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0; }
 </style>
 </head>
 <body>
 
-<nav id="site-nav">
-  <a href="index.html" class="nav-brand">AI-ISCO</a>
-  <div class="nav-links">
-    <a href="index.html" class="nav-active">Treemap</a>
-    <a href="explorer.html">Explorer</a>
-    <a href="portfolio.html">Analyze Your Job</a>
-    <a href="insights.html">Insights</a>
-  </div>
-</nav>
-<script src="scorer.js"></script>
-<div id="wrapper">
-<div id="header">
-  <div class="intro">
-    <h1>AI-ISCO: Job Evolution Explorer <a href="https://github.com/Jorisdevreede/AI-ISCO">GitHub</a></h1>
-    <p>An interactive visualization of <b>3,000+ ESCO occupations</b> mapped to ISCO-08, scored by AI along two axes: <b>Automation Risk</b> and <b>Amplification Potential</b>. Click any block to drill down through the ISCO hierarchy. Each rectangle's <b>area</b> reflects the number of occupations (or skills) in that group.</p>
-    <div class="quadrant-grid">
-      <div class="q-item"><div class="q-dot" style="background:#d4a017"></div><span class="q-label">TRANSFORM</span> <span class="q-desc">&mdash; high auto + high amp: job evolves</span></div>
-      <div class="q-item"><div class="q-dot" style="background:#e04040"></div><span class="q-label">SHRINK</span> <span class="q-desc">&mdash; high auto + low amp: job at risk</span></div>
-      <div class="q-item"><div class="q-dot" style="background:#4a90d9"></div><span class="q-label">EVOLVE</span> <span class="q-desc">&mdash; low auto + high amp: job enhanced</span></div>
-      <div class="q-item"><div class="q-dot" style="background:#3ca55c"></div><span class="q-label">STABLE</span> <span class="q-desc">&mdash; low auto + low amp: largely unaffected</span></div>
-    </div>
-    <p><b>Caveat:</b> Scores are LLM-generated estimates based on ESCO skill profiles. Use as an exploration tool, not a prediction engine.</p>
-  </div>
+<!-- Must be static markup: scorer.js looks this element up by id. -->
+<nav id="site-nav"></nav>
 
-  <div class="controls-row">
-    <div class="stat-section">
-      <h3>Color by</h3>
-      <div class="color-toggle" id="colorToggle">
-        <button data-mode="evolution" class="active">Evolution Potential</button>
-        <button data-mode="automation">Automation Risk</button>
-        <button data-mode="amplification">Amplification</button>
-        <button data-mode="quadrant">Quadrant</button>
+<main id="main" class="page">
+
+  <section class="hero">
+    <h1>Will AI change your job?</h1>
+    <p id="subtitle" class="hero-sub"></p>
+
+    <div class="hero-search">
+      <label class="hero-label" for="job-search">Find your job title</label>
+      <div class="combobox">
+        <input id="job-search" type="text" enterkeyhint="go"
+               placeholder="Type a job title, for example programmer">
+        <div id="search-hint" class="search-hint" hidden></div>
+        <ul id="job-listbox"></ul>
       </div>
+      <p id="search-status" class="visually-hidden" role="status" aria-live="polite"></p>
+      <p id="search-loading" class="loading" hidden>Loading job titles…</p>
+      <div id="search-error"></div>
     </div>
-    <div class="gradient-legend" id="gradientLegendWrap">
-      <span id="legendLow">Low</span>
-      <canvas id="gradientLegend" width="80" height="8"></canvas>
-      <span id="legendHigh">High</span>
-    </div>
-  </div>
-</div>
+  </section>
 
-<div id="breadcrumb"></div>
+  <section class="section" id="popular-section">
+    <h2 id="popular-heading">Popular jobs</h2>
+    <div class="chip-row" id="chip-row"></div>
+  </section>
 
-<div style="padding: 0 28px 12px;">
-  <div class="stats-row" id="statsRow">
-    <div class="stat-section">
-      <h3>Showing</h3>
-      <div class="stat-big" id="statTotal">&mdash;</div>
-      <div class="stat-label" id="statLabel">occupations</div>
-    </div>
-    <div class="stat-section" id="block2"></div>
-    <div class="stat-section" id="block3"></div>
-    <div class="stat-section" id="block4"></div>
-  </div>
-</div>
+  <section class="section" id="recent-section" hidden>
+    <h2 id="recent-heading">Recently viewed</h2>
+    <ul class="recent-list" id="recent-list" aria-labelledby="recent-heading"></ul>
+  </section>
 
-<canvas id="canvas"></canvas>
-</div>
+  <nav class="more-links" aria-label="Other ways to explore">
+    <a class="button button--quiet" id="browse-link" href="groups.html#g=all">Or browse a whole sector →</a>
+    <a class="button button--quiet" id="skill-link" href="skill.html">Look up a skill →</a>
+  </nav>
 
-<div id="tooltip">
-  <div class="tt-title"></div>
-  <div class="tt-sub"></div>
-  <div class="tt-scores"></div>
-  <div class="tt-skills"></div>
-</div>
+</main>
 
-<script>
-
-// === Data & State ===
-let allData = [];
-let colorMode = "evolution";
-
-// Drill-down: path is an array of {level, key} objects
-// level: "root" | "major" | "sub_major" | "minor" | "unit"
-let drillPath = [];
-
-const QUADRANT_COLORS = { TRANSFORM: "#d4a017", SHRINK: "#e04040", EVOLVE: "#4a90d9", STABLE: "#3ca55c" };
-
-// === Color scales ===
-function evolutionColor(v, a) {
-  if (v == null) return `rgba(128,128,128,${a})`;
-  const t = Math.max(0, Math.min(1, v / 10));
-  let r, g, b;
-  if (t < 0.5) { const s = t / 0.5; r = 60+s*140; g = 165+s*30; b = 80-s*50; }
-  else { const s = (t-0.5)/0.5; r = 200+s*12; g = 195-s*35; b = 30-s*7; }
-  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
-}
-function automationColor(v, a) {
-  if (v == null) return `rgba(128,128,128,${a})`;
-  const t = Math.max(0, Math.min(1, v / 10));
-  let r, g, b;
-  if (t < 0.5) { const s = t / 0.5; r = 60+s*195; g = 175+s*55; b = 80-s*60; }
-  else { const s = (t-0.5)/0.5; r = 255; g = 230-s*170; b = 20-s*10; }
-  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
-}
-function amplificationColor(v, a) {
-  if (v == null) return `rgba(128,128,128,${a})`;
-  const t = Math.max(0, Math.min(1, v / 10));
-  let r, g, b;
-  if (t < 0.5) { const s = t / 0.5; r = 100-s*40; g = 105+s*50; b = 115+s*75; }
-  else { const s = (t-0.5)/0.5; r = 60-s*20; g = 155-s*15; b = 190+s*27; }
-  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
-}
-function quadrantColor(q, a) {
-  const hex = QUADRANT_COLORS[q] || "#888";
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${a})`;
-}
-
-function metricValue(d) {
-  if (colorMode === "evolution") return d.evolution_potential;
-  if (colorMode === "automation") return d.automation_risk;
-  if (colorMode === "amplification") return d.amplification_potential;
-  return null;
-}
-function metricColorFn() {
-  if (colorMode === "evolution") return evolutionColor;
-  if (colorMode === "automation") return automationColor;
-  if (colorMode === "amplification") return amplificationColor;
-  return (v, a) => `rgba(128,128,128,${a})`;
-}
-
-function tileColorCSS(d, alpha) {
-  if (d._isGroup) {
-    if (colorMode === "quadrant") return quadrantColor(d._dominantQuadrant, alpha);
-    return metricColorFn()(d._avgMetric, alpha);
-  }
-  if (colorMode === "quadrant") return quadrantColor(d.quadrant, alpha);
-  return metricColorFn()(metricValue(d), alpha);
-}
-
-// === Hierarchy helpers ===
-const LEVELS = ["major_group", "sub_major_group", "minor_group", "unit_group"];
-
-function getFilteredData() {
-  let items = allData;
-  for (const step of drillPath) {
-    items = items.filter(d => d[step.level] === step.key);
-  }
-  return items;
-}
-
-function getNextLevel() {
-  if (drillPath.length >= LEVELS.length) return null;
-  return LEVELS[drillPath.length];
-}
-
-function buildGroups(items, groupField) {
-  const groups = {};
-  for (const d of items) {
-    const key = d[groupField] || "Other";
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(d);
-  }
-  return Object.entries(groups).map(([key, members]) => {
-    const avgAuto = members.reduce((s, d) => s + (d.automation_risk || 0), 0) / members.length;
-    const avgAmp = members.reduce((s, d) => s + (d.amplification_potential || 0), 0) / members.length;
-    const avgMetric = members.reduce((s, d) => s + (metricValue(d) || 0), 0) / members.length;
-    // Dominant quadrant
-    const qc = { TRANSFORM: 0, SHRINK: 0, EVOLVE: 0, STABLE: 0 };
-    for (const d of members) { if (d.quadrant && qc[d.quadrant] !== undefined) qc[d.quadrant]++; }
-    const dominant = Object.keys(qc).reduce((a, b) => qc[a] >= qc[b] ? a : b);
-    return {
-      _isGroup: true,
-      _groupField: groupField,
-      _groupKey: key,
-      _members: members,
-      _avgMetric: avgMetric,
-      _avgAuto: avgAuto,
-      _avgAmp: avgAmp,
-      _dominantQuadrant: dominant,
-      _quadrantCounts: qc,
-      title: key,
-      value: members.length,
-    };
-  }).sort((a, b) => b.value - a.value);
-}
-
-// === Treemap layout ===
-function squarify(items, x, y, w, h) {
-  if (!items.length) return [];
-  if (items.length === 1) return [{ ...items[0], rx: x, ry: y, rw: w, rh: h }];
-  const total = items.reduce((s, d) => s + d.value, 0);
-  if (total === 0) return [];
-  const results = [];
-  let remaining = [...items], cx = x, cy = y, cw = w, ch = h;
-  while (remaining.length > 0) {
-    const remTotal = remaining.reduce((s, d) => s + d.value, 0);
-    const vertical = cw >= ch;
-    const side = vertical ? ch : cw;
-    let row = [remaining[0]], rowSum = remaining[0].value;
-    for (let i = 1; i < remaining.length; i++) {
-      const candidate = [...row, remaining[i]];
-      const candidateSum = rowSum + remaining[i].value;
-      if (worstAspect(candidate, candidateSum, side, remTotal, vertical ? cw : ch) <
-          worstAspect(row, rowSum, side, remTotal, vertical ? cw : ch)) {
-        row = candidate; rowSum = candidateSum;
-      } else break;
-    }
-    const rowFraction = rowSum / remTotal;
-    const rowThickness = vertical ? cw * rowFraction : ch * rowFraction;
-    let offset = 0;
-    for (const item of row) {
-      const itemFraction = item.value / rowSum;
-      const itemLength = side * itemFraction;
-      if (vertical) results.push({ ...item, rx: cx, ry: cy + offset, rw: rowThickness, rh: itemLength });
-      else results.push({ ...item, rx: cx + offset, ry: cy, rw: itemLength, rh: rowThickness });
-      offset += itemLength;
-    }
-    if (vertical) { cx += rowThickness; cw -= rowThickness; }
-    else { cy += rowThickness; ch -= rowThickness; }
-    remaining = remaining.slice(row.length);
-  }
-  return results;
-}
-function worstAspect(row, rowSum, side, totalArea, availableExtent) {
-  const rowExtent = availableExtent * (rowSum / totalArea);
-  if (rowExtent === 0) return Infinity;
-  let worst = 0;
-  for (const item of row) {
-    const itemLen = side * (item.value / rowSum);
-    if (itemLen === 0) continue;
-    const aspect = Math.max(rowExtent / itemLen, itemLen / rowExtent);
-    if (aspect > worst) worst = aspect;
-  }
-  return worst;
-}
-
-// === Rendering ===
-let rects = [];
-let hovered = null;
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-let dpr = window.devicePixelRatio || 1;
-const MARGIN = 12, GAP = 2;
-
-function layout() {
-  const wrapper = document.getElementById("wrapper");
-  const w = wrapper.clientWidth;
-  const h = Math.round(w * 0.6);
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  canvas.style.width = w + "px"; canvas.style.height = h + "px";
-  const tx = MARGIN, ty = MARGIN, tw = w - MARGIN * 2, th = h - MARGIN * 2;
-
-  const filtered = getFilteredData();
-  const nextLevel = getNextLevel();
-
-  if (nextLevel) {
-    // Show groups
-    const groups = buildGroups(filtered, nextLevel);
-    const items = groups.map(g => ({ ...g, value: g.value }));
-    rects = squarify(items, tx, ty, tw, th);
-  } else {
-    // Leaf level: show individual occupations
-    const items = filtered.map(d => ({ ...d, value: d.num_skills || 1 }))
-      .sort((a, b) => b.value - a.value);
-    rects = squarify(items, tx, ty, tw, th);
-  }
-}
-
-function draw() {
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = "#0a0a0f";
-  ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-
-  for (const r of rects) {
-    const isHov = r === hovered;
-    const g = GAP / 2, rx = r.rx + g, ry = r.ry + g, rw = r.rw - g * 2, rh = r.rh - g * 2;
-    if (rw <= 0 || rh <= 0) continue;
-
-    ctx.fillStyle = tileColorCSS(r, isHov ? 0.85 : 0.55);
-    ctx.fillRect(rx, ry, rw, rh);
-
-    if (isHov) {
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(rx, ry, rw, rh);
-    }
-
-    // Text rendering
-    if (rw > 40 && rh > 20) {
-      ctx.save();
-      ctx.beginPath(); ctx.rect(rx + 6, ry + 4, rw - 12, rh - 8); ctx.clip();
-
-      const isGroup = r._isGroup;
-      const maxFontSize = isGroup ? 20 : 13;
-      const fontSize = Math.min(maxFontSize, Math.max(9, Math.min(rw / 8, rh / (isGroup ? 2.5 : 3))));
-
-      ctx.font = `${isGroup ? 700 : 500} ${fontSize}px -apple-system, system-ui, sans-serif`;
-      ctx.fillStyle = isHov ? "#fff" : "rgba(255,255,255,0.9)";
-      ctx.textBaseline = "top";
-      ctx.fillText(r.title, rx + 8, ry + 6);
-
-      // Sub-info line
-      if (rh > 38 && rw > 60) {
-        const subSize = Math.max(9, fontSize - 3);
-        ctx.font = `400 ${subSize}px -apple-system, system-ui, sans-serif`;
-        ctx.fillStyle = "rgba(255,255,255,0.5)";
-        if (isGroup) {
-          const count = r._members.length;
-          const cfn = metricColorFn();
-          const label = colorMode === "quadrant"
-            ? `${count} occupations \u00b7 ${r._dominantQuadrant}`
-            : `${count} occupations \u00b7 avg ${r._avgMetric.toFixed(1)}/10`;
-          ctx.fillText(label, rx + 8, ry + 8 + fontSize + 2);
-        } else {
-          const val = metricValue(r);
-          const quad = r.quadrant || "";
-          ctx.fillText(
-            (val != null ? val.toFixed(1) + "/10" : "") +
-            (quad ? " \u00b7 " + quad : "") +
-            (r.num_skills ? " \u00b7 " + r.num_skills + " skills" : ""),
-            rx + 8, ry + 8 + fontSize + 2
-          );
-        }
-      }
-
-      // Quadrant mini-bars for groups
-      if (isGroup && rh > 70 && rw > 80) {
-        const barY = ry + 10 + fontSize * 2 + 6;
-        const barW = Math.min(rw - 24, 160);
-        const total = r._members.length;
-        let bx = rx + 8;
-        for (const q of ["TRANSFORM", "SHRINK", "EVOLVE", "STABLE"]) {
-          const qw = (r._quadrantCounts[q] / total) * barW;
-          if (qw > 0) {
-            ctx.fillStyle = QUADRANT_COLORS[q];
-            ctx.globalAlpha = 0.7;
-            ctx.fillRect(bx, barY, Math.max(1, qw), 6);
-            ctx.globalAlpha = 1;
-            bx += qw;
-          }
-        }
-      }
-
-      ctx.restore();
-    }
-  }
-}
-
-function hitTest(mx, my) {
-  const rect = canvas.getBoundingClientRect();
-  const cx = mx - rect.left, cy = my - rect.top;
-  for (let i = rects.length - 1; i >= 0; i--) {
-    const r = rects[i];
-    if (cx >= r.rx && cx < r.rx + r.rw && cy >= r.ry && cy < r.ry + r.rh) return r;
-  }
-  return null;
-}
-
-// === Tooltip ===
-function scoreBar(label, value, colorFn) {
-  if (value == null) return "";
-  const pct = (value / 10 * 100).toFixed(0);
-  const color = colorFn(value, 1);
-  return `<div class="tt-score-row">
-    <span class="tt-score-label">${label}</span>
-    <span class="tt-score-val" style="color:${color}">${value.toFixed(1)}</span>
-    <div class="tt-score-bar"><div class="tt-score-fill" style="width:${pct}%;background:${color}"></div></div>
-  </div>`;
-}
-
-function showTooltip(d, mx, my) {
-  const tt = document.getElementById("tooltip");
-
-  if (d._isGroup) {
-    tt.querySelector(".tt-title").textContent = d.title;
-    tt.querySelector(".tt-sub").textContent = d._members.length + " occupations";
-    let html = scoreBar("Avg Automation", d._avgAuto, automationColor);
-    html += scoreBar("Avg Amplification", d._avgAmp, amplificationColor);
-    const avgEvo = (d._avgAuto * d._avgAmp) / 10;
-    html += scoreBar("Avg Evolution", avgEvo, evolutionColor);
-    // Quadrant breakdown
-    html += `<div style="margin-top:6px;font-size:11px;color:var(--fg2)">`;
-    for (const q of ["TRANSFORM","SHRINK","EVOLVE","STABLE"]) {
-      const c = d._quadrantCounts[q];
-      if (c > 0) {
-        const pct = (c / d._members.length * 100).toFixed(0);
-        html += `<span style="color:${QUADRANT_COLORS[q]};font-weight:600">${q}</span>: ${c} (${pct}%) &nbsp;`;
-      }
-    }
-    html += `</div>`;
-    tt.querySelector(".tt-scores").innerHTML = html;
-    tt.querySelector(".tt-skills").innerHTML = "<div style='font-size:11px;color:var(--fg2);margin-top:6px'>Click to drill down</div>";
-  } else {
-    tt.querySelector(".tt-title").textContent = d.title;
-    tt.querySelector(".tt-sub").textContent =
-      "ISCO " + (d.isco_code || "\u2014") + " \u00b7 " + (d.category || "") + " \u00b7 " + (d.num_skills || 0) + " skills";
-    let html = scoreBar("Automation Risk", d.automation_risk, automationColor);
-    html += scoreBar("Amplification", d.amplification_potential, amplificationColor);
-    html += scoreBar("Evolution", d.evolution_potential, evolutionColor);
-    if (d.quadrant) {
-      const qc = QUADRANT_COLORS[d.quadrant] || "#888";
-      html += `<div class="tt-quadrant-badge" style="background:${qc}22;color:${qc};border:1px solid ${qc}44;">${d.quadrant}</div>`;
-    }
-    tt.querySelector(".tt-scores").innerHTML = html;
-
-    let skillsHTML = "";
-    if (d.top_skills && d.top_skills.length > 0) {
-      skillsHTML = `<div class="tt-skills-title">Top skills</div>`;
-      for (const sk of d.top_skills.slice(0, 5)) {
-        const ac = automationColor(sk.auto, 1), mc = amplificationColor(sk.amp, 1);
-        skillsHTML += `<div class="tt-skill-row">
-          <span class="tt-skill-name">${sk.title}</span>
-          <span class="tt-skill-scores"><span style="color:${ac}">A:${sk.auto != null ? sk.auto.toFixed(0) : '?'}</span> <span style="color:${mc}">M:${sk.amp != null ? sk.amp.toFixed(0) : '?'}</span></span>
-        </div>`;
-      }
-    }
-    skillsHTML += `<div class="tt-skills-title" style="margin-top:8px">Click to open the full job profile &rarr;</div>`;
-    tt.querySelector(".tt-skills").innerHTML = skillsHTML;
-  }
-
-  let tx = mx + 16, ty = my - 16;
-  if (tx + 380 > window.innerWidth) tx = mx - 396;
-  if (ty < 10) ty = my + 16;
-  if (ty + 260 > window.innerHeight) ty = my - 260;
-  tt.style.left = tx + "px"; tt.style.top = ty + "px";
-  tt.classList.add("visible");
-}
-
-function hideTooltip() { document.getElementById("tooltip").classList.remove("visible"); }
-
-// === Breadcrumb ===
-const LEVEL_LABELS = {
-  major_group: "Major Group",
-  sub_major_group: "Sub-Major Group",
-  minor_group: "Minor Group",
-  unit_group: "Unit Group",
-};
-
-function renderBreadcrumb() {
-  const bc = document.getElementById("breadcrumb");
-  let html = `<span class="bc-item" onclick="navigateTo(-1)">All Occupations</span>`;
-  for (let i = 0; i < drillPath.length; i++) {
-    html += `<span class="bc-sep">&rsaquo;</span>`;
-    if (i < drillPath.length - 1) {
-      html += `<span class="bc-item" onclick="navigateTo(${i})">${drillPath[i].key}</span>`;
-    } else {
-      html += `<span class="bc-item bc-current">${drillPath[i].key}</span>`;
-    }
-  }
-  bc.innerHTML = html;
-}
-
-function navigateTo(index) {
-  if (index < 0) {
-    drillPath = [];
-  } else {
-    drillPath = drillPath.slice(0, index + 1);
-  }
-  refresh();
-}
-
-// === Stats ===
-function updateStats() {
-  const filtered = getFilteredData();
-  const nextLevel = getNextLevel();
-  const count = nextLevel ? buildGroups(filtered, nextLevel).length : filtered.length;
-  document.getElementById("statTotal").textContent = count.toLocaleString();
-  document.getElementById("statLabel").textContent = nextLevel
-    ? (LEVEL_LABELS[nextLevel] || "groups") + " (" + filtered.length + " occupations)"
-    : "occupations";
-
-  // Quadrant breakdown
-  const qc = { TRANSFORM: 0, SHRINK: 0, EVOLVE: 0, STABLE: 0 };
-  for (const d of filtered) { if (d.quadrant && qc[d.quadrant] !== undefined) qc[d.quadrant]++; }
-  const total = filtered.length;
-  const tiers = Object.keys(qc).map(q => `<div class="tier-row">
-    <div class="tier-color" style="background:${QUADRANT_COLORS[q]}"></div>
-    <span class="tier-name">${q}</span>
-    <span class="tier-count">${qc[q]}</span>
-    <span class="tier-pct">${total > 0 ? (qc[q] / total * 100).toFixed(0) : 0}%</span>
-  </div>`).join("");
-  document.getElementById("block2").innerHTML = `<h3>Quadrants</h3><div class="tier-bar">${tiers}</div>`;
-
-  // Avg scores
-  let sa = 0, sm = 0, n = 0;
-  for (const d of filtered) { if (d.automation_risk != null) { sa += d.automation_risk; sm += d.amplification_potential; n++; } }
-  const aa = n > 0 ? sa / n : 0, am = n > 0 ? sm / n : 0;
-  document.getElementById("block3").innerHTML = `<h3>Avg Automation</h3>
-    <div class="stat-big"><span style="color:${automationColor(aa, 1)}">${aa.toFixed(1)}</span></div>
-    <div class="stat-label">risk (1-10)</div>`;
-  document.getElementById("block4").innerHTML = `<h3>Avg Amplification</h3>
-    <div class="stat-big"><span style="color:${amplificationColor(am, 1)}">${am.toFixed(1)}</span></div>
-    <div class="stat-label">potential (1-10)</div>`;
-}
-
-// === Events ===
-canvas.addEventListener("mousemove", (e) => {
-  const hit = hitTest(e.clientX, e.clientY);
-  if (hit !== hovered) { hovered = hit; draw(); }
-  if (hovered) { showTooltip(hovered, e.clientX, e.clientY); canvas.style.cursor = "pointer"; }
-  else { hideTooltip(); canvas.style.cursor = "default"; }
-});
-
-canvas.addEventListener("click", (e) => {
-  const hit = hitTest(e.clientX, e.clientY);
-  if (!hit) return;
-  if (hit._isGroup) {
-    drillPath.push({ level: hit._groupField, key: hit._groupKey });
-    refresh();
-  } else if (hit.slug) {
-    // A single job: open its profile, keeping any ?scorer= choice.
-    location.href = "portfolio.html" + location.search + "#" + hit.slug;
-  }
-});
-
-canvas.addEventListener("mouseleave", () => { hovered = null; hideTooltip(); draw(); });
-
-function refresh() {
-  hovered = null;
-  hideTooltip();
-  renderBreadcrumb();
-  updateStats();
-  layout();
-  draw();
-}
-
-function resize() { dpr = window.devicePixelRatio || 1; layout(); draw(); }
-
-// === Legend ===
-const LEGEND_CONFIG = {
-  evolution:     { low: "Low", high: "High", fn: evolutionColor },
-  automation:    { low: "Low risk", high: "High risk", fn: automationColor },
-  amplification: { low: "Low", high: "High", fn: amplificationColor },
-  quadrant:      null,
-};
-
-function drawGradientLegend() {
-  const wrap = document.getElementById("gradientLegendWrap");
-  const cfg = LEGEND_CONFIG[colorMode];
-  if (!cfg) {
-    wrap.innerHTML = `<div class="quadrant-swatches">
-      ${Object.keys(QUADRANT_COLORS).map(q => `<span class="q-swatch"><span class="q-swatch-dot" style="background:${QUADRANT_COLORS[q]}"></span>${q}</span>`).join("")}
-    </div>`;
-    return;
-  }
-  wrap.innerHTML = `<span id="legendLow">${cfg.low}</span><canvas id="gradientLegend" width="80" height="8" style="border-radius:2px"></canvas><span id="legendHigh">${cfg.high}</span>`;
-  const c = document.getElementById("gradientLegend");
-  const gctx = c.getContext("2d");
-  for (let x = 0; x < 80; x++) {
-    gctx.fillStyle = cfg.fn(x / 79 * 10, 1);
-    gctx.fillRect(x, 0, 1, 8);
-  }
-}
-
-// === Layer toggle ===
-document.getElementById("colorToggle").addEventListener("click", (e) => {
-  const btn = e.target.closest("button");
-  if (!btn || !btn.dataset.mode) return;
-  colorMode = btn.dataset.mode;
-  document.querySelectorAll("#colorToggle button").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  drawGradientLegend();
-  refresh();
-});
-
-// === Load ===
-scorerFetch("data")
-  .then(r => r.json())
-  .then(d => {
-    allData = d;
-    drawGradientLegend();
-    renderBreadcrumb();
-    updateStats();
-    resize();
-  });
-
-window.addEventListener("resize", resize);
-</script>
-<footer class="site-attribution">
-  <p>This service uses the ESCO classification of the European Commission. What you see is a modified version of ESCO v1.2.1: the scores, quadrants, rationales and narratives are AI-generated additions (Google Gemini Flash) and are not part of ESCO. They are model estimates, meant for exploring, not for predicting.</p>
-  <p>Occupation groups follow ISCO-08. ESCO states: &ldquo;Information and data in ESCO is based on an original work published by the ILO under the title International Standard Classification of Occupations, ISCO-08. Structure, Group Definitions and Correspondence Tables. Copyright &copy; 2012 International Labour Organization. Adapted and reproduced with permission.&rdquo; Neither the European Commission nor the ILO endorses this site.</p>
-  <p><a href="https://github.com/Jorisdevreede/AI-ISCO/blob/master/THIRD-PARTY-NOTICES.md">Licensing and attribution</a></p>
-</footer>
-<style>
-.site-attribution { max-width: 980px; margin: 48px auto 0; padding: 20px 28px 32px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; line-height: 1.6; color: #888894; }
-.site-attribution p { margin: 0 0 8px; }
-.site-attribution a { color: #b4b4c0; }
-</style>
+<script src="scorer.js" defer></script>
+<script type="module" src="js/pages/landing.js"></script>
 </body>
 </html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job details — AI-ISCO</title>
+<meta name="description" content="How AI could change one occupation: two scores, the skills behind them, what changes in the work, and where to go next.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/job.css">
+</head>
+<body>
+
+<!-- Must be static markup: scorer.js looks this element up by id. -->
+<nav id="site-nav"></nav>
+
+<main id="main" class="page job-page">
+
+  <div class="job-topbar">
+    <p id="job-back" class="job-back"></p>
+    <div class="job-finder">
+      <label for="job-find" class="small muted">Find another job</label>
+      <div class="combobox">
+        <input id="job-find" type="text" placeholder="Type a job title" spellcheck="false">
+        <ul id="job-find-list"></ul>
+      </div>
+      <p id="job-find-status" class="visually-hidden" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <p id="job-loading" class="loading" hidden>Loading the job data. It is one large file, so this can take a few seconds…</p>
+  <div id="job-error"></div>
+
+  <header class="job-head">
+    <h1 id="job-title" tabindex="-1">Will AI change this job?</h1>
+    <p id="job-meta" class="job-meta"></p>
+    <div id="job-tools" class="job-tools" hidden>
+      <a id="job-framing" class="button button--quiet" href="index.html"></a>
+      <button id="job-copy" class="button button--quiet" type="button">Copy link</button>
+      <p id="job-copy-status" class="small muted" role="status" aria-live="polite"></p>
+    </div>
+    <p id="job-note" class="job-note" hidden></p>
+  </header>
+
+  <div id="job-intro" class="job-intro"></div>
+
+  <article id="job-article" hidden>
+
+    <section class="card">
+      <h2 id="scores-heading"></h2>
+      <p id="scores-intro" class="small muted"></p>
+      <div id="score-list" class="score-grid"></div>
+      <p id="exposure-line" class="small muted"></p>
+    </section>
+
+    <div id="advice-top"></div>
+
+    <section class="card">
+      <h2 id="scatter-heading"></h2>
+      <p id="scatter-intro" class="small muted"></p>
+      <div class="scatter-wrap">
+        <canvas id="scatter" role="img" aria-label="Skill scatter plot"></canvas>
+        <div id="scatter-tip" class="scatter-tip" hidden aria-hidden="true"></div>
+      </div>
+      <p class="scatter-legend">
+        <span><span class="legend-dot legend-dot--essential"></span>Essential to the job</span>
+        <span><span class="legend-dot"></span>Optional</span>
+        <span id="scatter-threshold"></span>
+      </p>
+      <button id="scatter-toggle" class="button button--quiet" type="button"
+              aria-expanded="false" aria-controls="scatter-table-wrap">View as table</button>
+      <div id="scatter-table-wrap" class="table-scroll" hidden>
+        <table>
+          <caption id="scatter-caption"></caption>
+          <thead>
+            <tr>
+              <th scope="col">Skill</th>
+              <th scope="col" class="numeric">Automation risk (out of 10)</th>
+              <th scope="col" class="numeric">Amplification (out of 10)</th>
+              <th scope="col">In this job</th>
+            </tr>
+          </thead>
+          <tbody id="scatter-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="skill-columns">
+      <section class="card">
+        <h2 id="dep-heading"></h2>
+        <p id="dep-count" class="small muted"></p>
+        <ul id="dep-list" class="skill-list"></ul>
+      </section>
+      <section class="card">
+        <h2 id="app-heading"></h2>
+        <p id="app-count" class="small muted"></p>
+        <ul id="app-list" class="skill-list"></ul>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2 id="cards-heading"></h2>
+      <p class="small muted">Each rationale is what the model wrote while it scored that skill. Open one to read it. The red number is automation risk, the blue one amplification, each out of 10.</p>
+      <div id="cards-list"></div>
+    </section>
+
+    <section id="sec-story" class="card">
+      <h2 id="story-heading"></h2>
+      <p id="story-note" class="job-note" hidden></p>
+      <p id="story-facts" class="story-facts"></p>
+      <div id="story-text" class="story-text"></div>
+    </section>
+
+    <section id="sec-tasks" class="card">
+      <h2 id="tasks-heading"></h2>
+      <div id="tasks-grid" class="card-grid"></div>
+    </section>
+
+    <section id="sec-week" class="card">
+      <h2 id="week-heading"></h2>
+      <div id="week-bars"></div>
+    </section>
+
+    <div id="advice-bottom"></div>
+
+    <section class="card">
+      <h2 id="paths-heading"></h2>
+      <p id="paths-intro" class="small muted"></p>
+      <div id="paths-grid" class="path-grid"></div>
+      <h3 id="sideways-heading"></h3>
+      <p id="sideways-note" class="small muted"></p>
+      <div id="sideways-grid" class="path-grid"></div>
+    </section>
+
+    <section class="card">
+      <h2 id="learn-heading"></h2>
+      <p id="learn-intro" class="small muted"></p>
+      <ul id="learn-list" class="learn-list"></ul>
+    </section>
+
+  </article>
+</main>
+
+<script src="scorer.js" defer></script>
+<script type="module" src="js/pages/job.js"></script>
+</body>
+</html>

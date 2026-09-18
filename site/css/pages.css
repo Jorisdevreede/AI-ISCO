@@ -1,0 +1,267 @@
+/* Page-specific styles for skill.html, method.html and insights.html.
+ *
+ * css/app.css owns the tokens and the shared components; this file only adds
+ * what these three pages need on top, and never redefines a token. Same rules
+ * apply: nothing scrolls the page sideways at 390px, every text colour reaches
+ * 4.5:1, targets are at least 24px, and motion respects prefers-reduced-motion.
+ */
+
+/* --- shared page furniture ----------------------------------------------- */
+
+.page-intro {
+  max-width: 62ch;
+  margin: 0 0 var(--space-5);
+  color: var(--fg-muted);
+  font-size: 1.0625rem;
+}
+
+.section { margin: 0 0 var(--space-6); }
+.section > h2 { margin-bottom: var(--space-2); }
+
+.section-note {
+  max-width: 62ch;
+  margin: 0 0 var(--space-4);
+  color: var(--fg-muted);
+  font-size: 0.9375rem;
+}
+
+.meta-line {
+  margin: -8px 0 var(--space-5);
+  color: var(--fg-muted);
+  font-size: 0.9375rem;
+}
+
+.prose { max-width: 68ch; }
+.prose p { font-size: 1rem; line-height: 1.75; }
+.prose h2 { margin-top: var(--space-6); }
+.prose ul { margin: 0 0 var(--space-4); padding-left: var(--space-5); }
+.prose li { margin-bottom: var(--space-2); line-height: 1.65; }
+
+.inline-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* --- score bars (skill page) --------------------------------------------- */
+
+.score-list {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 640px;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 180px) 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.score-label { font-weight: 600; font-size: 0.9375rem; }
+
+/* Both are <span>s, so they need a block display before height applies. */
+.score-track {
+  display: block;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.score-fill { display: block; height: 100%; background: var(--gold); }
+.score-fill[data-axis='amplification'] { background: var(--blue); }
+
+.score-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  color: var(--fg);
+}
+.score-value .score-word { color: var(--fg-muted); }
+
+@media (max-width: 560px) {
+  .score-row { grid-template-columns: 1fr auto; }
+  .score-track { grid-column: 1 / -1; }
+}
+
+/* --- rationale ------------------------------------------------------------ */
+
+.rationale {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+}
+.rationale p { margin: 0 0 var(--space-2); font-size: 1rem; }
+.rationale-source { margin: 0; color: var(--fg-muted); font-size: 0.8125rem; }
+
+/* --- occupation lists ----------------------------------------------------- */
+
+.split {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+}
+
+.occ-list { margin: 0; padding: 0; list-style: none; }
+.occ-list li { border-bottom: 1px solid var(--line); }
+.occ-list li:last-child { border-bottom: 0; }
+
+.occ-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-2) var(--space-1);
+  color: var(--fg);
+  text-decoration: none;
+}
+.occ-link:hover { color: var(--fg); background: rgba(255, 255, 255, 0.05); }
+.occ-link .occ-title { text-decoration: underline; text-underline-offset: 2px; }
+.occ-scores {
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.list-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+}
+.list-tools select {
+  min-height: var(--tap);
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--fg);
+  background: var(--bg2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+
+/* --- skill lookup, empty state ------------------------------------------- */
+
+.lookup { max-width: 640px; }
+.lookup .combobox { margin-bottom: var(--space-3); }
+.examples { margin-top: var(--space-4); }
+.examples h2 { font-size: 0.9375rem; margin-bottom: var(--space-2); }
+
+/* --- insights ------------------------------------------------------------- */
+
+.hero { margin: 0 0 var(--space-6); padding-bottom: var(--space-5); border-bottom: 1px solid var(--line); }
+.hero-kicker {
+  margin: 0 0 var(--space-2);
+  color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.hero-sub { max-width: 64ch; color: var(--fg-muted); font-size: 1.0625rem; }
+
+.hero-stats {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  margin: 0;
+  padding: 0;
+}
+.hero-stat { margin: 0; }
+.hero-stat dt { color: var(--fg-muted); font-size: 0.75rem; order: 2; }
+.hero-stat dd {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.hero-stat { display: flex; flex-direction: column; }
+.hero-stat dd { order: 1; }
+
+.q-bar { display: block; height: 8px; border-radius: 4px; background: var(--line-strong); }
+.q-bar[data-quadrant='TRANSFORM'] { background: var(--q-transform); }
+.q-bar[data-quadrant='SHRINK'] { background: var(--q-shrink); }
+.q-bar[data-quadrant='EVOLVE'] { background: var(--q-evolve); }
+.q-bar[data-quadrant='STABLE'] { background: var(--q-stable); }
+td.q-bar-cell { width: 40%; min-width: 90px; }
+
+.rank-list { margin: 0; padding: 0; list-style: none; counter-reset: rank; }
+.rank-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.rank-list li::before {
+  counter-increment: rank;
+  content: counter(rank);
+  min-width: 1.6em;
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+.rank-list .rank-scores { margin-left: auto; color: var(--fg-muted); font-size: 0.8125rem; }
+
+.article { margin-top: var(--space-7); padding-top: var(--space-5); border-top: 3px solid var(--gold); }
+.article-byline { margin-bottom: var(--space-5); color: var(--fg-muted); font-style: italic; }
+.article-body { max-width: 68ch; }
+.article-body p { margin-bottom: var(--space-4); font-size: 1.0625rem; line-height: 1.8; }
+.article-body .dropcap::first-letter {
+  float: left;
+  margin: 6px var(--space-2) 0 0;
+  color: var(--gold);
+  font-size: 3.2em;
+  font-weight: 800;
+  line-height: 0.85;
+}
+.article-body .pullquote {
+  margin: var(--space-6) 0;
+  padding: var(--space-3) 0 var(--space-3) var(--space-4);
+  border-left: 3px solid var(--gold);
+  color: var(--gold);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* --- method --------------------------------------------------------------- */
+
+.method-lede { max-width: 62ch; font-size: 1.125rem; line-height: 1.7; }
+.method-figure {
+  display: block;
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.method-figure .figure-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.method-figure .figure-note { color: var(--fg-muted); font-size: 0.875rem; }
+
+.source-list { margin: 0; padding: 0; list-style: none; }
+.source-list li { margin-bottom: var(--space-3); }
+.source-list dt { font-weight: 600; }
+.source-list dd { margin: 0 0 var(--space-3); color: var(--fg-muted); font-size: 0.9375rem; }
+
+@media (max-width: 640px) {
+  .hero-stat dd { font-size: 1.5rem; }
+  .article-body p { font-size: 1rem; }
+  .article-body .pullquote { font-size: 1.0625rem; }
+}
