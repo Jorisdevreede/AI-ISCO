@@ -94,7 +94,7 @@ Sharding `portfolio_data.json` into one file per job is a later increment; until
 
 ## Tests
 
-- `node --test tests/js/` for the pure modules.
+- `npm test` (`node --test tests/js/*.test.js`) for the pure modules.
 - `pytest tests/e2e/` with Playwright for the flows: find a job by a synonym and land on the right page; every chip opens the job it names; treemap → group → job → back to the group; neutral-wording link round-trips; group overview views and the table alternative; skill lookup → an occupation that needs it; keyboard-only path from landing to a job page; no horizontal scroll at 390 px; no console errors.
 - `pytest` for `build_site_indexes.py` against small synthetic fixtures.
 

@@ -8,7 +8,7 @@ import { rankOccupations } from './js/search.js';
 ```
 
 Five of them are **pure** — they import nothing from the DOM and are unit-tested
-with `node --test tests/js/`. Four are **thin DOM wrappers**: put logic in the
+with `npm test` (`node --test tests/js/*.test.js`). Four are **thin DOM wrappers**: put logic in the
 pure ones so it stays testable.
 
 A working example of everything below is [`_selftest.html`](./_selftest.html),
