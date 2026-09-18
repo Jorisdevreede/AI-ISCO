@@ -8,7 +8,7 @@ them, and not before.
 
 import pytest
 
-from .conftest import reveal_all
+from .conftest import reveal_all, reveal_section
 
 SLUG = "software-developer"
 
@@ -21,6 +21,10 @@ SHARD = f"{UNIT}_v2.json"
 SEARCH_INDEX = "search_index_v2.json"
 SKILL_INDEX = "skill_index_v2.json"
 SKILL_OCCUPATIONS = "skill_occupations_v2.json"
+
+#: The two the method page's same-rubric comparison needs, neither of them the
+#: active set's.
+COMPARED = ("search_index.json", "search_index_typesafe.json")
 
 PAGES = [
     ("index.html", "#chip-row a"),
@@ -75,6 +79,30 @@ def test_the_skill_page_reads_two_indexes_until_a_skill_is_opened(
     reveal_all(page)
     page.locator("#skill-detail .occ-link").first.wait_for(state="visible", timeout=15_000)
     assert SKILL_OCCUPATIONS in desktop.fetched
+    assert desktop.unexpected_errors() == []
+
+
+def test_the_tree_reads_only_the_active_set_s_indexes(desktop, open_ready):
+    """The tree once fetched both sets' index files — 3.5 MB, and half of it
+    never shown."""
+    open_ready(desktop, "tree.html", "[role='tree'] [role='treeitem']")
+    assert SEARCH_INDEX in desktop.fetched
+    assert "groups_v2.json" in desktop.fetched
+    for name in ("search_index.json", "groups.json"):
+        assert name not in desktop.fetched, f"the tree also fetched {name}"
+
+
+def test_the_method_page_waits_before_fetching_two_more_indexes(desktop, open_ready):
+    """The same-rubric comparison needs two whole search indexes, neither of
+    them the set on screen, and it sits near the foot of the page."""
+    page = open_ready(desktop, "method.html", "#type-table tbody tr")
+    for name in COMPARED:
+        assert name not in desktop.fetched, f"the method page fetched {name} at once"
+
+    reveal_section(page, "#agreement")
+    page.locator("#agreement-table td").first.wait_for(state="visible", timeout=15_000)
+    for name in COMPARED:
+        assert name in desktop.fetched
     assert desktop.unexpected_errors() == []
 
 

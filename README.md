@@ -697,7 +697,7 @@ uv sync --dev
 uv run pytest --ignore=tests/e2e --cov --cov-branch    # Python: unit and characterisation tests
 npm test                                               # JavaScript: node --test over the pure modules
 uv run playwright install chromium                     # once, for the end-to-end tests
-uv run pytest tests/e2e -q                             # the site's flows in a real browser (about a minute)
+uv run pytest tests/e2e -q                             # the site's flows in a real browser (218 tests, two to three minutes)
 uv run radon cc -s -n B aiisco                         # anything more complex than grade A
 
 uvx ruff check aiisco tests aggregate_scores.py build_portfolio_data.py compare_skill_scores.py \
@@ -707,14 +707,15 @@ uvx ruff check aiisco tests aggregate_scores.py build_portfolio_data.py compare_
 
 | What | How it is kept |
 |---|---|
-| Python coverage | 721 tests, with line and branch coverage over the pipeline scripts and the `aiisco/` package; CI fails below 95% |
+| Python coverage | 732 tests, 100% line and branch coverage over the pipeline scripts and the `aiisco/` package; CI fails below 95% |
 | Behaviour | Golden-output tests were written before any refactoring, and the real pipeline output was compared byte for byte before and after |
 | Unit size and complexity | Following the SIG maintainability guidelines: short functions, low cyclomatic complexity, at most four parameters, no duplicated blocks |
 | Scoring v2 arithmetic | `tests/test_v2.py`, `tests/test_rubric_v2.py`, `tests/test_score_skills_v2.py` and `tests/test_pipeline_v2.py` cover the thresholds, the class and type rules one boundary at a time, the answer serialisation and `--rederive` |
 | The published files themselves | `tests/test_search_synonyms.py` asserts against the built indexes of both schemes that the labels people actually type reach the right job ("software engineer" → Software developer, "lorry driver" → a truck driver). `tests/test_site_head.py` asserts that every page that is not a redirect has a real `<title>`, a meta description and the Open Graph block |
-| Front-end logic | Pure modules (search ranking, quadrant rules, the scheme switch, share arithmetic, URL state, page models, treemap layout) run under `node --test`; no browser needed |
+| Front-end logic | Pure modules (search ranking, quadrant rules, the scheme switch, share arithmetic, URL state, page models, treemap layout, data loading) run under `node --test`: 462 tests, every line of those modules covered; no browser needed |
 | The flows visitors take | `tests/e2e/` serves a copy of `site/` and drives it with Playwright: find a job by a synonym, every chip opens the job it names, group → job → back, neutral wording, the four group views and their table alternative, the skill pages, a keyboard-only path, the second score set and its borrowed rationales, the per-page load budget, no horizontal scroll at 390 px, no console errors. Set `AIISCO_E2E_CHANNEL=chrome` to use an installed Chrome |
 | No network, no keys | Every model call is faked in the tests. The fixtures under `tests/fixtures/` are synthetic ([why](tests/fixtures/README.md)) |
+| Static analysis | `sonar-project.properties` scopes a SonarQube scan to the project's own code (no data, no BLS pages, no karpathy/jobs files). The last local scan had no open issues. The browser-only modules are left out of Sonar's coverage figure because `tests/e2e` covers them in a real browser, which Sonar cannot see; four rule-and-file suppressions are each explained in that file |
 | Known bugs | Behaviour that looks wrong but is published is pinned by a test marked `# BUG:` rather than silently changed, because fixing it changes the published numbers |
 
 `.github/workflows/tests.yml` runs three jobs on every push and pull request:

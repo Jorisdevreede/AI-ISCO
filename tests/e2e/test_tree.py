@@ -260,15 +260,13 @@ def test_a_skill_row_names_the_class_the_model_gave_it(desktop, developer_skills
     a different class from the one the published shard gave the skill."""
     page = desktop.open(f"tree.html#job={SLUG}")
     page.wait_for_selector(".skill-table")
-    cells = page.locator(".skill-table tbody td.class-cell")
-    named = {text.split("\n")[0].strip() for text in cells.all_inner_texts()}
-    expected = {SKILL_CLASS_NAMES[skill["c"]] for skill in developer_skills["rows"]}
-    for shown in named:
-        assert any(shown.startswith(name) for name in expected), shown
-    assert {name for name in expected
-            if any(shown.startswith(name) for shown in named)} == expected
-    assert sorted(cells.evaluate_all("nodes => nodes.map(n => n.dataset.class)")) == sorted(
-        skill["c"] for skill in developer_skills["rows"])
+    shown = page.locator(".skill-table tbody td.class-cell").evaluate_all(
+        "nodes => nodes.map((node) =>"
+        " ({code: node.dataset.class, text: node.textContent}))")
+    assert sorted(cell["code"] for cell in shown) == sorted(
+        skill.get("c") or "" for skill in developer_skills["rows"])
+    for cell in shown:
+        assert cell["text"].startswith(SKILL_CLASS_NAMES[cell["code"]]), cell
 
 
 def test_the_tree_works_without_a_job_shard(desktop, groups_v2, by_slug_v2):
