@@ -13,6 +13,7 @@ Usage:
 import os
 import sys
 from collections import Counter
+from typing import NoReturn
 
 from aiisco import esco
 from aiisco.jsonio import write_json
@@ -25,7 +26,7 @@ OUT_DIR = "data"
 # Loading
 # ---------------------------------------------------------------------------
 
-def fail(message):
+def fail(message) -> NoReturn:
     """Print an error and stop: none of the later steps work without the CSVs."""
     print(message)
     sys.exit(1)
@@ -57,6 +58,14 @@ def load_tables():
     if not tables["occupations"].rows:
         fail("\nERROR: Cannot proceed without occupations data.")
     return tables
+
+
+def join(tables):
+    """Join the loaded tables, stopping when the download contradicts itself."""
+    try:
+        return esco.join_tables(tables)
+    except ValueError as clash:
+        fail(f"\nERROR: {clash}")
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +147,7 @@ def main():
     print(f"\nFound {len(csv_files)} CSV files in {DATA_DIR}/")
     print("Loading data...\n")
 
-    occupations, skills = esco.join_tables(load_tables())
+    occupations, skills = join(load_tables())
 
     write_outputs(occupations, skills)
     print_summary(occupations, skills)

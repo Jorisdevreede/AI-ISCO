@@ -9,33 +9,58 @@ compact JSON to site/portfolio_data.json.
 With --scorer typesafe it reads data/skill_scores_typesafe.json and writes
 site/portfolio_data_typesafe.json, leaving the Gemini file untouched. That
 scorer returns numbers only, so each skill borrows the Gemini rationale, marked
-with who wrote it and for which scores ("rf").
+with who wrote it and for which scores ("rf"). --scorer v2 is the same in that
+respect, and additionally carries the skill classes, the four shares and the
+occupation types of docs/scoring-v2.md.
+
+The dataset stays published, but no page fetches it: fourteen megabytes to show
+one job is not a page. For the two scorers the site's switch offers, the run also
+writes what the pages actually read - site/jobs/units.json, one
+site/jobs/<unit group>.json per ISCO unit group, and the rationales sharded into
+site/skill_notes/.
 
 Usage:
     uv run python build_portfolio_data.py
     uv run python build_portfolio_data.py --scorer typesafe
+    uv run python build_portfolio_data.py --scorer v2
 """
 
 import json
 import os
 from collections import defaultdict
 
-from aiisco.jsonio import load_json
+from aiisco import site_indexes as ix
+from aiisco import v2
+from aiisco.jsonio import load_json, write_shard_files
 from aiisco.portfolio import (
     MIN_JACCARD_OVERLAP,
     PortfolioIndex,
     build_occupations,
     build_short_id_map,
     build_skills,
+    build_unit_shards,
+    build_units,
     collect_skill_info,
     compute_adjacency,
     scored_occupation,
 )
-from aiisco.rollup import QUADRANTS, index_skill_scores, scorer_suffix
+from aiisco.rollup import (
+    QUADRANTS,
+    SCORER_SUFFIX,
+    index_skill_scores,
+    parse_scorer,
+)
 
 DATA_DIR = "data"
 SITE_DIR = "site"
+JOBS_DIR = "jobs"
+NOTES_DIR = "skill_notes"
+UNITS_FILE = "units.json"
 PUBLISHED_SCORER = "gemini"  # the scorer behind the unsuffixed files; it writes rationales
+V2 = "v2"
+#: The scorers the site's "Scores from" switch offers, and so the only ones whose
+#: per-unit job files and rationale shards are worth writing.
+SHARDED_SCORERS = (PUBLISHED_SCORER, V2)
 
 
 # ---------------------------------------------------------------------------
@@ -81,16 +106,35 @@ def borrow_rationales(skill_scores, published):
         print(f"  Rationales borrowed from the {PUBLISHED_SCORER} scores: {len(lacking)}")
 
 
-def load_inputs(suffix):
+def kept_per_skill(scorer):
+    """What index_skill_scores keeps per skill beyond the two display scores."""
+    if scorer == V2:
+        return lambda entry: {**rationale_of(entry), **v2.skill_extra(entry)}
+    return rationale_of
+
+
+def dataset_meta(scorer, raw_scores):
+    """The scheme and the model a share-scheme dataset carries at its top level.
+
+    build_site_indexes.py reads the portfolio file and nothing else, so the
+    scheme and the model that produced it have to travel with it.
+    """
+    if scorer != V2:
+        return {}
+    models = sorted({entry["model"] for entry in raw_scores if entry.get("model")})
+    return {"scheme": ix.SCHEME_SHARES, "model": ", ".join(models)}
+
+
+def load_inputs(suffix, scorer):
     """Load the occupations and the per-skill scores of the chosen scorer."""
     occupations = load_json(os.path.join(DATA_DIR, "esco_occupations.json"))
     raw_scores = load_json(os.path.join(DATA_DIR, f"skill_scores{suffix}.json"))
     print(f"  Occupations loaded: {len(occupations)}")
     print(f"  Skill scores loaded: {len(raw_scores)}")
-    skill_scores = index_skill_scores(raw_scores, rationale_of)
+    skill_scores = index_skill_scores(raw_scores, kept_per_skill(scorer))
     print(f"  Skills with valid scores: {len(skill_scores)}")
     borrow_rationales(skill_scores, published_rationales(suffix))
-    return occupations, skill_scores
+    return occupations, skill_scores, dataset_meta(scorer, raw_scores)
 
 
 def load_narratives():
@@ -136,12 +180,12 @@ def build_adjacency(occ_data):
     return adjacency
 
 
-def build_dataset(occ_data, adjacency, index):
-    """The whole compact dataset: the skills map and the occupation entries."""
+def build_dataset(occ_data, adjacency, index, meta):
+    """The whole compact dataset: the skills map, the occupations, and how to read them."""
     skills = build_skills(occ_data, index)
     print(f"\nSkills in output: {len(skills)}")
     return {"skills": skills,
-            "occupations": build_occupations(occ_data, adjacency, index)}
+            "occupations": build_occupations(occ_data, adjacency, index), **meta}
 
 
 # ---------------------------------------------------------------------------
@@ -155,6 +199,50 @@ def write_dataset(dataset, suffix):
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(dataset, f, ensure_ascii=False, separators=(",", ":"))
     return out_path
+
+
+def write_units(dataset):
+    """Write the slug -> unit group map every page starts from; it has no suffix."""
+    path = os.path.join(SITE_DIR, JOBS_DIR, UNITS_FILE)
+    payload = write_shard_files(os.path.join(SITE_DIR, JOBS_DIR),
+                                {UNITS_FILE: build_units(dataset["occupations"])})[0]
+    return path, len(payload), ix.gzipped_size(payload)
+
+
+def write_named_shards(directory, files):
+    """Write a family of shards and measure what each one costs a browser."""
+    payloads = write_shard_files(os.path.join(SITE_DIR, directory), files)
+    return [len(payload) for payload in payloads], \
+        [ix.gzipped_size(payload) for payload in payloads]
+
+
+def write_job_shards(dataset, suffix):
+    """One file per ISCO unit group, each carrying its jobs and their neighbours."""
+    shards = build_unit_shards(dataset)
+    return write_named_shards(JOBS_DIR, {f"{unit}{suffix}.json": shard
+                                         for unit, shard in shards.items()})
+
+
+def write_note_shards(dataset, suffix):
+    """The rationales, sharded so one skill costs one small file."""
+    shards = ix.build_skill_notes(dataset["skills"])
+    return write_named_shards(NOTES_DIR, {f"{name}{suffix}.json": shard
+                                          for name, shard in shards.items()})
+
+
+def write_page_files(dataset, scorer, suffix):
+    """Write everything the pages fetch; return a line about each family written.
+
+    Only the scorers the site's switch offers get them: nothing loads the
+    `_typesafe` set, so sharding it would be 426 files nobody fetches.
+    """
+    if scorer not in SHARDED_SCORERS:
+        return []
+    path, raw, packed = write_units(dataset)
+    return [f"  {path}: {raw:,} bytes, {packed:,} gzipped",
+            "  " + ix.shard_report(f"jobs{suffix}", *write_job_shards(dataset, suffix)),
+            "  " + ix.shard_report(f"skill_notes{suffix}",
+                                   *write_note_shards(dataset, suffix))]
 
 
 def report_counts(out_path, dataset, narratives):
@@ -192,37 +280,45 @@ def report_adjacency(occupations):
               f"min={min(counts)}  max={max(counts)}")
 
 
-def report_quadrants(occupations):
-    """Print how the occupations are spread over the four quadrants."""
+def report_classes(occupations, codes, heading, width):
+    """Print how the occupations are spread over a fixed set of class codes."""
     counts = defaultdict(int)
     for occ in occupations:
         counts[occ["q"]] += 1
-    print("\n  Quadrant distribution:")
-    for quadrant in QUADRANTS:
-        found = counts.get(quadrant, 0)
+    print(f"\n  {heading}:")
+    for code in codes:
+        found = counts.get(code, 0)
         pct = found / len(occupations) * 100 if occupations else 0
-        print(f"    {quadrant:12s}: {found:4d} ({pct:5.1f}%)")
+        print(f"    {code:{width}s}: {found:4d} ({pct:5.1f}%)")
 
 
-def report(out_path, dataset, index):
+def report(out_path, dataset, index, pages=()):
     """Print the summary the operator reads to sanity-check a run."""
     report_counts(out_path, dataset, index.narratives)
+    for line in pages:
+        print(line)
     report_adjacency(dataset["occupations"])
-    report_quadrants(dataset["occupations"])
+    if dataset.get("scheme") == ix.SCHEME_SHARES:
+        report_classes(dataset["occupations"], v2.TYPE_ORDER, "Type distribution", 20)
+    else:
+        report_classes(dataset["occupations"], QUADRANTS, "Quadrant distribution", 12)
     print("\nDone.")
 
 
 def main():
     """Build the portfolio dataset for the scorer named on the command line."""
-    suffix = scorer_suffix(__doc__.split("\n\n")[0])
+    scorer = parse_scorer(__doc__.split("\n\n")[0])
+    suffix = SCORER_SUFFIX[scorer]
     print("Portfolio data builder")
     print("=" * 60)
-    occupations, skill_scores = load_inputs(suffix)
+    occupations, skill_scores, meta = load_inputs(suffix, scorer)
     index = build_index(occupations, skill_scores)
     occ_data = score_occupations(occupations, skill_scores)
     adjacency = build_adjacency(occ_data)
-    dataset = build_dataset(occ_data, adjacency, index)
-    report(write_dataset(dataset, suffix), dataset, index)
+    dataset = build_dataset(occ_data, adjacency, index, meta)
+    out_path = write_dataset(dataset, suffix)
+    pages = write_page_files(dataset, scorer, suffix)
+    report(out_path, dataset, index, pages)
 
 
 if __name__ == "__main__":

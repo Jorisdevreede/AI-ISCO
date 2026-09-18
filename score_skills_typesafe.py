@@ -30,19 +30,21 @@ Usage:
 """
 
 import argparse
-import os
-import random
-import subprocess
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
-from typesafe_sdk import Score, TypeSafeClient, TypeSafeError
+from typesafe_sdk import Score, TypeSafeClient
 
 from aiisco.checkpoint import load_checkpoint, pending, save_checkpoint_atomically
 from aiisco.jsonio import load_json
+from aiisco.systemone import (
+    PoolConfig,
+    add_run_arguments,
+    load_api_key,
+    run_pool,
+    select_items,
+    to_ten_scale,
+)
 
 load_dotenv()
 
@@ -124,46 +126,6 @@ QUESTIONS = {
 }
 
 
-def load_api_key():
-    """Return the TypeSafe key from the environment or the login keychain."""
-    key = os.environ.get("TYPESAFE_API_KEY")
-    if key:
-        return key
-    result = subprocess.run(
-        ["security", "find-generic-password", "-a", "typesafe",
-         "-s", "typesafe-api-key", "-w"],
-        capture_output=True, text=True, check=False,
-    )
-    if result.returncode != 0:
-        raise SystemExit(
-            "No TypeSafe key: set TYPESAFE_API_KEY or add the keychain item "
-            "'typesafe-api-key'."
-        )
-    return result.stdout.strip()
-
-
-def to_ten_scale(level_score):
-    """Map a 0-4 band position onto the rubric's 1-10 scale (band centres)."""
-    return round(1.5 + 2.0 * level_score, 2)
-
-
-class RateLimiter:
-    """Space request starts evenly so the run stays under the per-minute cap."""
-
-    def __init__(self, per_second):
-        self.interval = 1.0 / per_second
-        self.lock = threading.Lock()
-        self.next_at = time.monotonic()
-
-    def wait(self):
-        with self.lock:
-            now = time.monotonic()
-            start = max(now, self.next_at)
-            self.next_at = start + self.interval
-        if start > now:
-            time.sleep(start - now)
-
-
 def skill_state(skill):
     """The state a System One request judges: one skill, trimmed."""
     return {
@@ -208,69 +170,16 @@ def save(scored):
     save_checkpoint_atomically(OUTPUT_FILE, scored, indent=1)
 
 
-@dataclass
-class PoolRun:
-    """What the worker pool writes to, and what the progress lines report."""
-
-    scored: dict
-    total: int
-    started: float
-    errors: list = field(default_factory=list)
-    done: int = 0
-    tokens: int = 0
-
-
-def collect(run, future, skill):
-    """Fold one finished request into the run, recording a refused skill."""
-    try:
-        entry = future.result()
-    except TypeSafeError as e:
-        run.errors.append(skill["uri"])
-        print(f"\n  ERROR {skill['title']!r}: {e}")
-        return
-    run.scored[entry["uri"]] = entry
-    run.tokens += entry["input_tokens"]
-
-
-def print_progress(run):
-    """Print the throughput line written at every checkpoint."""
-    rate = run.done / (time.monotonic() - run.started)
-    print(
-        f"  {run.done}/{run.total} "
-        f"({rate:.1f}/s, {run.tokens:,} tokens, "
-        f"errors {len(run.errors)})",
-        flush=True,
+def pool_config(client, args):
+    """How the pool runs one scoring pass for this command line."""
+    return PoolConfig(
+        score_one=lambda limiter, skill: score_skill(client, limiter, skill,
+                                                     args.model),
+        save=save,
+        workers=args.workers,
+        rps=args.rps,
+        checkpoint_every=CHECKPOINT_EVERY,
     )
-
-
-def score_all(to_score, scored, client, args):
-    """Run every remaining skill through the pool, checkpointing as it goes."""
-    limiter = RateLimiter(args.rps)
-    run = PoolRun(scored=scored, total=len(to_score), started=time.monotonic())
-    try:
-        with ThreadPoolExecutor(args.workers) as pool:
-            futures = {
-                pool.submit(score_skill, client, limiter, s, args.model): s
-                for s in to_score
-            }
-            for future in as_completed(futures):
-                collect(run, future, futures[future])
-                run.done += 1
-                if run.done % CHECKPOINT_EVERY == 0:
-                    save(run.scored)
-                    print_progress(run)
-    finally:
-        save(run.scored)
-    return run
-
-
-def select_skills(all_skills, args):
-    """Take the requested slice, then the fixed random sample if asked for."""
-    subset = all_skills[args.start:args.end]
-    if args.sample:
-        random.seed(args.seed)
-        subset = random.sample(subset, min(args.sample, len(subset)))
-    return subset
 
 
 def print_summary(run):
@@ -278,6 +187,8 @@ def print_summary(run):
     elapsed = time.monotonic() - run.started
     print(f"\nDone in {elapsed:.0f}s. Total scored: {len(run.scored)}, "
           f"errors: {len(run.errors)}.")
+    if run.stopped:
+        print(f"Stopped early: {run.stopped}. Re-run to resume.")
     print(f"Input tokens this run: {run.tokens:,}")
     for uri in run.errors[:10]:
         print(f"  failed: {uri}")
@@ -296,24 +207,13 @@ def parse_args():
         description="Score ESCO skills with TypeSafe System One"
     )
     parser.add_argument("--model", default=DEFAULT_MODEL)
-    parser.add_argument("--start", type=int, default=0)
-    parser.add_argument("--end", type=int, default=None)
-    parser.add_argument("--sample", type=int, default=None,
-                        help="Score a fixed random sample of this size")
-    parser.add_argument("--seed", type=int, default=7,
-                        help="Seed for --sample")
-    parser.add_argument("--workers", type=int, default=6)
-    parser.add_argument("--rps", type=float, default=15.0,
-                        help="Request starts per second; keep under TypeSafe's "
-                             "documented rate limit")
-    parser.add_argument("--force", action="store_true",
-                        help="Re-score even if already cached")
+    add_run_arguments(parser, workers=6, rps=15.0)
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    subset = select_skills(load_json(INPUT_FILE), args)
+    subset = select_items(load_json(INPUT_FILE), args)
     scored = load_checkpoint(OUTPUT_FILE, args.force)
     to_score = pending(subset, scored)
 
@@ -325,7 +225,7 @@ def main():
         return
 
     client = TypeSafeClient(api_key=load_api_key())
-    print_summary(score_all(to_score, scored, client, args))
+    print_summary(run_pool(to_score, scored, pool_config(client, args)))
 
 
 if __name__ == "__main__":

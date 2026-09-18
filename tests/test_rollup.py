@@ -6,17 +6,19 @@ from aiisco.rollup import (
     ESSENTIAL_WEIGHT,
     OPTIONAL_WEIGHT,
     QUADRANT_THRESHOLD,
+    SCORER_SUFFIX,
     assign_quadrant,
     evolution_potential,
     get_major_group,
     get_sub_major_group,
     hierarchy_level,
     index_skill_scores,
+    parse_scorer,
     scorable,
     scored_skills,
-    scorer_suffix,
     slugify,
     weighted_averages,
+    weighted_mean,
 )
 
 
@@ -136,13 +138,27 @@ def test_slugify_makes_url_friendly_slugs(title, expected):
     assert slugify(title) == expected
 
 
-@pytest.mark.parametrize("argv, expected", [([], ""), (["--scorer", "gemini"], ""),
-                                            (["--scorer", "typesafe"], "_typesafe")])
-def test_scorer_suffix_only_suffixes_the_non_default_scorer(argv, expected):
-    assert scorer_suffix("description", argv) == expected
+def test_weighted_mean_weighs_essential_skills_twice_as_heavily():
+    assert weighted_mean([(9.0, ESSENTIAL_WEIGHT), (3.0, OPTIONAL_WEIGHT)]) == 7.0
 
 
-def test_scorer_suffix_rejects_an_unknown_scorer(capsys):
+def test_weighted_mean_rounds_to_one_decimal():
+    assert weighted_mean([(1.0, 1.0), (2.0, 2.0)]) == 1.7
+
+
+@pytest.mark.parametrize("argv, expected", [([], "gemini"),
+                                            (["--scorer", "gemini"], "gemini"),
+                                            (["--scorer", "typesafe"], "typesafe"),
+                                            (["--scorer", "v2"], "v2")])
+def test_parse_scorer_reads_the_scorer_off_the_command_line(argv, expected):
+    assert parse_scorer("description", argv) == expected
+
+
+def test_parse_scorer_rejects_an_unknown_scorer(capsys):
     with pytest.raises(SystemExit):
-        scorer_suffix("description", ["--scorer", "nope"])
+        parse_scorer("description", ["--scorer", "nope"])
     assert "invalid choice" in capsys.readouterr().err
+
+
+def test_only_the_published_scorer_writes_unsuffixed_files():
+    assert SCORER_SUFFIX == {"gemini": "", "typesafe": "_typesafe", "v2": "_v2"}

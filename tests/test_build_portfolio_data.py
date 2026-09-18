@@ -218,3 +218,54 @@ def test_a_run_without_any_scored_skill_still_writes_an_empty_dataset(
         {"skills": {}, "occupations": []}
     assert "  Occupations with adjacency: 0 / 0" in printed
     assert "    TRANSFORM   :    0 (  0.0%)" in printed
+
+
+# --- what the pages fetch, per scorer ---------------------------------------
+
+def shard_names(directory, pattern="*.json"):
+    """The names of the matching JSON files in a shard directory, sorted."""
+    return sorted(path.name for path in directory.glob(pattern)) \
+        if directory.exists() else []
+
+
+def test_the_published_scorer_writes_the_units_map_and_one_file_per_unit_group(
+        tmp_path, monkeypatch):
+    run_main(tmp_path, monkeypatch, [])
+
+    jobs = tmp_path / "site/jobs"
+    assert "units.json" in shard_names(jobs)
+    assert shard_names(jobs, "[0-9]*.json") == ["1412.json", "2423.json",
+                                                "2512.json", "2519.json",
+                                                "4132.json", "4412.json"]
+    assert json.loads((jobs / "units.json").read_text())["software-developer"] == "2512"
+
+
+def test_the_published_scorer_writes_the_rationale_shards(tmp_path, monkeypatch):
+    run_main(tmp_path, monkeypatch, [])
+
+    notes = tmp_path / "site/skill_notes"
+    assert shard_names(notes)
+    every = {}
+    for name in shard_names(notes):
+        every.update(json.loads((notes / name).read_text()))
+    data = json.loads((tmp_path / "site/portfolio_data.json").read_text())
+    with_text = {sid for sid, skill in data["skills"].items() if skill.get("r")}
+    assert set(every) == with_text
+
+
+def test_a_shard_never_carries_a_suffix_the_switch_does_not_offer(tmp_path,
+                                                                  monkeypatch):
+    run_main(tmp_path, monkeypatch, ["--scorer", "typesafe"])
+
+    assert shard_names(tmp_path / "site/jobs") == []
+    assert shard_names(tmp_path / "site/skill_notes") == []
+    assert (tmp_path / "site/portfolio_data_typesafe.json").exists()
+
+
+def test_the_run_reports_what_the_pages_will_fetch(tmp_path, monkeypatch, capsys):
+    run_main(tmp_path, monkeypatch, [])
+    printed = capsys.readouterr().out
+
+    assert "site/jobs/units.json" in printed
+    assert "jobs " in printed and "skill_notes " in printed
+    assert "files" in printed

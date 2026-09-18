@@ -144,9 +144,10 @@ def test_scorer_typesafe_reads_and_writes_suffixed_files(workspace):
         assert not (workspace / "site" / f"{name}.json").exists()
 
 
-def test_report_fails_when_a_budget_is_missed(capsys, monkeypatch):
-    monkeypatch.setitem(cli.ix.BUDGET_GZ_KB, "groups", 0)
-    assert cli.report([("groups", 2048, 1024), ("skill_occupations", 10, 10)]) is False
+def test_report_fails_when_a_budget_is_missed(capsys):
+    budgets = {"groups": 0, "skill_occupations": None}
+    assert cli.report([("groups", 2048, 1024), ("skill_occupations", 10, 10)],
+                      budgets) is False
     printed = capsys.readouterr().out
     assert "OVER BUDGET" in printed
     assert "lazy, no budget" in printed
@@ -155,6 +156,25 @@ def test_report_fails_when_a_budget_is_missed(capsys, monkeypatch):
 def test_main_exits_non_zero_when_over_budget(workspace, monkeypatch):
     monkeypatch.setitem(cli.ix.BUDGET_GZ_KB, "skill_index", 0)
     assert run(workspace, "--date", "2026-09-18") == 1
+
+
+def test_the_share_scheme_gets_its_own_skill_index_budget():
+    older = cli.ix.budgets_for(cli.ix.SCHEME_QUADRANTS)
+    shares = cli.ix.budgets_for(cli.ix.SCHEME_SHARES)
+    assert older is cli.ix.BUDGET_GZ_KB
+    assert set(shares) == set(older)
+    assert shares["skill_index"] > older["skill_index"]
+    assert shares["groups"] == older["groups"]
+
+
+def test_both_schemes_share_the_search_budget_so_they_carry_the_same_synonyms():
+    older = cli.ix.budgets_for(cli.ix.SCHEME_QUADRANTS)
+    shares = cli.ix.budgets_for(cli.ix.SCHEME_SHARES)
+    assert shares["search_index"] == older["search_index"] == 260
+
+
+def test_a_family_that_produced_no_shards_says_so():
+    assert cli.ix.shard_report("jobs", [], []).split() == ["jobs", "0", "files"]
 
 
 def test_parse_args_defaults_to_the_published_scorer():

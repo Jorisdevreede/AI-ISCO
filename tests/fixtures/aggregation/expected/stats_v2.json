@@ -1,0 +1,55 @@
+{
+  "built": "2026-09-18",
+  "threshold": 0.5,
+  "occupations": 7,
+  "skills_scored": 14,
+  "scheme": "shares",
+  "model": "jev-test",
+  "types": {
+    "order": [
+      "AUTOMATION_HEAVY",
+      "TRANSFORMING",
+      "AUGMENTED",
+      "MECHANISABLE",
+      "INSULATED_PHYSICAL",
+      "INSULATED_PEOPLE",
+      "MIXED"
+    ],
+    "counts": {
+      "AUTOMATION_HEAVY": 2,
+      "TRANSFORMING": 0,
+      "AUGMENTED": 1,
+      "MECHANISABLE": 1,
+      "INSULATED_PHYSICAL": 0,
+      "INSULATED_PEOPLE": 3,
+      "MIXED": 0
+    },
+    "shares": {
+      "AUTOMATION_HEAVY": 0.2857,
+      "TRANSFORMING": 0.0,
+      "AUGMENTED": 0.1429,
+      "MECHANISABLE": 0.1429,
+      "INSULATED_PHYSICAL": 0.0,
+      "INSULATED_PEOPLE": 0.4286,
+      "MIXED": 0.0
+    }
+  },
+  "skill_classes": {
+    "counts": {
+      "S": 5,
+      "A": 2,
+      "M": 1,
+      "I": 5
+    },
+    "shares": {
+      "S": 0.3846,
+      "A": 0.1538,
+      "M": 0.0769,
+      "I": 0.3846
+    }
+  },
+  "near_line": {
+    "count": 2,
+    "share": 0.2857
+  }
+}

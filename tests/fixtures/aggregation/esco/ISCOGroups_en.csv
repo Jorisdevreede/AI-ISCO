@@ -1,0 +1,20 @@
+conceptType,conceptUri,code,preferredLabel,status
+ISCOGroup,http://example.org/esco/isco/C1,1,Managers,released
+ISCOGroup,http://example.org/esco/isco/C2,2,Professionals,released
+ISCOGroup,http://example.org/esco/isco/C4,4,Clerical support workers,released
+ISCOGroup,http://example.org/esco/isco/C14,14,Hospitality and retail managers,released
+ISCOGroup,http://example.org/esco/isco/C24,24,Business and administration professionals,released
+ISCOGroup,http://example.org/esco/isco/C25,25,ICT professionals,released
+ISCOGroup,http://example.org/esco/isco/C41,41,General and keyboard clerks,released
+ISCOGroup,http://example.org/esco/isco/C44,44,Other clerical support workers,released
+ISCOGroup,http://example.org/esco/isco/C141,141,Hotel and restaurant managers,released
+ISCOGroup,http://example.org/esco/isco/C242,242,Administration professionals,released
+ISCOGroup,http://example.org/esco/isco/C251,251,Software and applications developers,released
+ISCOGroup,http://example.org/esco/isco/C413,413,Keyboard operators,released
+ISCOGroup,http://example.org/esco/isco/C441,441,Other clerical support workers,released
+ISCOGroup,http://example.org/esco/isco/C1412,1412,Restaurant managers,released
+ISCOGroup,http://example.org/esco/isco/C2423,2423,Personnel and careers professionals,released
+ISCOGroup,http://example.org/esco/isco/C2512,2512,Software developers,released
+ISCOGroup,http://example.org/esco/isco/C2519,2519,Software and applications developers not elsewhere classified,released
+ISCOGroup,http://example.org/esco/isco/C4132,4132,Data entry clerks,released
+ISCOGroup,http://example.org/esco/isco/C4412,4412,Mail carriers and sorting clerks,released

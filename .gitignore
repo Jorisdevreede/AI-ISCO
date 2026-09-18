@@ -46,5 +46,8 @@ scoring.log
 
 # Test artefacts
 .coverage
+# SonarQube scanner work directory and the coverage reports made for it
+.scannerwork/
+/sonar-reports/
 htmlcov/
 .pytest_cache/

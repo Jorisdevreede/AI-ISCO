@@ -7,9 +7,11 @@ behind them; build_portfolio_data.py does the reading, writing and reporting.
 """
 
 import hashlib
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 
+from aiisco import v2
 from aiisco.rollup import (
     assign_quadrant,
     evolution_potential,
@@ -18,11 +20,16 @@ from aiisco.rollup import (
     scored_skills,
     slugify,
     weighted_averages,
+    weighted_mean,
 )
 
 MIN_JACCARD_OVERLAP = 0.15
 MAX_ADJACENT = 8
 MAX_GAP_SKILLS = 5
+
+#: The per-skill fields a compact record carries when the scorer supplies them.
+OPTIONAL_SKILL_KEYS = ("rationale", "rationale_from", "mechanical_automation",
+                       "class", "sub", "comp", "mech")
 
 SHORT_ID_LENGTH = 8
 MAX_SHORT_ID_LENGTH = 32
@@ -41,7 +48,11 @@ NARRATIVE_FIELDS = (
 
 @dataclass
 class ScoredOccupation:
-    """An occupation with at least one scored skill, plus its rolled-up scores."""
+    """An occupation with at least one scored skill, plus its rolled-up scores.
+
+    `v2` holds the share-scheme roll-up when the scorer supplies one, and is None
+    for the scorers whose classes are quadrants.
+    """
 
     occ: dict
     essential_uris: set
@@ -50,6 +61,7 @@ class ScoredOccupation:
     amp: float
     evolution: float
     quadrant: str
+    v2: dict = None
 
 
 @dataclass
@@ -110,21 +122,51 @@ def build_short_id_map(all_uris):
 # Score aggregation
 # ---------------------------------------------------------------------------
 
+def weighted_scores(occ, skill_scores):
+    """(score, weight) for every skill of the occupation the scores can reach."""
+    return [(score, weight) for _, score, weight, _ in
+            scored_skills(occ, lambda skill: skill_scores.get(skill["uri"]))]
+
+
+def v2_block(rows):
+    """The share-scheme roll-up of an occupation, or None for an older scorer."""
+    if not any("class" in score for score, _ in rows):
+        return None
+    block = v2.roll_up([v2.contribution(score, weight) for score, weight in rows])
+    block["mechanical"] = weighted_mean(
+        [(score["mechanical_automation"], weight) for score, weight in rows])
+    return block
+
+
 def scored_occupation(occ, skill_scores):
     """Roll one occupation up, or None when not one of its skills is scored."""
-    contributions = [(score["automation_risk"], score["amplification_potential"], weight)
-                     for _, score, weight, _ in
-                     scored_skills(occ, lambda skill: skill_scores.get(skill["uri"]))]
-    averages = weighted_averages(contributions)
+    rows = weighted_scores(occ, skill_scores)
+    averages = weighted_averages(
+        [(score["automation_risk"], score["amplification_potential"], weight)
+         for score, weight in rows])
     if averages is None:
         return None
+    return rolled_up(occ, rows, averages)
+
+
+def rolled_up(occ, rows, averages):
+    """The scored occupation, taking its class from the v2 block when there is one."""
     auto, amp = averages
-    essential = [skill["uri"] for skill in occ.get("essential_skills", [])]
-    optional = [skill["uri"] for skill in occ.get("optional_skills", [])]
-    return ScoredOccupation(occ=occ, essential_uris=set(essential),
-                            all_uris=set(essential) | set(optional), auto=auto, amp=amp,
-                            evolution=evolution_potential(auto, amp),
-                            quadrant=assign_quadrant(auto, amp))
+    block = v2_block(rows)
+    essential = {skill["uri"] for skill in occ.get("essential_skills", [])}
+    optional = {skill["uri"] for skill in occ.get("optional_skills", [])}
+    return ScoredOccupation(
+        occ=occ, essential_uris=essential, all_uris=essential | optional,
+        auto=auto, amp=amp, evolution=evolution_potential(auto, amp),
+        quadrant=block["type"] if block else assign_quadrant(auto, amp), v2=block)
+
+
+def kept_fields(scores):
+    """The optional per-skill fields a record carries when the scorer filled them in."""
+    if not scores:
+        return {}
+    return {key: scores[key] for key in OPTIONAL_SKILL_KEYS
+            if scores.get(key) is not None}
 
 
 def skill_record(skill, scores):
@@ -132,9 +174,7 @@ def skill_record(skill, scores):
     record = {"title": skill.get("title", ""),
               "automation_risk": scores["automation_risk"] if scores else None,
               "amplification_potential": scores["amplification_potential"] if scores else None}
-    for key in ("rationale", "rationale_from"):
-        if scores and scores.get(key):
-            record[key] = scores[key]
+    record.update(kept_fields(scores))
     return record
 
 
@@ -217,8 +257,13 @@ def amplification_rank(uri, skill_info):
 
 
 def gap_skill_ids(gap_uris, index):
-    """Short IDs of the skills the adjacent occupation needs and this one lacks."""
-    ranked = sorted(gap_uris, key=lambda uri: -amplification_rank(uri, index.skill_info))
+    """Short IDs of the skills the adjacent occupation needs and this one lacks.
+
+    `gap_uris` is a set, so the URI breaks ties: without it, two skills with the
+    same amplification would swap places between runs over identical input.
+    """
+    ranked = sorted(gap_uris,
+                    key=lambda uri: (-amplification_rank(uri, index.skill_info), uri))
     return [index.uri_to_short[uri] for uri in ranked[:MAX_GAP_SKILLS]]
 
 
@@ -244,6 +289,14 @@ def compact_narrative(narrative):
     return compact
 
 
+def v2_occupation_fields(block):
+    """The share-scheme additions to a compact occupation record."""
+    if not block:
+        return {}
+    return {"ak": block["mechanical"], "sh": v2.share_list(block["shares"]),
+            "nl": block["near_line"], "why": block["why_insulated"]}
+
+
 def occupation_entry(occupation, index):
     """The compact record the site loads for one occupation."""
     occ = occupation.occ
@@ -260,6 +313,7 @@ def occupation_entry(occupation, index):
         "ap": occupation.amp,
         "se": [index.uri_to_short[s["uri"]] for s in occ.get("essential_skills", [])],
         "so": [index.uri_to_short[s["uri"]] for s in occ.get("optional_skills", [])],
+        **v2_occupation_fields(occupation.v2),
     }
 
 
@@ -292,6 +346,14 @@ def rationale_source(source):
             "m": rounded(source["amplification_potential"])}
 
 
+def v2_skill_fields(info):
+    """The share-scheme additions to a compact skill record: machine score, class, probabilities."""
+    if "class" not in info:
+        return {}
+    return {"k": rounded(info["mechanical_automation"]), "c": info["class"],
+            "p": [round(info[key], 2) for key in ("sub", "comp", "mech")]}
+
+
 def skill_entry(info):
     """The compact record for one skill: title, both scores, rationale if any.
 
@@ -304,6 +366,7 @@ def skill_entry(info):
         entry["r"] = info["rationale"]
     if info.get("rationale_from"):
         entry["rf"] = rationale_source(info["rationale_from"])
+    entry.update(v2_skill_fields(info))
     return entry
 
 
@@ -314,3 +377,78 @@ def build_skills(occ_data, index):
         referenced.update(occupation.all_uris)
     return {index.uri_to_short[uri]: skill_entry(index.skill_info[uri])
             for uri in referenced}
+
+
+# ---------------------------------------------------------------------------
+# One file per ISCO unit group
+# ---------------------------------------------------------------------------
+# The whole dataset is 14 MB, and a page that shows one job needs one job, its
+# unit group and the jobs it is adjacent to. Slicing it by unit group turns a
+# 14 MB fetch into a 10-40 KB one, and `units.json` is the small map that says
+# which slice a slug lives in.
+
+UNIT_CODE = re.compile(r"^\d{4}$")
+
+
+def in_a_unit(occupation):
+    """True when an occupation carries a four-digit ISCO unit group to live in.
+
+    Every occupation of the real ESCO export does. One without a code cannot be
+    reached through `jobs/<unit>` at all, so it is left out of the map rather than
+    given a file whose name is empty.
+    """
+    return bool(UNIT_CODE.match(occupation.get("c", "")))
+
+
+def build_units(occupations):
+    """Occupation slug -> its four-digit ISCO unit group."""
+    return {occupation["s"]: occupation["c"]
+            for occupation in sorted(occupations, key=lambda o: o["s"])
+            if in_a_unit(occupation)}
+
+
+def occupations_by_unit(occupations):
+    """The occupation records of the dataset, grouped by their unit group."""
+    units = defaultdict(list)
+    for occupation in occupations:
+        if in_a_unit(occupation):
+            units[occupation["c"]].append(occupation)
+    return units
+
+
+def neighbours_of(members, by_slug):
+    """The full records of the adjacent occupations that live in another unit.
+
+    ``members`` are one unit group's occupations, so the comparison is against
+    that group's code rather than against the members themselves: a job adjacent
+    to a job in its own unit is already in the shard.
+    """
+    unit = members[0]["c"]
+    wanted = {adjacent["s"] for occupation in members
+              for adjacent in occupation.get("adj", [])}
+    return [by_slug[slug] for slug in sorted(wanted)
+            if slug in by_slug and by_slug[slug]["c"] != unit]
+
+
+def referenced_skills(records, skills):
+    """The skills map restricted to what these occupation records reference."""
+    used = set()
+    for record in records:
+        used.update(record.get("se", []) + record.get("so", []))
+    return {sid: skills[sid] for sid in sorted(used) if sid in skills}
+
+
+def unit_shard(members, neighbours, skills, meta):
+    """One unit group's slice of the dataset, shaped like the dataset itself."""
+    return {"skills": referenced_skills(members + neighbours, skills),
+            "occupations": members, **meta, "neighbours": neighbours}
+
+
+def build_unit_shards(dataset):
+    """Unit group code -> the slice of the dataset a job page needs for it."""
+    by_slug = {occupation["s"]: occupation for occupation in dataset["occupations"]}
+    meta = {key: dataset[key] for key in ("scheme", "model") if key in dataset}
+    units = occupations_by_unit(dataset["occupations"])
+    return {unit: unit_shard(units[unit], neighbours_of(units[unit], by_slug),
+                             dataset["skills"], meta)
+            for unit in sorted(units)}
