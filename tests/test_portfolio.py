@@ -20,6 +20,7 @@ from aiisco.portfolio import (
     gap_skill_ids,
     invert_essential,
     jaccard,
+    remap_collider,
     rounded,
     scored_occupation,
     skill_entry,
@@ -93,6 +94,30 @@ def test_a_collision_does_not_disturb_the_other_skills():
 
     assert len(set(ids.values())) == 4
     assert all(len(ids[uri]) == 8 for uri in others)
+
+
+def test_nothing_is_remapped_when_the_short_prefix_is_free():
+    """A URI that lengthened for some other reason has no collider to move."""
+    uri = "http://example.org/esco/skill/a1"
+    id_to_uri = {"deadbeef": "http://example.org/esco/skill/elsewhere"}
+    uri_to_id = {"http://example.org/esco/skill/elsewhere": "deadbeef"}
+
+    remap_collider(uri, 9, id_to_uri, uri_to_id)
+
+    assert id_to_uri == {"deadbeef": "http://example.org/esco/skill/elsewhere"}
+    assert uri_to_id == {"http://example.org/esco/skill/elsewhere": "deadbeef"}
+
+
+def test_a_uri_is_never_remapped_onto_itself():
+    """The short prefix belongs to the URI itself: there is nothing to move."""
+    uri = "http://example.org/esco/skill/a1"
+    id_to_uri = {skill_short_id(uri): uri}
+    uri_to_id = {uri: skill_short_id(uri)}
+
+    remap_collider(uri, 9, id_to_uri, uri_to_id)
+
+    assert id_to_uri == {}
+    assert uri_to_id == {uri: skill_short_id(uri)}
 
 
 def test_an_unresolvable_collision_is_an_error(monkeypatch):
