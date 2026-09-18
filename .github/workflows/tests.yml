@@ -27,3 +27,15 @@ jobs:
           node-version: 22
       - name: Unit tests for the site's pure modules
         run: npm test
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install
+        run: uv sync --dev
+      - name: Install the browser
+        run: uv run playwright install --with-deps chromium
+      - name: End-to-end tests against a served copy of site/
+        run: uv run pytest tests/e2e -q

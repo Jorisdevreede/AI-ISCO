@@ -454,6 +454,8 @@ git push origin master
 uv sync --dev
 uv run pytest --ignore=tests/e2e --cov --cov-branch    # Python: unit and characterisation tests
 npm test                                               # JavaScript: node --test over the pure modules
+uv run playwright install chromium                     # once, for the end-to-end tests
+uv run pytest tests/e2e -q                             # the site's flows in a real browser (about a minute)
 uvx ruff check aiisco tests build_*.py aggregate_scores.py ingest_esco.py score_skills*.py
 uv run radon cc -s -n B aiisco                         # anything more complex than grade A
 ```
@@ -464,10 +466,11 @@ uv run radon cc -s -n B aiisco                         # anything more complex t
 | Behaviour | Golden-output tests were written before any refactoring, and the real pipeline output was compared byte for byte before and after |
 | Unit size and complexity | Following the SIG maintainability guidelines: short functions, low cyclomatic complexity, at most four parameters, no duplicated blocks |
 | Front-end logic | Pure modules (search ranking, quadrant rules, URL state, page models, treemap layout) run under `node --test`; no browser needed |
+| The flows visitors take | `tests/e2e/` serves a copy of `site/` and drives it with Playwright: find a job by a synonym, every chip opens the job it names, group → job → back, neutral wording, the four group views and their table alternative, skill lookup, a keyboard-only path, the second score set and its borrowed rationales, no horizontal scroll at 390 px, no console errors. Set `AIISCO_E2E_CHANNEL=chrome` to use an installed Chrome |
 | No network, no keys | Every model call is faked in the tests. The fixtures under `tests/fixtures/` are synthetic ([why](tests/fixtures/README.md)) |
 | Known bugs | Behaviour that looks wrong but is published is pinned by a test marked `# BUG:` rather than silently changed, because fixing it changes the published numbers |
 
-`.github/workflows/tests.yml` runs the Python tests with the coverage gate, ruff and the JavaScript tests on every push and pull request. The files copied from karpathy/jobs are outside the scope of the tests.
+`.github/workflows/tests.yml` runs the Python tests with the coverage gate, ruff, the JavaScript tests and the end-to-end suite on every push and pull request. The files copied from karpathy/jobs are outside the scope of the tests.
 
 The shared Python code lives in the `aiisco/` package: `esco.py` (reading ESCO), `rollup.py` (weights, the threshold, quadrants), `portfolio.py` (adjacency and gap skills), `site_indexes.py`, `stats.py`, `openrouter.py` and `checkpoint.py` (model calls, retry, resume) and `jsonio.py`. The scripts at the top level are thin entry points over it.
 
