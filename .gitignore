@@ -24,6 +24,8 @@ data/esco_occupations.json
 data/esco_skills.json
 data/site_data.json
 data/skill_scores.json
+data/skill_scores_typesafe.json
+data/skill_score_comparison.json
 data/occupation_scores.json
 data/esco/*.zip
 
