@@ -28,6 +28,8 @@ PAGES = [
     Page("job.html#software-developer", None, "#job-article"),
     Page("groups.html", "Browse sectors", "#tablist [role='tab']"),
     Page("groups.html#g=major:2&view=table", "Browse sectors", "#panel tbody tr"),
+    Page("tree.html", "Job tree", "[role='tree'] [role='treeitem']"),
+    Page("tree.html#job=software-developer", "Job tree", "[role='treeitem'][aria-selected='true']"),
     Page("skill.html", "Look up a skill", "#skill-examples a"),
     Page(f"skill.html#{SKILL_ID}", "Look up a skill", "#skill-detail .occ-link"),
     Page("method.html", "How sure is this?", "#quadrant-table tbody tr"),

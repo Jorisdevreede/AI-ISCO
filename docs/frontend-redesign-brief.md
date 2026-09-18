@@ -33,11 +33,12 @@ Decisions for rebuilding the AI-ISCO site around the questions visitors arrive w
 | `index.html` — **Find a job** | Search-first landing: one combobox, verified chips, recently viewed, "browse a sector". Loads only `search_index.json`. | the treemap as first page |
 | `job.html#<slug>` — the one canonical job page | Everything about one occupation. Every surface links here with a real `<a href>`. | `portfolio.html` (kept as a redirect for old links) |
 | `groups.html#g=<level>:<key>` — **Browse sectors** | Group overview at any ISCO level: quadrant mix, ranked list, scatter, treemap, table. | `index.html` treemap and `explorer.html` |
+| `tree.html#job=<slug>` — **Job tree** | The ISCO hierarchy as an expandable tree down to each job, with a pane showing the selected job's skills and quadrants. Added after the first build, at the owner's request. | new |
 | `skill.html#<skill_id>` — **Look up a skill** | Both scores, the rationale, which occupations need it. | new |
 | `insights.html` — **What we found** | The article, with every number computed from `stats.json`. | same page, no prose constants |
 | `method.html` — **How sure is this?** | Plain-language method and limits. | new |
 
-Navigation, same on every page: `Find a job` · `Browse sectors` · `Look up a skill` · `What we found` · `How sure is this?`
+Navigation, same on every page: `Find a job` · `Browse sectors` · `Job tree` · `Look up a skill` · `What we found` · `How sure is this?`
 
 Deep links are hash-based so GitHub Pages serves them unchanged:
 

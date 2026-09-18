@@ -7,7 +7,7 @@ This repository mixes original work with material from other parties. This file 
 Code written for this project:
 
 - `ingest_esco.py`, `score_skills.py`, `score_skills_typesafe.py`, `compare_skill_scores.py`, `aggregate_scores.py`, `generate_narratives.py`, `merge_narrative_shards.py`, `build_portfolio_data.py`, `build_site_indexes.py` and the `aiisco/` package
-- Every page under `site/` (`index.html`, `job.html`, `groups.html`, `skill.html`, `method.html`, `insights.html` and the `portfolio.html` and `explorer.html` redirects), `site/scorer.js`, `site/js/` and `site/css/`
+- Every page under `site/` (`index.html`, `job.html`, `groups.html`, `tree.html`, `skill.html`, `method.html`, `insights.html` and the `portfolio.html` and `explorer.html` redirects), `site/scorer.js`, `site/js/` and `site/css/`
 - `tests/`, `README.md`, `docs/`, `pyproject.toml`, `package.json`, `.github/workflows/`
 
 The treemap on `site/groups.html` uses `site/js/treemap-layout.js`, written for this project from the published algorithm (Bruls, Huizing and van Wijk, "Squarified Treemaps", 2000). Until September 2026 `site/index.html` carried a treemap layout taken from karpathy/jobs; that code is no longer in the site.

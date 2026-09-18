@@ -13,6 +13,7 @@ import { withScorer } from './urlstate.js';
 export const NAV_ITEMS = [
   { key: 'index', href: 'index.html', label: 'Find a job' },
   { key: 'groups', href: 'groups.html', label: 'Browse sectors' },
+  { key: 'tree', href: 'tree.html', label: 'Job tree' },
   { key: 'skill', href: 'skill.html', label: 'Look up a skill' },
   { key: 'insights', href: 'insights.html', label: 'What we found' },
   { key: 'method', href: 'method.html', label: 'How sure is this?' },
@@ -82,8 +83,8 @@ function clearOwnNodes(parent) {
  * Render the shared navigation and the attribution footer.
  *
  * @param {{active?: string, search?: string}} [options]
- *   `active` is a NAV_ITEMS key ("index", "groups", "skill", "insights",
- *   "method") or an href; that link gets aria-current="page".
+ *   `active` is a NAV_ITEMS key ("index", "groups", "tree", "skill",
+ *   "insights", "method") or an href; that link gets aria-current="page".
  *   `search` defaults to location.search, and any ?scorer= in it is carried
  *   onto every nav link.
  * @returns {{nav: HTMLElement, footer: HTMLElement}}

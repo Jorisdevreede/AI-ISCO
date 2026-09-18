@@ -324,7 +324,7 @@ Static pages in vanilla JS: ES modules, no framework, no build step. The site is
 |---|---|
 | "How will my profession be affected?" | [Find a job](https://jorisdevreede.github.io/AI-ISCO/) → the job page |
 | "How will someone else's profession be affected?" | The same job page in neutral wording, with a link you can share |
-| "Which groups of professions are affected, and how differently?" | [Browse sectors](https://jorisdevreede.github.io/AI-ISCO/groups.html) |
+| "Which groups of professions are affected, and how differently?" | [Browse sectors](https://jorisdevreede.github.io/AI-ISCO/groups.html), or the whole hierarchy at once in the [Job tree](https://jorisdevreede.github.io/AI-ISCO/tree.html) |
 | "How will a skill evolve?" | [Look up a skill](https://jorisdevreede.github.io/AI-ISCO/skill.html) |
 | "Where could I move next, and what should I learn?" | The job page: nearby jobs and skills to learn |
 | "How sure is this?" | On every quadrant badge, and on [How sure is this?](https://jorisdevreede.github.io/AI-ISCO/method.html) |
@@ -338,6 +338,7 @@ job.html#software-developer                   my-job wording
 job.html#software-developer&for=other         neutral wording, for someone else's job
 job.html#optical-engineer&from=unit:2149      adds a way back to that group
 groups.html#g=major:2&view=ranked|scatter|treemap|table
+tree.html#job=software-developer              the tree opened at one job
 skill.html#59b27e7b
 ```
 
@@ -364,6 +365,10 @@ Everything about one occupation, and the one page every other surface links to:
 ### Browse sectors ([groups.html](https://jorisdevreede.github.io/AI-ISCO/groups.html))
 
 Any ISCO-08 group at any level (10 major groups → 43 sub-major → 130 minor → 436 unit groups): how its jobs split over the four quadrants, then four views of the same jobs — a ranked dot plot, a scatter, a drill-down treemap and a sortable table — plus the most and least exposed jobs, the skills that drive the group, and a side-by-side comparison of two groups. The treemap is keyboard-navigable and every chart has a text summary and a table alternative. `explorer.html` redirects here.
+
+### Job tree ([tree.html](https://jorisdevreede.github.io/AI-ISCO/tree.html))
+
+The whole ISCO-08 hierarchy as an expandable tree on the left, down to the 3,000+ individual jobs, and a detail pane on the right. Every group row shows its job count and quadrant mix; every job row shows its quadrant and both scores. Pick a group to see how it splits; pick a job to see its quadrant badge, both scores, how its skills split over the four quadrants, and a sortable table of every skill (essential or optional, both scores, the skill's own quadrant) with links to the skill pages and the full job page. A filter box narrows the tree by title or alternative label. The tree follows the WAI-ARIA tree pattern (arrow keys, Home/End, type-ahead), renders only the rows that are open, and fetches the large skills file only after the tree has painted. `tree.html#job=<slug>` and `tree.html#g=<level>:<code>` are deep links.
 
 ### Look up a skill ([skill.html](https://jorisdevreede.github.io/AI-ISCO/skill.html))
 
@@ -492,6 +497,7 @@ The shared Python code lives in the `aiisco/` package: `esco.py` (reading ESCO),
 | `site/index.html` | Find a job: the search-first landing page |
 | `site/job.html` | The one job page (`portfolio.html` redirects to it) |
 | `site/groups.html` | Browse sectors: quadrant split, ranked, scatter, treemap, table (`explorer.html` redirects to it) |
+| `site/tree.html` | Job tree: the ISCO hierarchy down to each job, with a skills-and-quadrants pane |
 | `site/skill.html`, `site/method.html`, `site/insights.html` | Skill lookup, the method page, the findings article |
 | `site/js/`, `site/css/` | Shared ES modules and stylesheet, one page module per page |
 | `tests/` | pytest for the Python, `node --test` for the JavaScript, synthetic fixtures |
