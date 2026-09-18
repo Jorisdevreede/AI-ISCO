@@ -22,6 +22,8 @@ const STEPS = {
 
 const centre = (rect) => ({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
 
+const ratio = () => window.devicePixelRatio || 1;
+
 function canvasHeight(width) {
   return Math.round(Math.min(560, Math.max(260, width * 0.62)));
 }
@@ -62,6 +64,12 @@ function drawRing(ctx, rect) {
   ctx.strokeStyle = '#e8b93b';
   ctx.lineWidth = 3;
   ctx.strokeRect(rect.x + 2.5, rect.y + 2.5, rect.width - 5, rect.height - 5);
+}
+
+function drawHover(ctx, box) {
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(box.x + 1, box.y + 1, box.width - 2, box.height - 2);
 }
 
 function inset(rect) {
@@ -109,6 +117,177 @@ function neighbour(rects, from, key) {
   return wrapped >= 0 && wrapped < rects.length ? wrapped : from;
 }
 
+/** One canvas painted as a treemap. `createTreemapView` is the way in. */
+class TreemapView {
+  constructor({ canvas, caption, live, onActivate, onUp }) {
+    this.canvas = canvas;
+    this.caption = caption;
+    this.live = live;
+    this.onActivate = onActivate;
+    this.onUp = onUp;
+    this.context = canvas.getContext('2d');
+    this.tiles = [];
+    this.rects = [];
+    this.mode = 'quadrant';
+    this.focus = -1;
+    this.hover = -1;
+    this.focused = false;
+    this.handlers = this.listen();
+    this.observer = this.observe();
+  }
+
+  listen() {
+    const handlers = {
+      keydown: (event) => this.onKeyDown(event),
+      pointermove: (event) => this.onPointerMove(event),
+      pointerleave: () => this.onPointerLeave(),
+      click: (event) => this.onClick(event),
+      focus: () => this.onFocus(),
+      blur: () => this.onBlur(),
+    };
+    for (const [type, handler] of Object.entries(handlers)) {
+      this.canvas.addEventListener(type, handler);
+    }
+    return handlers;
+  }
+
+  observe() {
+    if (typeof ResizeObserver !== 'function') return null;
+    const observer = new ResizeObserver(() => this.redraw());
+    observer.observe(this.canvas.parentElement);
+    return observer;
+  }
+
+  tileAt(index) {
+    return index >= 0 ? this.tiles[index] : null;
+  }
+
+  /** The tile under a rect index, or null when there is no such rect. */
+  tileOf(index) {
+    const rect = this.rects[index];
+    return this.tileAt(rect ? rect.index : -1);
+  }
+
+  paint() {
+    const scale = ratio();
+    this.context.setTransform(scale, 0, 0, scale, 0, 0);
+    this.context.clearRect(0, 0, this.canvas.width / scale, this.canvas.height / scale);
+    this.rects.forEach((rect, index) => this.paintTile(rect, index));
+  }
+
+  paintTile(rect, index) {
+    const tile = this.tiles[rect.index];
+    const colours = tileColour(tile, this.mode);
+    const box = inset(rect);
+    this.context.fillStyle = colours.fill;
+    this.context.fillRect(box.x, box.y, box.width, box.height);
+    drawLabel(this.context, box, tile, colours);
+    if (index === this.hover) drawHover(this.context, box);
+    if (index === this.focus && this.focused) drawRing(this.context, box);
+  }
+
+  resize(width, height) {
+    const scale = ratio();
+    this.canvas.width = Math.round(width * scale);
+    this.canvas.height = Math.round(height * scale);
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+  }
+
+  say(index) {
+    const text = describeTile(this.tileOf(index));
+    if (this.live) this.live.textContent = text;
+    if (this.caption) this.caption.textContent = text;
+  }
+
+  setFocus(index) {
+    this.focus = index;
+    this.paint();
+    if (index >= 0) this.say(index);
+  }
+
+  activate(index) {
+    const rect = this.rects[index];
+    if (rect) this.onActivate(this.tiles[rect.index]);
+  }
+
+  /** The rect under a pointer event, or -1. */
+  indexAt(event) {
+    const bounds = this.canvas.getBoundingClientRect();
+    return hitIndex(this.rects, event.clientX - bounds.left, event.clientY - bounds.top);
+  }
+
+  onKeyDown(event) {
+    if (STEPS[event.key] && this.rects.length) {
+      event.preventDefault();
+      this.setFocus(neighbour(this.rects, Math.max(0, this.focus), event.key));
+    } else if (event.key === 'Enter' && this.focus >= 0) {
+      event.preventDefault();
+      this.activate(this.focus);
+    } else if (event.key === 'Escape' || event.key === 'Backspace') {
+      event.preventDefault();
+      this.onUp();
+    }
+  }
+
+  onPointerMove(event) {
+    const index = this.indexAt(event);
+    if (index === this.hover) return;
+    this.hover = index;
+    if (index >= 0 && this.caption) this.caption.textContent = describeTile(this.tileOf(index));
+    this.paint();
+  }
+
+  onPointerLeave() {
+    this.hover = -1;
+    this.paint();
+  }
+
+  onClick(event) {
+    const index = this.indexAt(event);
+    if (index >= 0) this.activate(index);
+  }
+
+  onFocus() {
+    this.focused = true;
+    this.setFocus(this.focus >= 0 ? this.focus : 0);
+  }
+
+  onBlur() {
+    this.focused = false;
+    this.paint();
+  }
+
+  setTiles(tiles) {
+    this.tiles = tiles || [];
+    this.focus = -1;
+    this.hover = -1;
+    this.redraw();
+  }
+
+  setMode(mode) {
+    this.mode = mode;
+    this.paint();
+  }
+
+  /** Size the canvas to its parent, lay the tiles out again and repaint. */
+  redraw() {
+    const width = Math.max(200, this.canvas.parentElement.clientWidth - 2);
+    const height = canvasHeight(width);
+    this.resize(width, height);
+    const box = { x: PADDING, y: PADDING, width: width - PADDING * 2, height: height - PADDING * 2 };
+    this.rects = layoutTreemap(this.tiles, box);
+    this.paint();
+  }
+
+  destroy() {
+    for (const [type, handler] of Object.entries(this.handlers)) {
+      this.canvas.removeEventListener(type, handler);
+    }
+    if (this.observer) this.observer.disconnect();
+  }
+}
+
 /**
  * Wire a canvas up as a treemap.
  *
@@ -120,134 +299,12 @@ function neighbour(rects, from, key) {
  * @param {() => void} options.onUp Escape or Backspace
  * @returns {{setTiles: Function, setMode: Function, redraw: Function, destroy: Function}}
  */
-export function createTreemapView({ canvas, caption, live, onActivate, onUp }) {
-  const context = canvas.getContext('2d');
-  const state = { tiles: [], rects: [], mode: 'quadrant', focus: -1, hover: -1, focused: false };
-
-  function tileAt(index) {
-    return index >= 0 ? state.tiles[index] : null;
-  }
-
-  function paint() {
-    const width = canvas.width / (window.devicePixelRatio || 1);
-    const height = canvas.height / (window.devicePixelRatio || 1);
-    context.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
-    context.clearRect(0, 0, width, height);
-    state.rects.forEach((rect, index) => {
-      const tile = state.tiles[rect.index];
-      const colours = tileColour(tile, state.mode);
-      const box = inset(rect);
-      context.fillStyle = colours.fill;
-      context.fillRect(box.x, box.y, box.width, box.height);
-      drawLabel(context, box, tile, colours);
-      if (index === state.hover) drawHover(context, box);
-      if (index === state.focus && state.focused) drawRing(context, box);
-    });
-  }
-
-  function drawHover(ctx, box) {
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(box.x + 1, box.y + 1, box.width - 2, box.height - 2);
-  }
-
-  function relayout() {
-    const ratio = window.devicePixelRatio || 1;
-    const width = Math.max(200, canvas.parentElement.clientWidth - 2);
-    const height = canvasHeight(width);
-    canvas.width = Math.round(width * ratio);
-    canvas.height = Math.round(height * ratio);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    const box = { x: PADDING, y: PADDING, width: width - PADDING * 2, height: height - PADDING * 2 };
-    state.rects = layoutTreemap(state.tiles, box);
-    paint();
-  }
-
-  function say(index) {
-    const tile = tileAt(state.rects[index] ? state.rects[index].index : -1);
-    if (live) live.textContent = describeTile(tile);
-    if (caption) caption.textContent = describeTile(tile);
-  }
-
-  function setFocus(index) {
-    state.focus = index;
-    paint();
-    if (index >= 0) say(index);
-  }
-
-  function activate(index) {
-    const rect = state.rects[index];
-    if (rect) onActivate(state.tiles[rect.index]);
-  }
-
-  function onKeyDown(event) {
-    if (STEPS[event.key] && state.rects.length) {
-      event.preventDefault();
-      setFocus(neighbour(state.rects, Math.max(0, state.focus), event.key));
-    } else if (event.key === 'Enter' && state.focus >= 0) {
-      event.preventDefault();
-      activate(state.focus);
-    } else if (event.key === 'Escape' || event.key === 'Backspace') {
-      event.preventDefault();
-      onUp();
-    }
-  }
-
-  function onPointerMove(event) {
-    const bounds = canvas.getBoundingClientRect();
-    const index = hitIndex(state.rects, event.clientX - bounds.left, event.clientY - bounds.top);
-    if (index === state.hover) return;
-    state.hover = index;
-    if (index >= 0 && caption) caption.textContent = describeTile(tileAt(state.rects[index].index));
-    paint();
-  }
-
-  function onPointerLeave() {
-    state.hover = -1;
-    paint();
-  }
-
-  function onClick(event) {
-    const bounds = canvas.getBoundingClientRect();
-    const index = hitIndex(state.rects, event.clientX - bounds.left, event.clientY - bounds.top);
-    if (index >= 0) activate(index);
-  }
-
-  function onFocus() {
-    state.focused = true;
-    setFocus(state.focus >= 0 ? state.focus : 0);
-  }
-
-  function onBlur() {
-    state.focused = false;
-    paint();
-  }
-
-  const listeners = [
-    ['keydown', onKeyDown], ['pointermove', onPointerMove], ['pointerleave', onPointerLeave],
-    ['click', onClick], ['focus', onFocus], ['blur', onBlur],
-  ];
-  for (const [type, handler] of listeners) canvas.addEventListener(type, handler);
-
-  const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(relayout) : null;
-  if (observer) observer.observe(canvas.parentElement);
-
+export function createTreemapView(options) {
+  const view = new TreemapView(options);
   return {
-    setTiles(tiles) {
-      state.tiles = tiles || [];
-      state.focus = -1;
-      state.hover = -1;
-      relayout();
-    },
-    setMode(mode) {
-      state.mode = mode;
-      paint();
-    },
-    redraw: relayout,
-    destroy() {
-      for (const [type, handler] of listeners) canvas.removeEventListener(type, handler);
-      if (observer) observer.disconnect();
-    },
+    setTiles: (tiles) => view.setTiles(tiles),
+    setMode: (mode) => view.setMode(mode),
+    redraw: () => view.redraw(),
+    destroy: () => view.destroy(),
   };
 }
