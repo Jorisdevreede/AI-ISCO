@@ -20,14 +20,13 @@ import { LoadError, loadJSON, whenSlow } from '../data.js';
 import { createCombobox } from '../combobox.js';
 import { rankOccupations, nearestTitles } from '../search.js';
 import { renderTypeBadge } from '../badge.js';
-import { renderInfoNote } from '../info-note.js';
 import { renderSharesBar } from '../shares-bar.js';
 import { borrowedRationale, rationaleWriterLine } from '../rationale.js';
 import { THRESHOLD } from '../quadrant.js';
 import {
   SHARES, SKILL_CLASS_ORDER, SKILL_NEAR_NOTE, skillClassName, thresholdOf, typeShortLabel,
 } from '../scheme.js';
-import { formatCount, formatPercent, formatScore, isScored } from '../format.js';
+import { formatPercent, formatScore, isScored, plural } from '../format.js';
 import { groupHref, jobHref, parseHash, skillHref, withScorer } from '../urlstate.js';
 import {
   MOVE_MARGIN, RECENT_KEY, SHARE_MARGIN, UNITS_FILE, addRecent, advicePosition, backTarget,
@@ -112,10 +111,6 @@ function capitalise(text) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function plural(count, noun) {
-  return `${formatCount(count)} ${noun}${count === 1 ? '' : 's'}`;
-}
-
 // --- route and navigation ---------------------------------------------------
 
 function readRoute() {
@@ -129,7 +124,7 @@ function readRoute() {
 function linkContext(route, occupation) {
   return {
     for: framingParam(route.framing),
-    from: route.from || unitGroupKey(occupation && occupation.c) || '',
+    from: route.from || unitGroupKey(occupation?.c) || '',
   };
 }
 
@@ -142,7 +137,7 @@ function onDocumentClick(event) {
   if (event.defaultPrevented || event.button !== 0) return;
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   const target = event.target instanceof Element ? event.target : null;
-  const anchor = target && target.closest('a[data-job-link]');
+  const anchor = target?.closest('a[data-job-link]');
   if (!anchor) return;
   event.preventDefault();
   go(anchor.getAttribute('href'));

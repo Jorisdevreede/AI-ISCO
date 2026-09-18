@@ -61,7 +61,7 @@ class ScoredOccupation:
     amp: float
     evolution: float
     quadrant: str
-    v2: dict = None
+    v2: dict | None = None
 
 
 @dataclass
@@ -78,8 +78,15 @@ class PortfolioIndex:
 # ---------------------------------------------------------------------------
 
 def skill_short_id(uri, length=SHORT_ID_LENGTH):
-    """Generate a short ID from a skill URI using an md5 hash prefix."""
-    return hashlib.md5(uri.encode()).hexdigest()[:length]
+    """Generate a short ID from a skill URI using an md5 hash prefix.
+
+    md5 is a name shortener here, never a security primitive: the URIs it
+    shortens are public ESCO identifiers and every collision is resolved by
+    lengthening the prefix, so `usedforsecurity=False` states the intent and
+    lets a FIPS build keep working. The digest, and so every published short
+    ID, is unchanged.
+    """
+    return hashlib.md5(uri.encode(), usedforsecurity=False).hexdigest()[:length]
 
 
 def unused_short_id(uri, id_to_uri):

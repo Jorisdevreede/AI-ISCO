@@ -30,7 +30,7 @@ class ChatRequest:
     model: str
     timeout: int
     retry_statuses: tuple = (429,)
-    max_tokens: int = None
+    max_tokens: int | None = None
 
 
 @dataclass(frozen=True)
@@ -160,7 +160,8 @@ def call_model(client, request, user_prompt, validate_item):
         except httpx.HTTPStatusError as error:
             last_error = error
             wait_or_raise_status(error, request.retry_statuses, attempt)
-        except (json.JSONDecodeError, ValueError, KeyError) as error:
+        # json.JSONDecodeError is a ValueError, so ValueError covers it too.
+        except (ValueError, KeyError) as error:
             last_error = error
             wait_or_raise_parse_error(error, attempt)
     raise last_error

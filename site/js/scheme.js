@@ -128,7 +128,7 @@ export const SKILL_CLASS_COLOR_VARS = {
  * @returns {'quadrants'|'shares'}
  */
 export function schemeOf(stats) {
-  return stats && stats.scheme === SHARES ? SHARES : QUADRANTS;
+  return stats?.scheme === SHARES ? SHARES : QUADRANTS;
 }
 
 /**
@@ -170,7 +170,7 @@ export function orderForCounts(counts) {
  */
 export function splitOf(stats) {
   const scheme = schemeOf(stats);
-  const source = (scheme === SHARES ? stats && stats.types : stats && stats.quadrants) || {};
+  const source = (scheme === SHARES ? stats?.types : stats?.quadrants) || {};
   return {
     scheme,
     order: Array.isArray(source.order) ? source.order : orderOf(scheme),
@@ -185,7 +185,7 @@ export function splitOf(stats) {
  * @returns {number|null}
  */
 export function thresholdOf(stats) {
-  const value = stats && stats.threshold;
+  const value = stats?.threshold;
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
@@ -299,7 +299,7 @@ const DECIDING = { S: [0], A: [0, 1], M: [0, 1, 2], I: [0, 1, 2] };
  * @returns {boolean} false under the quadrant scheme or when `p` is missing
  */
 export function isSkillNear(row, cut = 0.5) {
-  const deciding = DECIDING[row && row.c];
+  const deciding = DECIDING[row?.c];
   if (!deciding || !Array.isArray(row.p)) return false;
   return deciding.some((index) => Math.abs(row.p[index] - cut) <= SKILL_NEAR_MARGIN + 1e-9);
 }
@@ -387,7 +387,7 @@ export function explainType(job) {
  * @returns {string}
  */
 export function nearLineCaveat(stats) {
-  const near = stats && stats.near_line;
+  const near = stats?.near_line;
   if (!near || !isScored(near.count)) {
     return 'Jobs sitting near a cut-off can fall either side of it, so read this split '
       + 'as a band, not a count.';
@@ -408,7 +408,7 @@ export function nearLineCaveat(stats) {
  * @returns {{heading: string, sentences: string[], nearLine: boolean}}
  */
 export function explain(job, scheme) {
-  const resolved = scheme || schemeOfCode(job && job.q) || QUADRANTS;
+  const resolved = scheme || schemeOfCode(job?.q) || QUADRANTS;
   return resolved === SHARES ? explainType(job) : explainQuadrant(job);
 }
 
@@ -420,7 +420,7 @@ export function explain(job, scheme) {
  * @returns {boolean}
  */
 export function isNear(job, scheme) {
-  const resolved = scheme || schemeOfCode(job && job.q) || QUADRANTS;
-  if (resolved === SHARES) return Boolean(job && job.nl);
-  return isNearLine(job && job.a, job && job.m);
+  const resolved = scheme || schemeOfCode(job?.q) || QUADRANTS;
+  if (resolved === SHARES) return Boolean(job?.nl);
+  return isNearLine(job?.a, job?.m);
 }

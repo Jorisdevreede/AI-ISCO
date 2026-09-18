@@ -13,7 +13,13 @@ comparison in test_second_scorer.py.
 import pytest
 from playwright.sync_api import expect
 
-from .conftest import SKILL_CLASS_NAMES, SKILL_CLASS_ORDER, TYPE_NAMES, reveal_section
+from .conftest import (
+    JOB_TIMEOUT,
+    SKILL_CLASS_NAMES,
+    SKILL_CLASS_ORDER,
+    TYPE_NAMES,
+    reveal_section,
+)
 
 READY = "#type-table tbody tr"
 
@@ -92,9 +98,12 @@ def test_the_agreement_note_is_one_computed_slot(desktop, open_ready, stats_v2):
     disagreed with the count two sections above."""
     page = open_ready(desktop, "method.html", READY)
     reveal_section(page, "#agreement")
+    # The body stays hidden until both index files are in, so waiting on it is
+    # what stops this reading an empty slot and calling it a pass.
+    page.locator("#agreement-body").wait_for(state="visible", timeout=JOB_TIMEOUT)
     note = page.locator("[data-agree='note']")
     expect(note).to_have_count(1)
-    expect(note).not_to_have_text("—", timeout=15_000)
+    expect(note).not_to_have_text("—")
     assert f"{stats_v2['occupations']:,}" in note.inner_text()
 
 

@@ -25,7 +25,7 @@ const EPSILON = 1e-12;
 
 /** A drawable value, or 0 for anything missing, zero, negative or not a number. */
 function valueOf(item) {
-  const value = typeof item === 'number' ? item : Number(item && item.value);
+  const value = typeof item === 'number' ? item : Number(item?.value);
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 

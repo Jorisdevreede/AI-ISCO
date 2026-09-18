@@ -153,7 +153,9 @@ function renderAgreement(sets) {
 function fetchAgreement() {
   const sets = loadBothSets('search_index');
   whenSlow(sets, SLOW_MS, () => setAgreementStatus('Loading both score files…')).catch(() => {});
-  sets.then(renderAgreement).catch(() => setAgreementStatus(FAILED));
+  // Two arguments, not .catch: a bug in the rendering should not be reported
+  // to the reader as a download that failed.
+  sets.then(renderAgreement, () => setAgreementStatus(FAILED));
 }
 
 // Two whole search indexes, and the largest download on this page. Nobody pays

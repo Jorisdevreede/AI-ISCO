@@ -21,7 +21,7 @@
 // Every decision that differs between the two schemes is one small function per
 // scheme behind a dispatcher, so neither the page nor a test has to fork.
 
-import { formatCount, formatPercent, isScored, NOT_SCORED } from '../format.js';
+import { formatCount, formatPercent, isScored, NOT_SCORED, plural } from '../format.js';
 import { THRESHOLD, quadrantOf } from '../quadrant.js';
 import {
   QUADRANTS, SHARES, isSkillNear, schemeOf, schemeOfCode, skillClassName, skillClassOf,
@@ -68,7 +68,7 @@ export const RECENT_KEY = 'ai-isco-recent';
  */
 export function schemeOfSet(stats, data) {
   if (stats) return schemeOf(stats);
-  const rows = (data && data.occupations) || [];
+  const rows = data?.occupations || [];
   return rows.some((row) => schemeOfCode(row.q) === SHARES) ? SHARES : QUADRANTS;
 }
 
@@ -87,7 +87,7 @@ export function unitFile(units, slug) {
 }
 
 function allRecords(data) {
-  return [...((data && data.occupations) || []), ...((data && data.neighbours) || [])];
+  return [...(data?.occupations || []), ...(data?.neighbours || [])];
 }
 
 /**
@@ -151,10 +151,10 @@ export function resolveSkills(skills, ids, essential = false) {
  * @returns {Array<Object>}
  */
 export function occupationSkills(data, occupation) {
-  const skills = (data && data.skills) || {};
+  const skills = data?.skills || {};
   return [
-    ...resolveSkills(skills, occupation && occupation.se, true),
-    ...resolveSkills(skills, occupation && occupation.so, false),
+    ...resolveSkills(skills, occupation?.se, true),
+    ...resolveSkills(skills, occupation?.so, false),
   ];
 }
 
@@ -170,8 +170,8 @@ function byTension(a, b) {
  * @returns {Array<Object>}
  */
 export function essentialSkills(data, occupation) {
-  const skills = (data && data.skills) || {};
-  return resolveSkills(skills, occupation && occupation.se, true).sort(byTension);
+  const skills = data?.skills || {};
+  return resolveSkills(skills, occupation?.se, true).sort(byTension);
 }
 
 /**
@@ -237,7 +237,7 @@ export function chanceLine(probs) {
  * @returns {boolean}
  */
 export function skillNear(skill, cut) {
-  return isSkillNear({ c: skill && skill.cls, p: skill && skill.probs }, cut);
+  return isSkillNear({ c: skill?.cls, p: skill?.probs }, cut);
 }
 
 /** Which of the three scores leads a row of each class. */
@@ -259,10 +259,6 @@ export function classSkillLists(skills) {
     list.sort((a, b) => (b[key] || 0) - (a[key] || 0));
   }
   return lists;
-}
-
-function plural(count, noun) {
-  return `${formatCount(count)} ${noun}${count === 1 ? '' : 's'}`;
 }
 
 const QUADRANT_LISTS = [
@@ -348,9 +344,9 @@ export function staysHumanNote(skills) {
   const count = classSkillLists(rows).I.length;
   if (!count) return '';
   return `The other ${formatCount(count)} of the ${plural(rows.length, 'skill')} in this `
-    + 'job stay human: neither an AI system nor machinery reaches most of that work. That is '
-    + 'not the same as AI being no help — many of these skills still gain clearly on part of '
-    + 'the work.';
+    + 'job stay human: neither an AI system nor machinery gets most of the way through that '
+    + 'work. AI can still help with parts of it, and many of these skills gain clearly on '
+    + 'part of the work.';
 }
 
 /** How many skills each rebuilt task list names. */
@@ -534,7 +530,7 @@ export function groupChain(code) {
   const digits = String(code || '').replace(/\D/g, '');
   const keys = GROUP_LEVELS
     .filter(([, length]) => digits.length >= length)
-    .map(([level, length]) => `${level}:${digits.slice(0, length)}`);
+    .map(([level, length]) => `${level}:${digits.slice(0, Number(length))}`);
   return [...keys, 'all'];
 }
 
@@ -565,7 +561,7 @@ export function backTarget(fromKey, occupation, groups) {
     return groupBackLink(fromKey, named,
       `← Back to ${named.label} (${plural(named.n, 'job')})`);
   }
-  for (const key of groupChain(occupation && occupation.c)) {
+  for (const key of groupChain(occupation?.c)) {
     if (table[key]) return groupBackLink(key, table[key], allJobsText(key, table[key]));
   }
   return {
@@ -667,7 +663,7 @@ const SHARE_SIDEWAYS = {
  * @returns {{kind: 'better'|'trade'|'exposed'|'sideways'|'unknown', label: string}}
  */
 export function compareShareMove(from, to, margin = SHARE_MARGIN) {
-  if (!isShares(from && from.sh) || !isShares(to && to.sh)) {
+  if (!isShares(from?.sh) || !isShares(to?.sh)) {
     return { kind: 'unknown', label: NOT_SCORED };
   }
   const flags = shareFlags(from, to, margin);
@@ -683,11 +679,11 @@ function moveOf(from, scores, context) {
 
 function cardScores(target) {
   return {
-    auto: isScored(target && target.ar) ? target.ar : null,
-    amp: isScored(target && target.ap) ? target.ap : null,
-    mech: isScored(target && target.ak) ? target.ak : null,
-    sh: isShares(target && target.sh) ? target.sh : null,
-    nl: Boolean(target && target.nl),
+    auto: isScored(target?.ar) ? target.ar : null,
+    amp: isScored(target?.ap) ? target.ap : null,
+    mech: isScored(target?.ak) ? target.ak : null,
+    sh: isShares(target?.sh) ? target.sh : null,
+    nl: Boolean(target?.nl),
   };
 }
 
@@ -698,8 +694,8 @@ function adjacencyCard(adjacency, index, context) {
   return {
     ...scores,
     slug: adjacency.s,
-    title: adjacency.t || (target && target.t) || adjacency.s,
-    q: adjacency.q || (target && target.q) || null,
+    title: adjacency.t || target?.t || adjacency.s,
+    q: adjacency.q || target?.q || null,
     overlap: typeof adjacency.ov === 'number' ? adjacency.ov : null,
     gapCount: (adjacency.gap || []).length,
     kind: move.kind,
@@ -722,9 +718,9 @@ function moveContext(occupation, options) {
     scheme,
     margin: options.margin === undefined ? fallback : options.margin,
     from: {
-      a: occupation && occupation.ar,
-      m: occupation && occupation.ap,
-      sh: occupation && occupation.sh,
+      a: occupation?.ar,
+      m: occupation?.ap,
+      sh: occupation?.sh,
     },
   };
 }
@@ -740,7 +736,7 @@ function moveContext(occupation, options) {
  */
 export function evolutionPaths(occupation, index, options = {}) {
   const context = moveContext(occupation, options);
-  const cards = ((occupation && occupation.adj) || [])
+  const cards = (occupation?.adj || [])
     .map((adjacency) => adjacencyCard(adjacency, index, context))
     .sort(compareCards);
   return {
@@ -819,7 +815,7 @@ function spreadSources(sorted, limit) {
  */
 export function gapSkills(data, occupation, options = {}) {
   const { scheme, limit = LEARN_LIMIT } = options;
-  const skills = (data && data.skills) || {};
+  const skills = data?.skills || {};
   const seen = new Set();
   const found = [];
   for (const { id, adjacency } of gapIdsOf(occupation || {})) {
@@ -828,7 +824,7 @@ export function gapSkills(data, occupation, options = {}) {
     const candidate = gapCandidate(id, skills, adjacency);
     if (candidate && worthLearning(candidate, scheme)) found.push(candidate);
   }
-  return spreadSources(found.sort(byNetGain), limit);
+  return spreadSources(found.toSorted(byNetGain), limit);
 }
 
 const QUADRANT_SCORE_CARDS = [
@@ -943,10 +939,10 @@ export function shareMeanings(shares, why) {
  */
 export function advicePosition(occupation, scheme) {
   if (scheme === SHARES) {
-    const shares = occupation && occupation.sh;
+    const shares = occupation?.sh;
     return isShares(shares) && shares[0] >= LARGE_SUBSTITUTED_SHARE ? 'top' : 'bottom';
   }
-  const score = occupation && occupation.ar;
+  const score = occupation?.ar;
   return isScored(score) && score >= THRESHOLD ? 'top' : 'bottom';
 }
 

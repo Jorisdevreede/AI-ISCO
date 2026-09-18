@@ -702,7 +702,7 @@ function wireScatter(svg, points, groupKey) {
   svg.addEventListener('focus', () => { if (cursor.at < 0) moveTo(0); });
   svg.addEventListener('keydown', (event) => onScatterKey(event, { cursor, moveTo, order, points, groupKey }));
   svg.addEventListener('pointerover', (event) => {
-    const index = event.target.dataset && event.target.dataset.index;
+    const index = event.target.dataset?.index;
     if (index !== undefined) moveTo(order.indexOf(Number(index)));
   });
 }
@@ -813,7 +813,7 @@ function activateTile(tile, groupKey) {
 }
 
 function goUp(groupKey) {
-  const parent = (state.groups[groupKey] || {}).parent;
+  const parent = state.groups[groupKey]?.parent;
   if (!parent) return;
   state.focusChart = true;
   go(groupHref(parent, 'treemap'));

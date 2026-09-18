@@ -174,7 +174,7 @@
   margin: 0;
   padding: 0;
 }
-.hero-stat { margin: 0; }
+.hero-stat { margin: 0; display: flex; flex-direction: column; }
 .hero-stat dt { color: var(--fg-muted); font-size: 0.75rem; order: 2; }
 .hero-stat dd {
   margin: 0;
@@ -182,9 +182,8 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  order: 1;
 }
-.hero-stat { display: flex; flex-direction: column; }
-.hero-stat dd { order: 1; }
 
 .q-bar { display: block; height: 8px; border-radius: 4px; background: var(--line-strong); }
 .q-bar[data-quadrant='TRANSFORM'] { background: var(--q-transform); }

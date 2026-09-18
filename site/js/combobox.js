@@ -19,6 +19,13 @@ function optionId(prefix, index) {
   return `${prefix}-option-${index}`;
 }
 
+// Where a move starts counting from. With nothing active, Down goes to the
+// first option and Up to the last.
+function startIndex(active, step) {
+  if (active >= 0) return active;
+  return step > 0 ? -1 : 0;
+}
+
 function describe(count, query) {
   if (!query) return '';
   if (count === 0) return `No results for ${query}.`;
@@ -27,7 +34,7 @@ function describe(count, query) {
 }
 
 function defaultRenderOption(result, node) {
-  node.textContent = result && result.row ? result.row.t : String(result);
+  node.textContent = result?.row ? result.row.t : String(result);
 }
 
 function prepare(input, listbox, prefix) {
@@ -162,8 +169,7 @@ class Combobox {
     if (this.listbox.hidden) this.open();
     const count = this.results.length;
     if (!count) return;
-    // From nothing active, Down goes to the first option and Up to the last.
-    const from = this.active < 0 ? (step > 0 ? -1 : 0) : this.active;
+    const from = startIndex(this.active, step);
     this.setActive((from + step + count) % count);
   }
 

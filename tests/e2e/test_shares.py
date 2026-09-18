@@ -96,6 +96,52 @@ def test_the_group_bars_add_up(desktop, open_group, groups_v2):
         assert sum(sentence_percents(rows.nth(position))) == 100
 
 
+# --- the job's skills, grouped by the class the model gave each one --------
+
+
+@pytest.fixture(scope="module")
+def developer_classes(unit_data, units_json):
+    """How the sample job's own skills fall into the four classes."""
+    shard = unit_data(units_json[SLUG])
+    job = next(row for row in shard["occupations"] if row["s"] == SLUG)
+    counts = {"S": 0, "A": 0, "M": 0, "I": 0, "total": 0}
+    for key in job.get("se", []) + job.get("so", []):
+        skill = shard["skills"].get(key)
+        if not skill:
+            continue
+        counts["total"] += 1
+        if skill.get("c") in counts:
+            counts[skill["c"]] += 1
+    return counts
+
+
+def test_the_job_lists_one_section_per_class_that_has_members(
+        desktop, open_job, developer_classes):
+    """Under the shares scheme a skill is classified, not cut at a score, so
+    the page has one list per class rather than two lists cut at 6."""
+    page = open_job(desktop, f"job.html#{SLUG}")
+    for code in ("S", "A", "M"):
+        rows = page.locator(f"#class-{code}-list li")
+        expect(rows).to_have_count(developer_classes[code])
+        if developer_classes[code]:
+            assert page.locator(f"#class-{code}-heading").is_visible()
+    assert page.locator("#skill-columns .skill-list").count() == sum(
+        1 for code in ("S", "A", "M") if developer_classes[code])
+
+
+def test_the_stays_human_note_counts_the_skills_no_list_covers(
+        desktop, open_job, developer_classes):
+    page = open_job(desktop, f"job.html#{SLUG}")
+    note = page.locator("#stays-human")
+    if not developer_classes["I"]:
+        expect(note).to_be_hidden()
+        return
+    text = note.inner_text()
+    assert f"{developer_classes['I']:,}" in text
+    assert f"{developer_classes['total']:,}" in text
+    assert "stay human" in text
+
+
 # --- the badge explains the type from the job's own data -------------------
 
 

@@ -172,7 +172,7 @@ export class TreeView {
   }
 
   focusIndex() {
-    const item = document.activeElement && document.activeElement.closest('[role="treeitem"]');
+    const item = document.activeElement?.closest('[role="treeitem"]');
     return item ? this.items.indexOf(item) : -1;
   }
 

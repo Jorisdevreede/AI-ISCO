@@ -39,6 +39,7 @@
   gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
+.group-tools output { margin: 0; }
 
 .picker-row {
   display: grid;

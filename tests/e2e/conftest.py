@@ -232,6 +232,13 @@ class Session:
         return kept
 
 
+# Every session fixture below is per-test and builds its own browser context.
+# That is load-bearing, not tidiness: site/scorer.js remembers the chosen set in
+# localStorage, so a context that once saw `?scorer=gemini` would stay on Gemini
+# for every bare URL afterwards. A fresh context starts on the default, and a
+# test that wants the other set says so on every navigation.
+
+
 def make_session(browser, base_url, viewport):
     context = browser.new_context(viewport=viewport)
     return context, Session(context, base_url)

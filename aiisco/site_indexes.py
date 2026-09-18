@@ -412,7 +412,7 @@ class SkillInputs:
 
     counts: tuple
     scheme: str = SCHEME_QUADRANTS
-    answers: dict = None
+    answers: dict | None = None
 
 
 def skill_shares(skill, scheme):

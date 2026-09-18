@@ -8,7 +8,7 @@
 // strings that fill them. Nothing is written twice, so nothing can disagree.
 
 import {
-  formatCount, formatPercent, formatScore, largestRemainder,
+  formatCount, formatPercent, formatScore, largestRemainder, plural,
 } from '../format.js';
 import {
   SHARES, SKILL_CLASS_ORDER, skillClassName, splitOf, typeDescription, typeLabel,
@@ -22,14 +22,6 @@ const PLACEHOLDER = /\{(\w+)\}/g;
 export const LIST_LENGTH = 10;
 
 /* --- deriving ------------------------------------------------------------ */
-
-/**
- * A count with the right noun: "1 occupation", "3,039 occupations".
- * TODO: format.js should own this; tree-model.js has the same two lines.
- */
-function countOf(value, noun = 'occupation') {
-  return `${formatCount(value)} ${noun}${value === 1 ? '' : 's'}`;
-}
 
 /** "0%" is a lie about a class that has one occupation in it. */
 function percentText(percent, count) {
@@ -89,7 +81,7 @@ function majorRow(key, group) {
 /** One row per ISCO major group, in ISCO order. */
 function majorRows(groups) {
   return Object.entries(groups || {})
-    .filter(([, group]) => group && group.level === 'major')
+    .filter(([, group]) => group?.level === 'major')
     .map(([key, group]) => majorRow(key, group))
     .sort((a, b) => a.key.localeCompare(b.key));
 }
@@ -142,7 +134,7 @@ function rankedLists(index) {
 
 /** One row per skill class, in the order the shares are stored. */
 function classRows(stats) {
-  const source = (stats && stats.skill_classes) || null;
+  const source = stats?.skill_classes || null;
   if (!source) return [];
   const counts = source.counts || {};
   const shares = source.shares || {};
@@ -286,8 +278,8 @@ function shrinkFreeClause(highlights) {
 
 /** The head of one ranked list, or null — the two schemes keep different lists. */
 function listHead(facts, key) {
-  const rows = (facts.lists || {})[key];
-  return (rows && rows[0]) || null;
+  const rows = facts.lists?.[key];
+  return rows?.[0] || null;
 }
 
 function exampleValues(facts) {
@@ -324,7 +316,7 @@ function groupValues(facts) {
   const { topAmplification, topAutomation, topShrinkShare, largestZeroShrink } = facts.highlights;
   return {
     shrinkFreeClause: shrinkFreeClause(facts.highlights),
-    shrinkFreeGroupName: (largestZeroShrink || topShrinkShare || {}).label || '',
+    shrinkFreeGroupName: (largestZeroShrink || topShrinkShare)?.label || '',
     topAmpGroup: groupLink(topAmplification),
     topAmpGroupAmp: formatScore(topAmplification?.amp),
     topAutoGroup: groupLink(topAutomation),
@@ -349,7 +341,7 @@ function quadrantValues(facts) {
 const NO_JOB = { text: 'no occupation of that type' };
 
 function shareOf(row, at) {
-  const parts = sharePercents(row && row.sh);
+  const parts = sharePercents(row?.sh);
   return parts.length ? `${parts[at].percent}%` : formatPercent(0);
 }
 
@@ -366,7 +358,7 @@ function typeSlots(facts, code, stem) {
   return {
     [`${stem}Name`]: typeLabel(code),
     [`${stem}Count`]: row.countText ?? formatCount(0),
-    [`${stem}Jobs`]: countOf(row.count ?? 0),
+    [`${stem}Jobs`]: plural(row.count ?? 0),
     [`${stem}Share`]: row.shareText ?? formatPercent(0),
   };
 }
@@ -376,7 +368,7 @@ function typeValues(facts) {
   return {
     topTypeName: typeLabel(first?.code),
     topTypeCount: first?.countText ?? formatCount(0),
-    topTypeJobs: countOf(first?.count ?? 0),
+    topTypeJobs: plural(first?.count ?? 0),
     topTypeShare: first?.shareText ?? formatPercent(0),
     topTypeDescription: typeDescription(first?.code),
     typeGap: gapWords(first, second),
@@ -425,7 +417,7 @@ export function articleValues(facts) {
     skills: formatCount(facts.skills),
     threshold: facts.threshold === null ? 'no cut-off' : String(facts.threshold),
     nearLineCount: formatCount(facts.nearLine.count),
-    nearLineJobs: countOf(facts.nearLine.count),
+    nearLineJobs: plural(facts.nearLine.count),
     nearLineShare: formatPercent(facts.nearLine.share),
     evolvePerShrink: formatCount(facts.evolvePerShrink ?? 0),
     methodLink: { text: 'How sure is this?', href: 'method.html' },

@@ -185,7 +185,7 @@ export function sortKeyOf(word, scheme) {
  * @returns {{key: string, descending: boolean}}
  */
 export function tableSortOf(here, scheme) {
-  const wanted = sortKeyOf(here && here.sort, scheme);
+  const wanted = sortKeyOf(here?.sort, scheme);
   const named = columnsFor(scheme).find((column) => column.key === wanted);
   if (!named) return { key: isShared(scheme) ? 's0' : 'a', descending: true };
   return { key: named.key, descending: here.descending === null ? true : here.descending };
@@ -223,7 +223,7 @@ export function compareHref(a, b) {
  * @returns {Object|null}
  */
 export function resolveGroup(groups, key) {
-  return (groups && groups[key]) || null;
+  return groups?.[key] || null;
 }
 
 /** "Major group 2 · ISCO-08 · 869 jobs" — level, code and size in one line. */
@@ -253,7 +253,7 @@ export function breadcrumb(groups, key) {
  */
 export function childGroups(groups, key) {
   const group = resolveGroup(groups, key);
-  return ((group && group.children) || [])
+  return (group?.children || [])
     .filter((child) => groups[child])
     .map((child) => ({ key: child, label: groups[child].label, n: groups[child].n }));
 }
@@ -307,7 +307,7 @@ function percentText(percent, count) {
  * @returns {Array<{code, label, count, share, percent, text}>}
  */
 export function mixBars(group, scheme) {
-  const counts = (group && group.q) || {};
+  const counts = group?.q || {};
   const order = scheme ? orderOf(scheme) : orderForCounts(counts);
   const total = order.reduce((sum, code) => sum + (counts[code] || 0), 0);
   const percents = largestRemainder(order.map((code) => counts[code] || 0));
@@ -324,9 +324,12 @@ export function mixBars(group, scheme) {
   });
 }
 
+/** One bar of the split as words: "36% Transform". */
+const barText = (bar) => `${bar.percent} ${bar.label}`;
+
 /** "36% Transform, 28% Stable, 18% Evolve, 17% Shrink." */
 export function mixSentence(group, scheme) {
-  return `${mixBars(group, scheme).map((bar) => `${bar.percent} ${bar.label}`).join(', ')}.`;
+  return `${mixBars(group, scheme).map(barText).join(', ')}.`;
 }
 
 /**
@@ -336,7 +339,7 @@ export function mixSentence(group, scheme) {
  * @returns {string}
  */
 export function meanShareSentence(group) {
-  const shares = group && group.sh;
+  const shares = group?.sh;
   if (!isShares(shares)) return '';
   return `Across the ${formatCount(group.n)} jobs in this group, on average `
     + `${shareSentence(shares)}.`;
@@ -369,7 +372,7 @@ export function nearLineCaveat(stats) {
  * @returns {string} '' when the group has no `near` count
  */
 export function groupNearSentence(group, scheme) {
-  const near = group && group.near;
+  const near = group?.near;
   if (!isScored(near) || !group.n) return '';
   const share = formatShare(near, group.n, 'jobs');
   if (isShared(scheme)) {
@@ -426,12 +429,12 @@ function dot(value) {
 }
 
 function shareAt(row, position) {
-  const shares = row && row.sh;
+  const shares = row?.sh;
   return isShares(shares) ? shares[position] : null;
 }
 
 function sharePercentText(row, position) {
-  const parts = sharePercents(row && row.sh);
+  const parts = sharePercents(row?.sh);
   return parts.length ? `${parts[position].percent}%` : NOT_SCORED;
 }
 
@@ -977,9 +980,9 @@ function groupTile(key, group, scheme) {
     kind: 'group',
     label: group.label,
     value: group.n,
-    automation: group.auto && group.auto.mean,
-    amplification: group.amp && group.amp.mean,
-    mechanical: group.mech && group.mech.mean,
+    automation: group.auto?.mean,
+    amplification: group.amp?.mean,
+    mechanical: group.mech?.mean,
     shares: isShares(group.sh) ? group.sh : null,
     quadrant,
     detail: `${formatCount(group.n)} jobs · mostly ${typeShortLabel(quadrant, scheme)}`,
@@ -1220,8 +1223,8 @@ export function exposureLists(context, limit = 5) {
   const { scheme, group, rows, bySlug } = context || {};
   if (isShared(scheme)) return bySubstitutedShare(rows, limit);
   return {
-    top: resolveSlugs(group && group.top, bySlug, limit),
-    bottom: resolveSlugs(group && group.bottom, bySlug, limit),
+    top: resolveSlugs(group?.top, bySlug, limit),
+    bottom: resolveSlugs(group?.bottom, bySlug, limit),
   };
 }
 
@@ -1264,7 +1267,7 @@ export function skillsNote(scheme) {
 }
 
 function skillRow(skills, id) {
-  const found = skills && skills.get(id);
+  const found = skills?.get(id);
   return typeof found === 'string' ? { t: found } : found || null;
 }
 
@@ -1272,14 +1275,14 @@ function skillEntries(list, skills) {
   return (list || []).map((entry) => ({
     id: entry.id,
     n: entry.n,
-    title: (skillRow(skills, entry.id) || {}).t || null,
+    title: skillRow(skills, entry.id)?.t || null,
     count: `in ${formatCount(entry.n)} jobs`,
   }));
 }
 
 /** Every skill the group's two lists name, the larger count per id kept. */
 function pooledSkills(group) {
-  const skills = (group && group.skills) || {};
+  const skills = group?.skills || {};
   const pool = new Map();
   for (const entry of [...(skills.auto || []), ...(skills.amp || [])]) {
     const seen = pool.get(entry.id);
@@ -1289,7 +1292,7 @@ function pooledSkills(group) {
 }
 
 function byClass(pool, skills, code, limit) {
-  return pool.filter((entry) => (skillRow(skills, entry.id) || {}).c === code).slice(0, limit);
+  return pool.filter((entry) => skillRow(skills, entry.id)?.c === code).slice(0, limit);
 }
 
 function sharesSkillColumns(group, skills, limit) {
@@ -1318,7 +1321,7 @@ function sharesSkillColumns(group, skills, limit) {
  */
 export function drivingSkills(group, skills, scheme, limit = 5) {
   if (isShared(scheme)) return sharesSkillColumns(group, skills, limit);
-  const lists = (group && group.skills) || {};
+  const lists = group?.skills || {};
   return {
     pending: false,
     columns: SKILL_COLUMNS.quadrants.map((column) => ({
@@ -1336,7 +1339,7 @@ export function skillIdsOf(group) {
 /* --- comparing two groups ------------------------------------------------- */
 
 function shareBars(group) {
-  const parts = sharePercents(group && group.sh);
+  const parts = sharePercents(group?.sh);
   return parts.map((part) => ({
     code: part.code,
     label: skillClassName(part.code),
@@ -1348,10 +1351,10 @@ function shareBars(group) {
 
 function medians(group, scheme) {
   const base = {
-    automation: group.auto && group.auto.p50,
-    amplification: group.amp && group.amp.p50,
+    automation: group.auto?.p50,
+    amplification: group.amp?.p50,
   };
-  return isShared(scheme) ? { ...base, mechanical: group.mech && group.mech.p50 } : base;
+  return isShared(scheme) ? { ...base, mechanical: group.mech?.p50 } : base;
 }
 
 /** "Median AI substitution 6.0 · median AI assistance 6.7 · …" */
@@ -1380,6 +1383,16 @@ function comparisonSide(groups, key, scheme) {
   };
 }
 
+const pointPlural = (points) => (points === 1 ? '' : 's');
+
+const moreOrFewer = (delta) => (delta > 0 ? 'more' : 'fewer');
+
+/** "3 percentage points more in Managers", or "the same share" when they tie. */
+function deltaSentence(label, delta, points) {
+  if (points === 0) return 'the same share';
+  return `${points} percentage point${pointPlural(points)} ${moreOrFewer(delta)} in ${label}`;
+}
+
 function differenceRow(a, b, left, right) {
   const delta = left.share - right.share;
   const points = Math.round(Math.abs(delta) * 100);
@@ -1390,10 +1403,7 @@ function differenceRow(a, b, left, right) {
     b: right,
     delta,
     text: `${left.percent} in ${a.label}, ${right.percent} in ${b.label}`,
-    deltaText: points === 0
-      ? 'the same share'
-      : `${points} percentage point${points === 1 ? '' : 's'} `
-        + `${delta > 0 ? 'more' : 'fewer'} in ${a.label}`,
+    deltaText: deltaSentence(a.label, delta, points),
   };
 }
 

@@ -63,7 +63,7 @@
   gap: var(--space-2);
 }
 .job-tools .button { font-size: 0.8125rem; }
-.job-tools p { margin: 0; }
+.job-tools p, .job-tools output { margin: 0; }
 
 .job-note {
   margin: var(--space-3) 0 0;

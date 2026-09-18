@@ -49,7 +49,7 @@ Copy this. The order of the last two `<script>` tags matters.
 <body>
 
 <!-- Must be static markup: scorer.js looks this element up by id. -->
-<nav id="site-nav"></nav>
+<nav id="site-nav" aria-label="Site"></nav>
 
 <main id="main" class="page">
   <h1>Will AI change your job?</h1>
@@ -64,7 +64,8 @@ Copy this. The order of the last two `<script>` tags matters.
 ### Script loading order
 
 1. `css/app.css` in `<head>`.
-2. `<nav id="site-nav"></nav>` as the first element of `<body>`, **in the HTML**.
+2. `<nav id="site-nav" aria-label="Site"></nav>` as the first element of `<body>`,
+   **in the HTML**. The label is what tells it apart from the breadcrumb nav.
    `site/scorer.js` calls `document.getElementById('site-nav')` at execution time
    and appends its score-set switch to whatever it finds. If the element is not
    in the markup, the switch silently disappears.
@@ -320,7 +321,8 @@ The ARIA 1.2 combobox pattern: `role="combobox"`, `aria-expanded`,
 `aria-controls`, `aria-autocomplete="list"`, `aria-activedescendant`, and
 `role="option"` children. Arrow Up/Down wrap, Home/End jump, Enter selects,
 Escape closes; pointer and touch work through `pointerdown`, which keeps focus in
-the input. `status` should be a `role="status" aria-live="polite"` element; it
+the input. `status` should be an `<output aria-live="polite">` element — `<output>`
+carries `role="status"` on its own, so the attribute is left off; it
 receives the result count. `getResults(query)` may return an array or a promise —
 stale responses are discarded.
 

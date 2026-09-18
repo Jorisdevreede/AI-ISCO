@@ -7,8 +7,10 @@ shared before v2 existed, and `_typesafe` itself is not offered: it exists only
 for the method page's same-rubric comparison.
 
 The jev model returns numbers and writes no text, so under the default every
-rationale on screen is Gemini's, borrowed, and says so behind an "i". A
-checkout with only the Gemini set must behave as a one-scorer site.
+explanation on screen is Gemini's, borrowed. Each one names the score it was
+written for, and where that score is far from the one shown the sentence is
+left out rather than stretched to fit. A checkout with only the Gemini set must
+behave as a one-scorer site.
 """
 
 import re
@@ -54,6 +56,35 @@ def borrowed_skill(skill_index_v2, skill_note):
             return row
     pytest.skip("no borrowed rationale close enough to be printed")
     return None
+
+
+@pytest.fixture(scope="module")
+def developer_rationales(unit_data, units_json):
+    """The essential skills of the sample job, keyed by the title on screen."""
+    shard = unit_data(units_json[SLUG])
+    job = next(row for row in shard["occupations"] if row["s"] == SLUG)
+    return {shard["skills"][key]["t"]: shard["skills"][key]
+            for key in job.get("se", []) if key in shard["skills"]}
+
+
+@pytest.fixture(scope="module")
+def widest_gap(unit_data, units_json):
+    """The skill in the sample unit group whose borrowed explanation was
+    written for the score furthest from the one on screen, and a job that
+    lists it. If anything is left out, this is."""
+    shard = unit_data(units_json[SLUG])
+    found = None
+    for occupation in shard["occupations"]:
+        for key in occupation.get("se", []):
+            skill = shard["skills"].get(key)
+            if not skill or not skill.get("r") or not skill.get("rf"):
+                continue
+            gap = abs(skill["rf"]["a"] - skill["a"])
+            if found is None or gap > found[0]:
+                found = (gap, occupation["s"], skill)
+    if found is None:
+        pytest.skip("no borrowed explanation in this unit group")
+    return found[1], found[2]
 
 
 # --- which set is on -------------------------------------------------------
@@ -121,37 +152,75 @@ def test_switching_reloads_the_job_with_the_other_scores(
 # --- the borrowed rationales ----------------------------------------------
 
 
-def test_a_borrowed_rationale_carries_an_i_that_names_its_writer(desktop, open_job):
-    page = open_job(desktop, f"job.html#{SLUG}")
-    card = open_card_with_an_i(page)
-    button = card.locator("button.info-button").first
-    note = card.locator(".info-note-text").first
+#: "Gemini scored this 8.0 for AI substitution and wrote:"
+LEAD = re.compile(r"^(\w+) scored this (\d+\.\d) for AI substitution and wrote:$")
 
-    assert "Gemini" in button.get_attribute("aria-label")
-    assert not note.is_visible()
-    button.focus()
-    page.keyboard.press("Enter")
-    assert note.is_visible()
-    assert button.get_attribute("aria-expanded") == "true"
-    assert "Gemini" in note.inner_text()
+
+def test_no_borrowed_explanation_is_printed_without_the_score_it_was_for(
+        desktop, open_job, developer_rationales):
+    """A sentence written for a very different score argues with the class
+    beside it, so the page either names both scores or says why it is leaving
+    the sentence out. It never just prints it."""
+    page = reveal_all(open_job(desktop, f"job.html#{SLUG}"))
+    cards = page.locator("#cards-list details.skill-card")
+    expect(cards.first).to_be_visible(timeout=JOB_TIMEOUT)
+    assert cards.count() == len(developer_rationales)
+
+    printed = 0
+    for position in range(cards.count()):
+        card = cards.nth(position)
+        skill = developer_rationales[card.locator(".sc-name").inner_text()]
+        lead = card.locator(".rationale-lead")
+        if lead.count():
+            printed += 1
+            writer, wrote_for = LEAD.match(lead.inner_text()).groups()
+            assert writer == "Gemini"
+            assert float(wrote_for) == skill["rf"]["a"]
+            assert card.locator(".rationale-after").inner_text() == (
+                f"This page shows {skill['a']:.1f}.")
+        else:
+            missing = card.locator(".rationale-missing").inner_text()
+            assert f"{skill['a']:.1f}" in missing or "no rationale" in missing
+    assert printed, "no borrowed explanation was printed at all"
     assert "Gemini" in page.locator("#cards-writer").inner_text()
 
 
-def test_the_skill_page_says_who_wrote_a_borrowed_explanation(
-        desktop, open_ready, borrowed_skill):
+def test_the_explanation_furthest_from_its_score_is_left_out_and_says_so(
+        desktop, open_job, widest_gap):
+    """A disclaimer does not stop a reader taking the sentence as the
+    explanation of the label, so past some gap the sentence is not shown."""
+    slug, skill = widest_gap
+    page = reveal_all(open_job(desktop, f"job.html#{slug}"))
+    card = page.locator("#cards-list details.skill-card").filter(
+        has=page.locator(".sc-name", has_text=skill["t"])).first
+    card.wait_for(state="visible", timeout=JOB_TIMEOUT)
+
+    body = card.inner_text()
+    assert skill["r"] not in body, "the furthest explanation was printed anyway"
+    missing = card.locator(".rationale-missing").inner_text()
+    assert f"{skill['rf']['a']:.1f}" in missing and f"{skill['a']:.1f}" in missing
+    assert "Gemini" in missing
+
+
+def test_the_skill_page_says_which_score_a_borrowed_explanation_was_written_for(
+        desktop, open_ready, borrowed_skill, skill_note):
     page = open_ready(desktop, f"skill.html#{borrowed_skill['id']}", "blockquote.rationale")
     quote = page.locator("blockquote.rationale")
+    source = skill_note(borrowed_skill["id"])["rf"]
 
-    assert "Gemini" in quote.inner_text()
-    quote.locator("button.info-button").first.click()
-    assert quote.locator(".info-note-text").first.is_visible()
+    writer, wrote_for = LEAD.match(quote.locator(".rationale-lead").inner_text()).groups()
+    assert writer == "Gemini"
+    assert float(wrote_for) == source["a"]
+    assert f"This page shows {borrowed_skill['a']:.1f}." in (
+        quote.locator(".rationale-source").inner_text())
 
 
-def test_the_gemini_set_shows_its_own_rationale_without_an_i(desktop, open_job):
+def test_the_gemini_set_shows_its_own_rationale_with_nothing_borrowed(desktop, open_job):
     page = open_job(desktop, f"job.html{GEMINI}#{SLUG}")
     open_first_card(page)
 
-    assert page.locator("button.info-button").count() == 0
+    assert page.locator(".rationale-lead").count() == 0
+    assert page.locator(".rationale-after").count() == 0
     assert "what the model wrote" in page.locator("#cards-writer").inner_text()
 
 
@@ -181,6 +250,7 @@ def open_agreement(session, open_ready):
     section it explains comes into view."""
     page = open_ready(session, "method.html", "h1")
     reveal_section(page, "#agreement")
+    page.locator("#agreement-body").wait_for(state="visible", timeout=JOB_TIMEOUT)
     page.locator("#agreement-table td").first.wait_for(
         state="visible", timeout=JOB_TIMEOUT)
     return page

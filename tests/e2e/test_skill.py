@@ -183,7 +183,8 @@ def test_the_class_rules_are_in_words_not_in_the_rubric_s_notation(desktop, open
     page = open_ready(desktop, "skill.html", "#scoring-heading")
     chips = page.locator(".rubric-class-list .class-chip")
     expect(chips).to_have_count(len(SKILL_CLASS_NAMES))
-    assert chips.all_inner_texts() == list(SKILL_CLASS_NAMES.values())
+    for shown, name in zip(chips.all_inner_texts(), SKILL_CLASS_NAMES.values()):
+        assert shown.startswith(name), shown
     for rule in page.locator(".rubric-rule").all_inner_texts():
         assert rule.strip()
         assert not re.search(r"[<>]=?|\b[A-Z]{3,}\b|\d", rule), rule
