@@ -180,6 +180,7 @@ canvas#canvas { display: block; cursor: default; }
     <a href="insights.html">Insights</a>
   </div>
 </nav>
+<script src="scorer.js"></script>
 <div id="wrapper">
 <div id="header">
   <div class="intro">
@@ -577,6 +578,7 @@ function showTooltip(d, mx, my) {
         </div>`;
       }
     }
+    skillsHTML += `<div class="tt-skills-title" style="margin-top:8px">Click to open the full job profile &rarr;</div>`;
     tt.querySelector(".tt-skills").innerHTML = skillsHTML;
   }
 
@@ -669,6 +671,9 @@ canvas.addEventListener("click", (e) => {
   if (hit._isGroup) {
     drillPath.push({ level: hit._groupField, key: hit._groupKey });
     refresh();
+  } else if (hit.slug) {
+    // A single job: open its profile, keeping any ?scorer= choice.
+    location.href = "portfolio.html" + location.search + "#" + hit.slug;
   }
 });
 
@@ -723,7 +728,7 @@ document.getElementById("colorToggle").addEventListener("click", (e) => {
 });
 
 // === Load ===
-fetch("data.json")
+scorerFetch("data")
   .then(r => r.json())
   .then(d => {
     allData = d;
@@ -735,5 +740,15 @@ fetch("data.json")
 
 window.addEventListener("resize", resize);
 </script>
+<footer class="site-attribution">
+  <p>This service uses the ESCO classification of the European Commission. What you see is a modified version of ESCO v1.2.1: the scores, quadrants, rationales and narratives are AI-generated additions (Google Gemini Flash) and are not part of ESCO. They are model estimates, meant for exploring, not for predicting.</p>
+  <p>Occupation groups follow ISCO-08. ESCO states: &ldquo;Information and data in ESCO is based on an original work published by the ILO under the title International Standard Classification of Occupations, ISCO-08. Structure, Group Definitions and Correspondence Tables. Copyright &copy; 2012 International Labour Organization. Adapted and reproduced with permission.&rdquo; Neither the European Commission nor the ILO endorses this site.</p>
+  <p><a href="https://github.com/Jorisdevreede/AI-ISCO/blob/master/THIRD-PARTY-NOTICES.md">Licensing and attribution</a></p>
+</footer>
+<style>
+.site-attribution { max-width: 980px; margin: 48px auto 0; padding: 20px 28px 32px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; line-height: 1.6; color: #888894; }
+.site-attribution p { margin: 0 0 8px; }
+.site-attribution a { color: #b4b4c0; }
+</style>
 </body>
 </html>

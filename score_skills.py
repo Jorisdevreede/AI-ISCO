@@ -15,19 +15,30 @@ Usage:
 """
 
 import argparse
-import json
-import os
-import re
-import time
+from dataclasses import dataclass, field
+
 import httpx
 from dotenv import load_dotenv
+
+from aiisco.checkpoint import load_checkpoint, pending, save_checkpoint
+from aiisco.jsonio import load_json
+from aiisco.openrouter import (
+    BatchLoop,
+    ChatRequest,
+    call_model,
+    collect_results,
+    iter_batches,
+    print_failures,
+    print_histogram,
+    run_batches,
+    tally,
+)
 
 load_dotenv()
 
 DEFAULT_MODEL = "google/gemini-3-flash-preview"
 INPUT_FILE = "data/esco_skills.json"
 OUTPUT_FILE = "data/skill_scores.json"
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 SYSTEM_PROMPT = """\
 You are an expert analyst evaluating how AI will affect individual skills and \
@@ -73,9 +84,30 @@ format (no other text):
 Return the skills in the SAME ORDER as provided.\
 """
 
-# Maximum retries for transient / rate-limit errors
-MAX_RETRIES = 5
-INITIAL_BACKOFF = 2.0  # seconds
+
+@dataclass
+class ScoreState:
+    """The scores collected so far and the averages printed after each batch."""
+
+    scored: dict = field(default_factory=dict)
+    count: int = 0
+    automation: float = 0.0
+    amplification: float = 0.0
+
+    def add(self, skill, result):
+        """Record one scored skill and fold it into the running averages."""
+        entry = score_entry(skill, result)
+        self.scored[entry["uri"]] = entry
+        self.count += 1
+        self.automation += entry["automation_risk"]
+        self.amplification += entry["amplification_potential"]
+
+    def progress(self):
+        """The line printed after a batch the model answered."""
+        avg_auto = self.automation / self.count if self.count else 0
+        avg_amp = self.amplification / self.count if self.count else 0
+        return (f"OK ({self.count} scored, "
+                f"avg risk={avg_auto:.1f}, avg amp={avg_amp:.1f})")
 
 
 def build_batch_prompt(skills_batch):
@@ -94,102 +126,86 @@ def build_batch_prompt(skills_batch):
     return "\n".join(lines)
 
 
-def strip_code_fences(content):
-    """Strip markdown code fences from LLM response."""
-    content = content.strip()
-    if content.startswith("```"):
-        content = content.split("\n", 1)[1]  # remove first line
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
-    return content
-
-
-def fix_json(text):
-    """Fix common LLM JSON issues: trailing commas, comments."""
-    # Remove trailing commas before } or ]
-    text = re.sub(r',\s*([\]}])', r'\1', text)
-    return text
+def validate_scores(item):
+    """Reject a scored skill whose two axes are not numbers."""
+    # ValueError, not TypeError: call_model only retries on ValueError.
+    if not isinstance(item.get("automation_risk"), (int, float)):
+        raise ValueError(  # noqa: TRY004
+            f"Invalid automation_risk for '{item.get('title')}'"
+        )
+    if not isinstance(item.get("amplification_potential"), (int, float)):
+        raise ValueError(  # noqa: TRY004
+            f"Invalid amplification_potential for '{item.get('title')}'"
+        )
 
 
 def score_batch(client, skills_batch, model):
     """Send one batch of skills to the LLM and parse the structured response."""
-    user_prompt = build_batch_prompt(skills_batch)
-
-    last_error = None
-    for attempt in range(MAX_RETRIES):
-        try:
-            response = client.post(
-                API_URL,
-                headers={
-                    "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
-                },
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "temperature": 0.2,
-                },
-                timeout=120,
-            )
-            response.raise_for_status()
-            content = response.json()["choices"][0]["message"]["content"]
-            content = strip_code_fences(content)
-            content = fix_json(content)
-            results = json.loads(content)
-
-            # Validate the response structure
-            if not isinstance(results, list):
-                raise ValueError(
-                    f"Expected a JSON array, got {type(results).__name__}"
-                )
-            for item in results:
-                if not isinstance(item.get("automation_risk"), (int, float)):
-                    raise ValueError(
-                        f"Invalid automation_risk for '{item.get('title')}'"
-                    )
-                if not isinstance(item.get("amplification_potential"), (int, float)):
-                    raise ValueError(
-                        f"Invalid amplification_potential for "
-                        f"'{item.get('title')}'"
-                    )
-
-            return results
-
-        except httpx.HTTPStatusError as e:
-            last_error = e
-            status = e.response.status_code
-            # Retry on rate limit (429) or server errors (5xx)
-            if status == 429 or status >= 500:
-                backoff = INITIAL_BACKOFF * (2 ** attempt)
-                print(
-                    f"\n    Rate limited/server error ({status}), "
-                    f"retrying in {backoff:.0f}s (attempt {attempt + 1}/"
-                    f"{MAX_RETRIES})...",
-                    flush=True,
-                )
-                time.sleep(backoff)
-                continue
-            raise
-        except (json.JSONDecodeError, ValueError, KeyError) as e:
-            last_error = e
-            if attempt < MAX_RETRIES - 1:
-                backoff = INITIAL_BACKOFF * (2 ** attempt)
-                print(
-                    f"\n    Parse error: {e}, retrying in {backoff:.0f}s "
-                    f"(attempt {attempt + 1}/{MAX_RETRIES})...",
-                    flush=True,
-                )
-                time.sleep(backoff)
-                continue
-            raise
-
-    raise last_error
+    request = ChatRequest(system_prompt=SYSTEM_PROMPT, model=model, timeout=120)
+    return call_model(client, request, build_batch_prompt(skills_batch),
+                      validate_scores)
 
 
-def main():
+def score_entry(skill, result):
+    """Build the record stored for one scored skill."""
+    return {
+        "uri": skill["uri"],
+        "title": skill["title"],
+        "automation_risk": int(result["automation_risk"]),
+        "amplification_potential": int(result["amplification_potential"]),
+        "rationale": result.get("rationale", ""),
+    }
+
+
+def score_all(to_score, state, args):
+    """Score every remaining skill, batch by batch, checkpointing as it goes."""
+    client = httpx.Client()
+
+    def handle(batch, errors):
+        collect_results(state, batch, score_batch(client, batch, args.model),
+                        errors)
+        print(state.progress())
+
+    errors = run_batches(BatchLoop(
+        batches=iter_batches(to_score, args.batch_size),
+        noun="skills",
+        handle=handle,
+        checkpoint=lambda: save_checkpoint(OUTPUT_FILE, state.scored),
+        delay=args.delay,
+    ))
+    client.close()
+    return errors
+
+
+def score_label(score):
+    """Right-align a 1-10 score so the distribution bars line up."""
+    return f"{score:>2}"
+
+
+def print_distributions(vals):
+    """Print how the scored skills spread over both 1-10 axes."""
+    print_histogram("Automation risk distribution:",
+                    tally(s["automation_risk"] for s in vals), score_label)
+    print_histogram("Amplification potential distribution:",
+                    tally(s["amplification_potential"] for s in vals),
+                    score_label)
+
+
+def print_summary(scored):
+    """Print the averages and both distributions over everything scored."""
+    vals = [s for s in scored.values() if "automation_risk" in s]
+    if not vals:
+        return
+    avg_risk = sum(s["automation_risk"] for s in vals) / len(vals)
+    avg_amp = sum(s["amplification_potential"] for s in vals) / len(vals)
+    print(f"\nSummary across {len(vals)} skills:")
+    print(f"  Average automation risk:        {avg_risk:.2f}")
+    print(f"  Average amplification potential: {avg_amp:.2f}")
+    print_distributions(vals)
+
+
+def parse_args():
+    """Parse the command line."""
     parser = argparse.ArgumentParser(
         description="Score ESCO skills on automation risk and AI amplification"
     )
@@ -202,140 +218,28 @@ def main():
                         help="Number of skills per LLM call")
     parser.add_argument("--force", action="store_true",
                         help="Re-score even if already cached")
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # Load skills from ingested ESCO data
-    with open(INPUT_FILE) as f:
-        all_skills = json.load(f)
 
-    subset = all_skills[args.start:args.end]
-
-    # Load existing scores for resume support
-    scored = {}
-    if os.path.exists(OUTPUT_FILE) and not args.force:
-        with open(OUTPUT_FILE) as f:
-            for entry in json.load(f):
-                scored[entry["uri"]] = entry
+def main():
+    args = parse_args()
+    subset = load_json(INPUT_FILE)[args.start:args.end]
+    state = ScoreState(scored=load_checkpoint(OUTPUT_FILE, args.force))
 
     print(f"Scoring {len(subset)} skills with {args.model}")
     print(f"Batch size: {args.batch_size}")
-    print(f"Already scored: {len(scored)}")
-
-    # Filter out already-scored skills (preserve order)
-    to_score = [s for s in subset if s["uri"] not in scored]
+    print(f"Already scored: {len(state.scored)}")
+    to_score = pending(subset, state.scored)
     print(f"Remaining to score: {len(to_score)}")
 
     if not to_score:
         print("Nothing to score. Use --force to re-score all.")
         return
 
-    # Split into batches
-    batches = []
-    for i in range(0, len(to_score), args.batch_size):
-        batches.append(to_score[i : i + args.batch_size])
-
-    errors = []
-    client = httpx.Client()
-    total_scored = 0
-    sum_automation = 0.0
-    sum_amplification = 0.0
-
-    for batch_idx, batch in enumerate(batches):
-        titles = [s["title"] for s in batch]
-        print(
-            f"\n  Batch {batch_idx + 1}/{len(batches)} "
-            f"({len(batch)} skills): {titles[0]!r} ... {titles[-1]!r}",
-            end=" ",
-            flush=True,
-        )
-
-        try:
-            results = score_batch(client, batch, args.model)
-
-            # Match results back to skills by position (fallback to title)
-            result_by_title = {r["title"].lower(): r for r in results}
-
-            for skill in batch:
-                # Try positional match first, then title match
-                idx_in_batch = batch.index(skill)
-                if idx_in_batch < len(results):
-                    result = results[idx_in_batch]
-                else:
-                    result = result_by_title.get(skill["title"].lower())
-
-                if result is None:
-                    print(f"\n    WARNING: No result for '{skill['title']}'")
-                    errors.append(skill["uri"])
-                    continue
-
-                scored[skill["uri"]] = {
-                    "uri": skill["uri"],
-                    "title": skill["title"],
-                    "automation_risk": int(result["automation_risk"]),
-                    "amplification_potential": int(
-                        result["amplification_potential"]
-                    ),
-                    "rationale": result.get("rationale", ""),
-                }
-                total_scored += 1
-                sum_automation += int(result["automation_risk"])
-                sum_amplification += int(result["amplification_potential"])
-
-            # Progress
-            avg_auto = sum_automation / total_scored if total_scored else 0
-            avg_amp = sum_amplification / total_scored if total_scored else 0
-            print(
-                f"OK ({total_scored} scored, "
-                f"avg risk={avg_auto:.1f}, avg amp={avg_amp:.1f})"
-            )
-
-        except Exception as e:
-            print(f"ERROR: {e}")
-            for skill in batch:
-                errors.append(skill["uri"])
-
-        # Incremental checkpoint after each batch
-        with open(OUTPUT_FILE, "w") as f:
-            json.dump(list(scored.values()), f, indent=2)
-
-        # Delay between batches (skip after last)
-        if batch_idx < len(batches) - 1:
-            time.sleep(args.delay)
-
-    client.close()
-
-    print(f"\nDone. Total scored: {len(scored)}, errors: {len(errors)}.")
-    if errors:
-        print(f"Failed URIs ({len(errors)}):")
-        for uri in errors[:10]:
-            print(f"  {uri}")
-        if len(errors) > 10:
-            print(f"  ... and {len(errors) - 10} more")
-
-    # Summary statistics
-    vals = [s for s in scored.values() if "automation_risk" in s]
-    if vals:
-        avg_risk = sum(s["automation_risk"] for s in vals) / len(vals)
-        avg_amp = sum(s["amplification_potential"] for s in vals) / len(vals)
-        print(f"\nSummary across {len(vals)} skills:")
-        print(f"  Average automation risk:        {avg_risk:.2f}")
-        print(f"  Average amplification potential: {avg_amp:.2f}")
-
-        print("\nAutomation risk distribution:")
-        risk_dist = {}
-        for s in vals:
-            bucket = s["automation_risk"]
-            risk_dist[bucket] = risk_dist.get(bucket, 0) + 1
-        for k in sorted(risk_dist):
-            print(f"  {k:>2}: {'█' * risk_dist[k]} ({risk_dist[k]})")
-
-        print("\nAmplification potential distribution:")
-        amp_dist = {}
-        for s in vals:
-            bucket = s["amplification_potential"]
-            amp_dist[bucket] = amp_dist.get(bucket, 0) + 1
-        for k in sorted(amp_dist):
-            print(f"  {k:>2}: {'█' * amp_dist[k]} ({amp_dist[k]})")
+    errors = score_all(to_score, state, args)
+    print(f"\nDone. Total scored: {len(state.scored)}, errors: {len(errors)}.")
+    print_failures(errors)
+    print_summary(state.scored)
 
 
 if __name__ == "__main__":

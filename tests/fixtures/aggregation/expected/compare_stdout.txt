@@ -1,0 +1,56 @@
+TypeSafe skills: 17 | matched to published Gemini scores: 15
+
+== automation risk
+  Spearman rho:            0.921
+  same rubric band:        46.7%
+  within one band:         80.0%
+  mean |gap| on 1-10:      1.09
+  mean  gemini 5.52 | typesafe 5.52
+     untyped items:      1, rho 0.000, mean gemini 8.00 | typesafe 6.50
+   knowledge items:      3, rho 1.000, mean gemini 4.20 | typesafe 4.10
+  skill/competence items:     11, rho 0.941, mean gemini 5.65 | typesafe 5.82
+  by TypeSafe confidence:
+    0.00-0.50:      2 skills (13%), same band 0.0%
+    0.50-0.70:      4 skills (27%), same band 50.0%
+    0.70-0.85:      5 skills (33%), same band 40.0%
+    0.85-1.00:      4 skills (27%), same band 75.0%
+  largest disagreements (gemini | typesafe, confidence):
+    'sort post': 7 | 4.8 (0.45)
+    'train staff': 3 | 4.2 (0.83)
+    'file records': 8 | 6.5 (0.70)
+    'plan budgets': 3 | 4.1 (0.65)
+    'négocier contracts': 2 | 3.6 (0.48)
+    'advise clients': 2 | 3.1 (0.68)
+    'plan budgets': 3 | 3.9 (0.90)
+    'file records': 8 | 6.9 (0.55)
+    'curate datasets': 8 | 7.1 (0.88)
+    'type documents': 9 | 8.2 (0.91)
+    'café service': 5 | 5.8 (0.62)
+    'scan invoices': 8 | 7.8 (0.72)
+
+== amplification potential
+  Spearman rho:            0.912
+  same rubric band:        53.3%
+  within one band:         93.3%
+  mean |gap| on 1-10:      0.72
+  mean  gemini 5.70 | typesafe 5.54
+     untyped items:      1, rho 0.000, mean gemini 2.40 | typesafe 3.20
+   knowledge items:      3, rho 1.000, mean gemini 5.90 | typesafe 5.47
+  skill/competence items:     11, rho 0.891, mean gemini 5.95 | typesafe 5.77
+  by TypeSafe confidence:
+    0.50-0.70:      6 skills (40%), same band 66.7%
+    0.70-0.85:      4 skills (27%), same band 0.0%
+    0.85-1.00:      5 skills (33%), same band 80.0%
+  largest disagreements (gemini | typesafe, confidence):
+    'file records': 2 | 3.4 (0.80)
+    'plan budgets': 7 | 6.1 (0.77)
+    'scan invoices': 2 | 3.0 (0.66)
+    'advise clients': 9 | 8.2 (0.93)
+    'file records': 2 | 3.2 (0.70)
+    'négocier contracts': 8 | 7.2 (0.61)
+    'café service': 6 | 5.2 (0.51)
+    'plan budgets': 7 | 6.3 (0.65)
+    'train staff': 8 | 6.8 (0.58)
+    'type documents': 2 | 2.6 (0.88)
+    'copy ledgers': 3 | 2.2 (0.90)
+    'tune models': 9 | 8.8 (0.92)

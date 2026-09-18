@@ -1,0 +1,459 @@
+[
+  {
+    "uri": "http://example.org/esco/occupation/o1",
+    "title": "Data entry clerk",
+    "isco_code": "4132",
+    "isco_group": "Numerical and material recording clerks",
+    "hierarchy": [
+      "Clerical support workers",
+      "Numerical and material recording clerks",
+      "Numerical clerks",
+      "Data entry clerks"
+    ],
+    "automation_risk": 5.3,
+    "amplification_potential": 5.1,
+    "evolution_potential": 2.7,
+    "quadrant": "STABLE",
+    "num_skills_scored": 12,
+    "num_skills_total": 12,
+    "top_automated_skills": [
+      {
+        "title": "type documents",
+        "score": 8.2,
+        "relation": "essential"
+      },
+      {
+        "title": "scan invoices",
+        "score": 7.8,
+        "relation": "essential"
+      },
+      {
+        "title": "copy ledgers",
+        "score": 7.6,
+        "relation": "essential"
+      },
+      {
+        "title": "file records",
+        "score": 6.9,
+        "relation": "essential"
+      },
+      {
+        "title": "café service",
+        "score": 5.8,
+        "relation": "optional"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "design systems",
+        "score": 8.9,
+        "relation": "essential"
+      },
+      {
+        "title": "advise clients",
+        "score": 8.2,
+        "relation": "essential"
+      },
+      {
+        "title": "négocier contracts",
+        "score": 7.2,
+        "relation": "essential"
+      },
+      {
+        "title": "train staff",
+        "score": 6.8,
+        "relation": "essential"
+      },
+      {
+        "title": "plan budgets",
+        "score": 6.1,
+        "relation": "essential"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o2",
+    "title": "Café manager",
+    "isco_code": "1412",
+    "isco_group": "Hospitality managers",
+    "hierarchy": [
+      "Managers",
+      "Hospitality, retail and other services managers"
+    ],
+    "automation_risk": 4.4,
+    "amplification_potential": 6.5,
+    "evolution_potential": 2.9,
+    "quadrant": "EVOLVE",
+    "num_skills_scored": 6,
+    "num_skills_total": 6,
+    "top_automated_skills": [
+      {
+        "title": "type documents",
+        "score": 8.2,
+        "relation": "optional"
+      },
+      {
+        "title": "café service",
+        "score": 5.8,
+        "relation": "essential"
+      },
+      {
+        "title": "train staff",
+        "score": 4.2,
+        "relation": "essential"
+      },
+      {
+        "title": "unscored task",
+        "score": 4.0,
+        "relation": "optional"
+      },
+      {
+        "title": "advise clients",
+        "score": 3.1,
+        "relation": "essential"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "design systems",
+        "score": 8.9,
+        "relation": "essential"
+      },
+      {
+        "title": "advise clients",
+        "score": 8.2,
+        "relation": "essential"
+      },
+      {
+        "title": "train staff",
+        "score": 6.8,
+        "relation": "essential"
+      },
+      {
+        "title": "café service",
+        "score": 5.2,
+        "relation": "essential"
+      },
+      {
+        "title": "unscored task",
+        "score": 4.0,
+        "relation": "optional"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o3",
+    "title": "Software developer",
+    "isco_code": "2512",
+    "isco_group": "Software developers",
+    "hierarchy": [
+      "Professionals",
+      "Science and engineering professionals",
+      "Software and applications developers"
+    ],
+    "automation_risk": 3.8,
+    "amplification_potential": 7.1,
+    "evolution_potential": 2.7,
+    "quadrant": "EVOLVE",
+    "num_skills_scored": 5,
+    "num_skills_total": 5,
+    "top_automated_skills": [
+      {
+        "title": "scan invoices",
+        "score": 7.8,
+        "relation": "optional"
+      },
+      {
+        "title": "plan budgets",
+        "score": 3.9,
+        "relation": "essential"
+      },
+      {
+        "title": "négocier contracts",
+        "score": 3.6,
+        "relation": "essential"
+      },
+      {
+        "title": "advise clients",
+        "score": 3.1,
+        "relation": "essential"
+      },
+      {
+        "title": "design systems",
+        "score": 2.8,
+        "relation": "essential"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "design systems",
+        "score": 8.9,
+        "relation": "essential"
+      },
+      {
+        "title": "advise clients",
+        "score": 8.2,
+        "relation": "essential"
+      },
+      {
+        "title": "négocier contracts",
+        "score": 7.2,
+        "relation": "essential"
+      },
+      {
+        "title": "plan budgets",
+        "score": 6.1,
+        "relation": "essential"
+      },
+      {
+        "title": "scan invoices",
+        "score": 3.0,
+        "relation": "optional"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o4",
+    "title": "Unscored helper",
+    "isco_code": "9999",
+    "isco_group": "Elementary occupations",
+    "hierarchy": [
+      "Elementary occupations"
+    ],
+    "automation_risk": 4.0,
+    "amplification_potential": 5.2,
+    "evolution_potential": 2.1,
+    "quadrant": "STABLE",
+    "num_skills_scored": 2,
+    "num_skills_total": 2,
+    "top_automated_skills": [
+      {
+        "title": "plan budgets",
+        "score": 4.1,
+        "relation": "essential"
+      },
+      {
+        "title": "unscored task",
+        "score": 4.0,
+        "relation": "essential"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "plan budgets",
+        "score": 6.3,
+        "relation": "essential"
+      },
+      {
+        "title": "unscored task",
+        "score": 4.0,
+        "relation": "essential"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o5",
+    "title": "Archivist",
+    "isco_code": "",
+    "isco_group": "",
+    "hierarchy": [],
+    "automation_risk": 5.8,
+    "amplification_potential": 3.2,
+    "evolution_potential": 1.9,
+    "quadrant": "STABLE",
+    "num_skills_scored": 2,
+    "num_skills_total": 2,
+    "top_automated_skills": [
+      {
+        "title": "file records",
+        "score": 6.9,
+        "relation": "essential"
+      },
+      {
+        "title": "sort post",
+        "score": 4.8,
+        "relation": "essential"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "file records",
+        "score": 3.4,
+        "relation": "essential"
+      },
+      {
+        "title": "sort post",
+        "score": 3.1,
+        "relation": "essential"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o6",
+    "title": "Post sorter",
+    "isco_code": "4412",
+    "isco_group": "Postal clerks",
+    "hierarchy": [
+      "Clerical support workers"
+    ],
+    "automation_risk": 6.9,
+    "amplification_potential": 3.0,
+    "evolution_potential": 2.1,
+    "quadrant": "SHRINK",
+    "num_skills_scored": 4,
+    "num_skills_total": 4,
+    "top_automated_skills": [
+      {
+        "title": "type documents",
+        "score": 8.2,
+        "relation": "essential"
+      },
+      {
+        "title": "scan invoices",
+        "score": 7.8,
+        "relation": "essential"
+      },
+      {
+        "title": "file records",
+        "score": 6.9,
+        "relation": "essential"
+      },
+      {
+        "title": "sort post",
+        "score": 4.8,
+        "relation": "essential"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "file records",
+        "score": 3.4,
+        "relation": "essential"
+      },
+      {
+        "title": "sort post",
+        "score": 3.1,
+        "relation": "essential"
+      },
+      {
+        "title": "scan invoices",
+        "score": 3.0,
+        "relation": "essential"
+      },
+      {
+        "title": "type documents",
+        "score": 2.6,
+        "relation": "essential"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o7",
+    "title": "Freelance consultant",
+    "isco_code": "2423",
+    "isco_group": "Business professionals",
+    "hierarchy": [
+      "Professionals",
+      "Business and administration professionals"
+    ],
+    "automation_risk": 3.4,
+    "amplification_potential": 7.7,
+    "evolution_potential": 2.6,
+    "quadrant": "EVOLVE",
+    "num_skills_scored": 2,
+    "num_skills_total": 2,
+    "top_automated_skills": [
+      {
+        "title": "négocier contracts",
+        "score": 3.6,
+        "relation": "optional"
+      },
+      {
+        "title": "advise clients",
+        "score": 3.1,
+        "relation": "optional"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "advise clients",
+        "score": 8.2,
+        "relation": "optional"
+      },
+      {
+        "title": "négocier contracts",
+        "score": 7.2,
+        "relation": "optional"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o8",
+    "title": "AI trainer",
+    "isco_code": "2519",
+    "isco_group": "Software developers",
+    "hierarchy": [
+      "Professionals",
+      "Science and engineering professionals"
+    ],
+    "automation_risk": 6.8,
+    "amplification_potential": 8.4,
+    "evolution_potential": 5.7,
+    "quadrant": "TRANSFORM",
+    "num_skills_scored": 2,
+    "num_skills_total": 2,
+    "top_automated_skills": [
+      {
+        "title": "curate datasets",
+        "score": 7.1,
+        "relation": "essential"
+      },
+      {
+        "title": "tune models",
+        "score": 6.4,
+        "relation": "essential"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "tune models",
+        "score": 8.8,
+        "relation": "essential"
+      },
+      {
+        "title": "curate datasets",
+        "score": 8.1,
+        "relation": "essential"
+      }
+    ]
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o9",
+    "title": "Ghost worker",
+    "isco_code": "9629",
+    "isco_group": "Elementary occupations",
+    "hierarchy": [
+      "Elementary occupations"
+    ],
+    "automation_risk": 4.0,
+    "amplification_potential": 4.0,
+    "evolution_potential": 1.6,
+    "quadrant": "STABLE",
+    "num_skills_scored": 1,
+    "num_skills_total": 1,
+    "top_automated_skills": [
+      {
+        "title": "unscored task",
+        "score": 4.0,
+        "relation": "essential"
+      }
+    ],
+    "top_amplified_skills": [
+      {
+        "title": "unscored task",
+        "score": 4.0,
+        "relation": "essential"
+      }
+    ]
+  }
+]

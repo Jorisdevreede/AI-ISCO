@@ -1,0 +1,48 @@
+[
+  {
+    "uri": "http://example.org/esco/occupation/o1",
+    "evolution_story": "Keying gives way to checking what the machine keyed.",
+    "time_savings_pct": 30,
+    "automated_tasks": [
+      "retyping invoices",
+      "sorting scans"
+    ],
+    "amplified_capabilities": [
+      "spotting outliers"
+    ],
+    "ai_tools_applicable": [
+      "OCR",
+      "spreadsheet copilot"
+    ],
+    "rebalanced_week": {
+      "review": 12,
+      "exceptions": 8
+    },
+    "timeline": [
+      {
+        "year": 2026,
+        "note": "OCR handles the inbox"
+      }
+    ],
+    "advice": "Learn to audit what the tool produced."
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o2",
+    "evolution_story": "",
+    "time_savings_pct": null,
+    "automated_tasks": [],
+    "amplified_capabilities": [],
+    "ai_tools_applicable": [],
+    "rebalanced_week": {},
+    "timeline": [],
+    "advice": ""
+  },
+  {
+    "uri": "http://example.org/esco/occupation/o3",
+    "time_savings_pct": 0
+  },
+  {
+    "uri": "",
+    "evolution_story": "No occupation attached."
+  }
+]

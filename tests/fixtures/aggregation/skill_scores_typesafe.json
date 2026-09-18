@@ -1,0 +1,390 @@
+[
+  {
+    "uri": "http://example.org/esco/skill/a1",
+    "title": "type documents",
+    "automation_risk": 8.2,
+    "amplification_potential": 2.6,
+    "automation_probs": [
+      0.01,
+      0.02,
+      0.05,
+      0.2,
+      0.72
+    ],
+    "amplification_probs": [
+      0.7,
+      0.2,
+      0.06,
+      0.03,
+      0.01
+    ],
+    "automation_confidence": 0.91,
+    "amplification_confidence": 0.88,
+    "rationale": "Synthetic rationale for type documents."
+  },
+  {
+    "uri": "http://example.org/esco/skill/a2",
+    "title": "scan invoices",
+    "automation_risk": 7.8,
+    "amplification_potential": 3.0,
+    "automation_probs": [
+      0.02,
+      0.04,
+      0.1,
+      0.6,
+      0.24
+    ],
+    "amplification_probs": [
+      0.55,
+      0.3,
+      0.1,
+      0.03,
+      0.02
+    ],
+    "automation_confidence": 0.72,
+    "amplification_confidence": 0.66,
+    "rationale": "Synthetic rationale for scan invoices."
+  },
+  {
+    "uri": "http://example.org/esco/skill/a3",
+    "title": "file records",
+    "automation_risk": 6.9,
+    "amplification_potential": 3.4,
+    "automation_probs": [
+      0.03,
+      0.07,
+      0.3,
+      0.45,
+      0.15
+    ],
+    "amplification_probs": [
+      0.35,
+      0.4,
+      0.15,
+      0.06,
+      0.04
+    ],
+    "automation_confidence": 0.55,
+    "amplification_confidence": 0.8,
+    "rationale": "Synthetic rationale for file records."
+  },
+  {
+    "uri": "http://example.org/esco/skill/a4",
+    "title": "sort post",
+    "automation_risk": 4.8,
+    "amplification_potential": 3.1,
+    "automation_probs": [
+      0.05,
+      0.1,
+      0.4,
+      0.3,
+      0.15
+    ],
+    "amplification_probs": [
+      0.3,
+      0.45,
+      0.15,
+      0.06,
+      0.04
+    ],
+    "automation_confidence": 0.45,
+    "amplification_confidence": 0.52,
+    "rationale": "Synthetic rationale for sort post."
+  },
+  {
+    "uri": "http://example.org/esco/skill/a5",
+    "title": "copy ledgers",
+    "automation_risk": 7.6,
+    "amplification_potential": 2.2,
+    "automation_probs": [
+      0.02,
+      0.03,
+      0.1,
+      0.55,
+      0.3
+    ],
+    "amplification_probs": [
+      0.65,
+      0.25,
+      0.06,
+      0.03,
+      0.01
+    ],
+    "automation_confidence": 0.86,
+    "amplification_confidence": 0.9,
+    "rationale": "Synthetic rationale for copy ledgers."
+  },
+  {
+    "uri": "http://example.org/esco/skill/b1",
+    "title": "advise clients",
+    "automation_risk": 3.1,
+    "amplification_potential": 8.2,
+    "automation_probs": [
+      0.2,
+      0.5,
+      0.2,
+      0.07,
+      0.03
+    ],
+    "amplification_probs": [
+      0.01,
+      0.02,
+      0.07,
+      0.3,
+      0.6
+    ],
+    "automation_confidence": 0.68,
+    "amplification_confidence": 0.93,
+    "rationale": "Synthetic rationale for advise clients."
+  },
+  {
+    "uri": "http://example.org/esco/skill/b2",
+    "title": "design systems",
+    "automation_risk": 2.8,
+    "amplification_potential": 8.9,
+    "automation_probs": [
+      0.25,
+      0.55,
+      0.12,
+      0.05,
+      0.03
+    ],
+    "amplification_probs": [
+      0.01,
+      0.02,
+      0.05,
+      0.22,
+      0.7
+    ],
+    "automation_confidence": 0.79,
+    "amplification_confidence": 0.71,
+    "rationale": "Synthetic rationale for design systems."
+  },
+  {
+    "uri": "http://example.org/esco/skill/b3",
+    "title": "négocier contracts",
+    "automation_risk": 3.6,
+    "amplification_potential": 7.2,
+    "automation_probs": [
+      0.15,
+      0.4,
+      0.3,
+      0.1,
+      0.05
+    ],
+    "amplification_probs": [
+      0.02,
+      0.04,
+      0.14,
+      0.5,
+      0.3
+    ],
+    "automation_confidence": 0.48,
+    "amplification_confidence": 0.61,
+    "rationale": "Synthetic rationale for négocier contracts."
+  },
+  {
+    "uri": "http://example.org/esco/skill/b4",
+    "title": "train staff",
+    "automation_risk": 4.2,
+    "amplification_potential": 6.8,
+    "automation_probs": [
+      0.1,
+      0.25,
+      0.45,
+      0.15,
+      0.05
+    ],
+    "amplification_probs": [
+      0.02,
+      0.05,
+      0.18,
+      0.55,
+      0.2
+    ],
+    "automation_confidence": 0.83,
+    "amplification_confidence": 0.58,
+    "rationale": "Synthetic rationale for train staff."
+  },
+  {
+    "uri": "http://example.org/esco/skill/b5",
+    "title": "plan budgets",
+    "automation_risk": 3.9,
+    "amplification_potential": 6.1,
+    "automation_probs": [
+      0.12,
+      0.3,
+      0.42,
+      0.11,
+      0.05
+    ],
+    "amplification_probs": [
+      0.03,
+      0.06,
+      0.41,
+      0.35,
+      0.15
+    ],
+    "automation_confidence": 0.9,
+    "amplification_confidence": 0.77,
+    "rationale": "Synthetic rationale for plan budgets."
+  },
+  {
+    "uri": "http://example.org/esco/skill/c2",
+    "title": "café service",
+    "automation_risk": 5.8,
+    "amplification_potential": 5.2,
+    "automation_probs": [
+      0.05,
+      0.15,
+      0.5,
+      0.22,
+      0.08
+    ],
+    "amplification_probs": [
+      0.06,
+      0.16,
+      0.48,
+      0.22,
+      0.08
+    ],
+    "automation_confidence": 0.62,
+    "amplification_confidence": 0.51,
+    "rationale": "Synthetic rationale for café service."
+  },
+  {
+    "uri": "http://example.org/esco/skill/d1",
+    "title": "curate datasets",
+    "automation_risk": 7.1,
+    "amplification_potential": 8.1,
+    "automation_probs": [
+      0.02,
+      0.05,
+      0.13,
+      0.55,
+      0.25
+    ],
+    "amplification_probs": [
+      0.01,
+      0.03,
+      0.08,
+      0.33,
+      0.55
+    ],
+    "automation_confidence": 0.88,
+    "amplification_confidence": 0.86,
+    "rationale": "Synthetic rationale for curate datasets."
+  },
+  {
+    "uri": "http://example.org/esco/skill/d2",
+    "title": "tune models",
+    "automation_risk": 6.4,
+    "amplification_potential": 8.8,
+    "automation_probs": [
+      0.03,
+      0.07,
+      0.35,
+      0.4,
+      0.15
+    ],
+    "amplification_probs": [
+      0.01,
+      0.02,
+      0.06,
+      0.26,
+      0.65
+    ],
+    "automation_confidence": 0.75,
+    "amplification_confidence": 0.92,
+    "rationale": "Synthetic rationale for tune models."
+  },
+  {
+    "uri": "http://example.org/esco/skill/c1",
+    "title": "unscored task",
+    "automation_risk": 4.0,
+    "amplification_potential": 4.0,
+    "automation_probs": [
+      0.1,
+      0.35,
+      0.35,
+      0.15,
+      0.05
+    ],
+    "amplification_probs": [
+      0.1,
+      0.35,
+      0.35,
+      0.15,
+      0.05
+    ],
+    "automation_confidence": 0.5,
+    "amplification_confidence": 0.5,
+    "rationale": "Synthetic rationale for unscored task."
+  },
+  {
+    "uri": "http://example.org/esco/skill/x1",
+    "title": "file records",
+    "automation_risk": 6.5,
+    "amplification_potential": 3.2,
+    "automation_probs": [
+      0.1,
+      0.2,
+      0.4,
+      0.2,
+      0.1
+    ],
+    "amplification_probs": [
+      0.1,
+      0.2,
+      0.4,
+      0.2,
+      0.1
+    ],
+    "automation_confidence": 0.7,
+    "amplification_confidence": 0.7
+  },
+  {
+    "uri": "http://example.org/esco/skill/c3",
+    "title": "plan budgets",
+    "automation_risk": 4.1,
+    "amplification_potential": 6.3,
+    "automation_probs": [
+      0.1,
+      0.2,
+      0.4,
+      0.2,
+      0.1
+    ],
+    "amplification_probs": [
+      0.1,
+      0.2,
+      0.4,
+      0.2,
+      0.1
+    ],
+    "automation_confidence": 0.65,
+    "amplification_confidence": 0.65
+  },
+  {
+    "uri": "http://example.org/esco/skill/x2",
+    "title": "ghost skill",
+    "automation_risk": 5.0,
+    "amplification_potential": 5.0,
+    "automation_probs": [
+      0.1,
+      0.2,
+      0.4,
+      0.2,
+      0.1
+    ],
+    "amplification_probs": [
+      0.1,
+      0.2,
+      0.4,
+      0.2,
+      0.1
+    ],
+    "automation_confidence": 0.5,
+    "amplification_confidence": 0.5
+  }
+]

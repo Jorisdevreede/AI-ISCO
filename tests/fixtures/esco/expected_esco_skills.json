@@ -1,0 +1,92 @@
+[
+  {
+    "uri": "http://example.org/esco/skill/s01",
+    "title": "analyse data quality",
+    "description": "Check a data set for gaps, duplicates and drift.",
+    "type": "skill",
+    "reuse_level": "sector-specific",
+    "essential_for_count": 1,
+    "optional_for_count": 1
+  },
+  {
+    "uri": "http://example.org/esco/skill/s02",
+    "title": "data governance",
+    "description": "Rules for who may read, change and delete a data set.",
+    "type": "knowledge",
+    "reuse_level": "cross-sector",
+    "essential_for_count": 1,
+    "optional_for_count": 0
+  },
+  {
+    "uri": "http://example.org/esco/skill/s03",
+    "title": "gérer un café",
+    "description": "Run a café: non-ASCII text must survive the round trip.",
+    "type": "skill",
+    "reuse_level": "transversal",
+    "essential_for_count": 0,
+    "optional_for_count": 1
+  },
+  {
+    "uri": "http://example.org/esco/skill/s04",
+    "title": "operate a kiln",
+    "description": "Load, fire and cool a ceramic kiln.",
+    "type": "knowledge",
+    "reuse_level": "occupation-specific",
+    "essential_for_count": 1,
+    "optional_for_count": 0
+  },
+  {
+    "uri": "http://example.org/esco/skill/s05",
+    "title": "tune a harpsichord",
+    "description": "Nobody in this fixture needs this skill.",
+    "type": "skill",
+    "reuse_level": "sector-specific",
+    "essential_for_count": 0,
+    "optional_for_count": 0
+  },
+  {
+    "uri": "http://example.org/esco/skill/s06",
+    "title": "keep a tidy workspace",
+    "description": "A skill with no reuse level recorded.",
+    "type": "skill",
+    "reuse_level": "",
+    "essential_for_count": 0,
+    "optional_for_count": 1
+  },
+  {
+    "uri": "http://example.org/esco/skill/s07",
+    "title": "ceramic chemistry",
+    "description": "How oxides behave at temperature.",
+    "type": "knowledge",
+    "reuse_level": "sector-specific",
+    "essential_for_count": 1,
+    "optional_for_count": 0
+  },
+  {
+    "uri": "http://example.org/esco/skill/s08",
+    "title": "work in a team",
+    "description": "Coordinate with colleagues.",
+    "type": "skill",
+    "reuse_level": "transversal",
+    "essential_for_count": 1,
+    "optional_for_count": 1
+  },
+  {
+    "uri": "http://example.org/esco/skill/s09",
+    "title": "write reports",
+    "description": "Write short, clear reports; quote the source as \"seen on site\".",
+    "type": "skill",
+    "reuse_level": "cross-sector",
+    "essential_for_count": 0,
+    "optional_for_count": 0
+  },
+  {
+    "uri": "http://example.org/esco/skill/s10",
+    "title": "catalogue logbooks",
+    "description": "Number and shelve historical logbooks.",
+    "type": "skill",
+    "reuse_level": "occupation-specific",
+    "essential_for_count": 2,
+    "optional_for_count": 0
+  }
+]

@@ -1,0 +1,40 @@
+ESCO data ingestion
+============================================================
+
+Found 5 CSV files in data/esco/
+Loading data...
+
+  Occupations: data/esco/occupations_en.csv (7 rows)
+  Skills: data/esco/skills_en.csv (10 rows)
+  Occupation-Skill relations: data/esco/occupationSkillRelations_en.csv (14 rows)
+  ISCO groups: data/esco/ISCOGroups_en.csv (10 rows)
+  Broader relations (occ pillar): data/esco/broaderRelationsOccPillar_en.csv (13 rows)
+
+Wrote 6 occupations to data/esco_occupations.json
+Wrote 10 skills to data/esco_skills.json
+
+============================================================
+Summary statistics
+============================================================
+Total occupations: 6
+Total skills:      10
+
+Skills per occupation (essential + optional):
+  avg: 2.0  min: 0  max: 4
+Essential per occupation:
+  avg: 1.3  min: 0  max: 3
+Optional per occupation:
+  avg: 0.7  min: 0  max: 1
+
+Skill type breakdown:
+  knowledge: 3
+  skill: 7
+
+Reuse level breakdown:
+  (empty): 1
+  cross-sector: 2
+  occupation-specific: 2
+  sector-specific: 3
+  transversal: 2
+
+Done.

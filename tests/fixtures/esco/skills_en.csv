@@ -1,0 +1,11 @@
+conceptType,conceptUri,skillType,reuseLevel,preferredLabel,altLabels,hiddenLabels,status,modifiedDate,scopeNote,definition,inScheme,description
+KnowledgeSkillCompetence,http://example.org/esco/skill/s01,skill/competence,sector-specific,analyse data quality,,,released,,,,,"Check a data set for gaps, duplicates and drift."
+KnowledgeSkillCompetence,http://example.org/esco/skill/s02,knowledge,cross-sector,data governance,,,released,,,,,"Rules for who may read, change and delete a data set."
+KnowledgeSkillCompetence,http://example.org/esco/skill/s03,skill/competence,transversal,gérer un café,,,released,,,,,Run a café: non-ASCII text must survive the round trip.
+KnowledgeSkillCompetence,http://example.org/esco/skill/s04,knowledge,occupation-specific,operate a kiln,,,released,,,,,"Load, fire and cool a ceramic kiln."
+KnowledgeSkillCompetence,http://example.org/esco/skill/s05,skill/competence,sector-specific,tune a harpsichord,,,released,,,,,Nobody in this fixture needs this skill.
+KnowledgeSkillCompetence,http://example.org/esco/skill/s06,skill/competence,,keep a tidy workspace,,,released,,,,,A skill with no reuse level recorded.
+KnowledgeSkillCompetence,http://example.org/esco/skill/s07,knowledge,sector-specific,ceramic chemistry,,,released,,,,,How oxides behave at temperature.
+KnowledgeSkillCompetence,http://example.org/esco/skill/s08,skill/competence,transversal,work in a team,,,released,,,,,Coordinate with colleagues.
+KnowledgeSkillCompetence,http://example.org/esco/skill/s09,,cross-sector,write reports,,,released,,,,,"Write short, clear reports; quote the source as ""seen on site""."
+KnowledgeSkillCompetence,http://example.org/esco/skill/s10,skill/competence,occupation-specific,catalogue logbooks,,,released,,,,,Number and shelve historical logbooks.

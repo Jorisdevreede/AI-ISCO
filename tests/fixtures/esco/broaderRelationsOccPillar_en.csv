@@ -1,0 +1,14 @@
+conceptType,conceptUri,conceptLabel,broaderType,broaderUri,broaderLabel
+ISCOGroup,http://example.org/esco/isco/C25,Information and communications technology professionals,ISCOGroup,http://example.org/esco/isco/C2,Professionals
+ISCOGroup,http://example.org/esco/isco/C251,Software and applications developers and analysts,ISCOGroup,http://example.org/esco/isco/C25,Information and communications technology professionals
+ISCOGroup,http://example.org/esco/isco/C2511,Systems analysts,ISCOGroup,http://example.org/esco/isco/C251,Software and applications developers and analysts
+Occupation,http://example.org/esco/occupation/occ-01,data steward,ISCOGroup,http://example.org/esco/isco/C2511,Systems analysts
+ISCOGroup,http://example.org/esco/isco/C818,Other stationary plant and machine operators,ISCOGroup,http://example.org/esco/isco/C8,Plant and machine operators
+Occupation,http://example.org/esco/occupation/occ-02,kiln operator,ISCOGroup,http://example.org/esco/isco/C818,Other stationary plant and machine operators
+Occupation,http://example.org/esco/occupation/occ-04,tunnel cleaner,ISCOGroup,http://example.org/esco/isco/CYC1,Cleaners
+ISCOGroup,http://example.org/esco/isco/CYC1,Cleaners,ISCOGroup,http://example.org/esco/isco/CYC2,Cleaners and helpers
+ISCOGroup,http://example.org/esco/isco/CYC2,Cleaners and helpers,ISCOGroup,http://example.org/esco/isco/CYC1,Cleaners
+Occupation,http://example.org/esco/occupation/occ-05,lighthouse archivist,ISCOGroup,http://example.org/esco/isco/C-MISSING,Nowhere
+Occupation,http://example.org/esco/occupation/occ-06,glaze mixer,ISCOGroup,http://example.org/esco/isco/CE,Unclassified helpers
+ISCOGroup,http://example.org/esco/isco/CE,Unclassified helpers,ISCOGroup,http://example.org/esco/isco/C9,Elementary occupations
+Occupation,http://example.org/esco/occupation/occ-99,nameless,,,

@@ -1,0 +1,32 @@
+[
+  {
+    "uri": "http://example.org/occupation/1",
+    "title": "barista",
+    "isco_code": "5132",
+    "essential_skills": [
+      {"uri": "http://example.org/skill/a", "title": "brew coffee"},
+      {"uri": "http://example.org/skill/b", "title": "types of sugars"}
+    ],
+    "optional_skills": [
+      {"uri": "http://example.org/skill/c", "title": "café management"}
+    ]
+  },
+  {
+    "uri": "http://example.org/occupation/2",
+    "title": "café manager",
+    "isco_code": "1412",
+    "essential_skills": [
+      {"uri": "http://example.org/skill/c", "title": "café management"}
+    ],
+    "optional_skills": []
+  },
+  {
+    "uri": "http://example.org/occupation/3",
+    "title": "bicycle courier",
+    "isco_code": "9331",
+    "essential_skills": [
+      {"uri": "http://example.org/skill/unknown", "title": "ride a bike"}
+    ],
+    "optional_skills": []
+  }
+]

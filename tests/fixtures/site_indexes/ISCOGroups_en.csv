@@ -1,0 +1,19 @@
+conceptType,conceptUri,code,preferredLabel,status
+ISCOGroup,http://data.europa.eu/esco/isco/C2,2,Professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C3,3,Technicians and associate professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C7,7,Craft and related trades workers,released
+ISCOGroup,http://data.europa.eu/esco/isco/C22,22,Health professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C25,25,Information and communications technology professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C32,32,Health associate professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C33,33,Business and administration associate professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C72,72,"Metal, machinery and related trades workers",released
+ISCOGroup,http://data.europa.eu/esco/isco/C222,222,Nursing and midwifery professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C251,251,Software and applications developers and analysts,released
+ISCOGroup,http://data.europa.eu/esco/isco/C322,322,Nursing and midwifery associate professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C331,331,Financial and mathematical associate professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C722,722,"Blacksmiths, toolmakers and related trades workers",released
+ISCOGroup,http://data.europa.eu/esco/isco/C2221,2221,Nursing professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C2511,2511,Systems analysts,released
+ISCOGroup,http://data.europa.eu/esco/isco/C2512,2512,Software developers,released
+ISCOGroup,http://data.europa.eu/esco/isco/C3221,3221,Nursing associate professionals,released
+ISCOGroup,http://data.europa.eu/esco/isco/C3313,3313,Accounting associate professionals,released

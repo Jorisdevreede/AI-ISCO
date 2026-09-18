@@ -17,12 +17,30 @@ Usage:
 """
 
 import argparse
-import json
-import os
-import re
-import time
+from dataclasses import dataclass, field
+
 import httpx
 from dotenv import load_dotenv
+
+from aiisco.checkpoint import load_checkpoint, pending, save_checkpoint
+from aiisco.jsonio import load_json
+from aiisco.openrouter import (
+    BatchLoop,
+    ChatRequest,
+    call_model,
+    collect_results,
+    iter_batches,
+    print_failures,
+    print_histogram,
+    run_batches,
+    tally,
+)
+from aiisco.rollup import (
+    ESSENTIAL_WEIGHT,
+    OPTIONAL_WEIGHT,
+    QUADRANTS,
+    assign_quadrant,
+)
 
 load_dotenv()
 
@@ -30,11 +48,7 @@ DEFAULT_MODEL = "google/gemini-3-flash-preview"
 OCCUPATIONS_FILE = "data/esco_occupations.json"
 SKILL_SCORES_FILE = "data/skill_scores.json"
 OUTPUT_FILE = "data/occupation_narratives.json"
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-ESSENTIAL_WEIGHT = 2.0
-OPTIONAL_WEIGHT = 1.0
-QUADRANT_THRESHOLD = 6
 
 SYSTEM_PROMPT = """\
 You are an expert analyst specializing in how artificial intelligence will \
@@ -102,25 +116,33 @@ this role today.
 Return the occupations in the SAME ORDER as provided.\
 """
 
-# Maximum retries for transient / rate-limit errors
-MAX_RETRIES = 5
-INITIAL_BACKOFF = 2.0  # seconds
+REQUIRED_ARRAYS = ("automated_tasks", "amplified_capabilities",
+                   "ai_tools_applicable")
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Occupation-level aggregation
 # ---------------------------------------------------------------------------
 
-def assign_quadrant(auto, amp):
-    """Assign quadrant based on automation_risk and amplification_potential."""
-    if auto >= QUADRANT_THRESHOLD and amp >= QUADRANT_THRESHOLD:
-        return "TRANSFORM"
-    elif auto >= QUADRANT_THRESHOLD and amp < QUADRANT_THRESHOLD:
-        return "SHRINK"
-    elif auto < QUADRANT_THRESHOLD and amp >= QUADRANT_THRESHOLD:
-        return "EVOLVE"
-    else:
-        return "STABLE"
+def scored_skills(skills, skill_scores):
+    """The skills that carry a score, in the shape the prompt shows them."""
+    entries = []
+    for skill in skills:
+        sc = skill_scores.get(skill["uri"])
+        if sc:
+            entries.append({
+                "title": skill.get("title", ""),
+                "automation_risk": sc["automation_risk"],
+                "amplification_potential": sc["amplification_potential"],
+                "rationale": sc.get("rationale", ""),
+            })
+    return entries
+
+
+def weighted_total(groups, key):
+    """Sum one axis across (skills, weight) groups."""
+    return sum(entry[key] * weight
+               for entries, weight in groups for entry in entries)
 
 
 def aggregate_occupation_scores(occ, skill_scores):
@@ -129,95 +151,100 @@ def aggregate_occupation_scores(occ, skill_scores):
     Returns (auto_avg, amp_avg, scored_essential, scored_optional) or None
     if no scored skills exist.
     """
-    auto_sum = 0.0
-    amp_sum = 0.0
-    total_weight = 0.0
-    scored_essential = []
-    scored_optional = []
-
-    for skill in occ.get("essential_skills", []):
-        sc = skill_scores.get(skill["uri"])
-        if sc:
-            auto_sum += sc["automation_risk"] * ESSENTIAL_WEIGHT
-            amp_sum += sc["amplification_potential"] * ESSENTIAL_WEIGHT
-            total_weight += ESSENTIAL_WEIGHT
-            scored_essential.append({
-                "title": skill.get("title", ""),
-                "automation_risk": sc["automation_risk"],
-                "amplification_potential": sc["amplification_potential"],
-                "rationale": sc.get("rationale", ""),
-            })
-
-    for skill in occ.get("optional_skills", []):
-        sc = skill_scores.get(skill["uri"])
-        if sc:
-            auto_sum += sc["automation_risk"] * OPTIONAL_WEIGHT
-            amp_sum += sc["amplification_potential"] * OPTIONAL_WEIGHT
-            total_weight += OPTIONAL_WEIGHT
-            scored_optional.append({
-                "title": skill.get("title", ""),
-                "automation_risk": sc["automation_risk"],
-                "amplification_potential": sc["amplification_potential"],
-                "rationale": sc.get("rationale", ""),
-            })
-
+    essential = scored_skills(occ.get("essential_skills", []), skill_scores)
+    optional = scored_skills(occ.get("optional_skills", []), skill_scores)
+    groups = [(essential, ESSENTIAL_WEIGHT), (optional, OPTIONAL_WEIGHT)]
+    total_weight = sum(len(entries) * weight for entries, weight in groups)
     if total_weight == 0:
         return None
+    auto_avg = round(weighted_total(groups, "automation_risk") / total_weight, 1)
+    amp_avg = round(
+        weighted_total(groups, "amplification_potential") / total_weight, 1)
+    return auto_avg, amp_avg, essential, optional
 
-    auto_avg = round(auto_sum / total_weight, 1)
-    amp_avg = round(amp_sum / total_weight, 1)
-    return auto_avg, amp_avg, scored_essential, scored_optional
+
+def index_skill_scores(entries):
+    """Index per-skill scores by uri, skipping entries that carry no score."""
+    skill_scores = {}
+    for s in entries:
+        uri = s.get("uri", "")
+        if uri and s.get("automation_risk") is not None:
+            skill_scores[uri] = {
+                "automation_risk": float(s["automation_risk"]),
+                "amplification_potential": float(s["amplification_potential"]),
+                "rationale": s.get("rationale", ""),
+            }
+    return skill_scores
+
+
+def build_occupation_contexts(occupations, skill_scores):
+    """Pre-compute the scores, quadrant and skill detail the prompt needs."""
+    contexts = []
+    for occ in occupations:
+        result = aggregate_occupation_scores(occ, skill_scores)
+        if result is None:
+            continue
+        auto_avg, amp_avg, essential, optional = result
+        contexts.append({
+            "uri": occ["uri"],
+            "title": occ["title"],
+            "isco_code": occ.get("isco_code", ""),
+            "quadrant": assign_quadrant(auto_avg, amp_avg),
+            "auto_avg": auto_avg,
+            "amp_avg": amp_avg,
+            "essential": essential,
+            "optional": optional,
+        })
+    return contexts
+
+
+# ---------------------------------------------------------------------------
+# Prompt
+# ---------------------------------------------------------------------------
+
+def skill_line(sk):
+    """One scored essential skill, both axes and its rationale."""
+    return (f"  - \"{sk['title']}\" "
+            f"(auto={sk['automation_risk']}, amp={sk['amplification_potential']})"
+            f" — {sk['rationale']}")
+
+
+def top_skill_lines(essential, key, heading, abbreviation):
+    """The 'Top 5' block ranking the essential skills on one axis."""
+    ranked = sorted(essential, key=lambda s: s[key], reverse=True)[:5]
+    return [f"\nTop 5 Most {heading} Essential Skills:"] + [
+        f"  - \"{sk['title']}\" ({abbreviation}={sk[key]})" for sk in ranked
+    ]
+
+
+def occupation_block(index, ctx):
+    """The prompt lines describing one occupation."""
+    lines = [
+        f"--- Occupation {index} ---",
+        f"Title: {ctx['title']}",
+        f"ISCO Code: {ctx['isco_code']}",
+        f"Quadrant: {ctx['quadrant']}",
+        (f"Aggregated Scores: automation_risk={ctx['auto_avg']}, "
+         f"amplification_potential={ctx['amp_avg']}"),
+        f"\nScored Essential Skills ({len(ctx['essential'])} total):",
+    ]
+    lines.extend(skill_line(sk) for sk in ctx["essential"])
+    lines.extend(top_skill_lines(ctx["essential"], "automation_risk",
+                                 "Automatable", "auto"))
+    lines.extend(top_skill_lines(ctx["essential"], "amplification_potential",
+                                 "AI-Amplifiable", "amp"))
+    lines.append("")  # blank line separator
+    return lines
 
 
 def build_batch_prompt(occupation_contexts):
     """Build the user prompt for a batch of occupations."""
     lines = [
-        "Generate an AI evolution narrative for each of the following "
-        "occupations:\n"
+        ("Generate an AI evolution narrative for each of the following "
+         "occupations:\n")
     ]
     for idx, ctx in enumerate(occupation_contexts, 1):
-        lines.append(f"--- Occupation {idx} ---")
-        lines.append(f"Title: {ctx['title']}")
-        lines.append(f"ISCO Code: {ctx['isco_code']}")
-        lines.append(f"Quadrant: {ctx['quadrant']}")
-        lines.append(
-            f"Aggregated Scores: automation_risk={ctx['auto_avg']}, "
-            f"amplification_potential={ctx['amp_avg']}"
-        )
-
-        # Essential skills with scores and rationales
-        lines.append(f"\nScored Essential Skills ({len(ctx['essential'])} total):")
-        for sk in ctx["essential"]:
-            lines.append(
-                f"  - \"{sk['title']}\" "
-                f"(auto={sk['automation_risk']}, amp={sk['amplification_potential']})"
-                f" — {sk['rationale']}"
-            )
-
-        # Top 5 most automated
-        top_auto = sorted(
-            ctx["essential"], key=lambda s: s["automation_risk"], reverse=True
-        )[:5]
-        lines.append("\nTop 5 Most Automatable Essential Skills:")
-        for sk in top_auto:
-            lines.append(
-                f"  - \"{sk['title']}\" (auto={sk['automation_risk']})"
-            )
-
-        # Top 5 most amplified
-        top_amp = sorted(
-            ctx["essential"],
-            key=lambda s: s["amplification_potential"],
-            reverse=True,
-        )[:5]
-        lines.append("\nTop 5 Most AI-Amplifiable Essential Skills:")
-        for sk in top_amp:
-            lines.append(
-                f"  - \"{sk['title']}\" (amp={sk['amplification_potential']})"
-            )
-
-        lines.append("")  # blank line separator
-
+        lines.extend(occupation_block(idx, ctx))
     lines.append(
         "For each occupation, respond with a JSON array of objects with "
         "fields: title, evolution_story, time_savings_pct, automated_tasks, "
@@ -227,145 +254,190 @@ def build_batch_prompt(occupation_contexts):
     return "\n".join(lines)
 
 
-def strip_code_fences(content):
-    """Strip markdown code fences from LLM response."""
-    content = content.strip()
-    if content.startswith("```"):
-        content = content.split("\n", 1)[1]  # remove first line
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
-    return content
+# ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
+
+def check_text(item, key):
+    """Report a required string field that is missing or empty."""
+    if not isinstance(item.get(key), str) or not item[key]:
+        return [f"missing or empty '{key}'"]
+    return []
 
 
-def fix_json(text):
-    """Fix common LLM JSON issues: trailing commas, comments."""
-    # Remove trailing commas before } or ]
-    text = re.sub(r',\s*([\]}])', r'\1', text)
-    return text
+def check_time_savings(item):
+    """Report a time saving that is not a percentage."""
+    tsp = item.get("time_savings_pct")
+    if not isinstance(tsp, (int, float)) or tsp < 0 or tsp > 100:
+        return [f"'time_savings_pct' must be a number 0-100, got {tsp!r}"]
+    return []
+
+
+def check_array(item, key):
+    """Report a required list field that is not a list."""
+    if not isinstance(item.get(key), list):
+        return [f"'{key}' must be an array"]
+    return []
+
+
+def check_rebalanced_week(item):
+    """Report a missing or incomplete before/after breakdown of the week."""
+    rw = item.get("rebalanced_week")
+    if not isinstance(rw, dict):
+        return ["'rebalanced_week' must be an object"]
+    return [f"'rebalanced_week' missing '{part}'"
+            for part in ("before", "after") if part not in rw]
 
 
 def validate_result(item):
     """Validate a single narrative result. Returns list of error messages."""
-    errors = []
-
-    if not isinstance(item.get("title"), str) or not item["title"]:
-        errors.append("missing or empty 'title'")
-
-    if not isinstance(item.get("evolution_story"), str) or not item["evolution_story"]:
-        errors.append("missing or empty 'evolution_story'")
-
-    tsp = item.get("time_savings_pct")
-    if not isinstance(tsp, (int, float)) or tsp < 0 or tsp > 100:
-        errors.append(
-            f"'time_savings_pct' must be a number 0-100, got {tsp!r}"
-        )
-
-    if not isinstance(item.get("automated_tasks"), list):
-        errors.append("'automated_tasks' must be an array")
-
-    if not isinstance(item.get("amplified_capabilities"), list):
-        errors.append("'amplified_capabilities' must be an array")
-
-    if not isinstance(item.get("ai_tools_applicable"), list):
-        errors.append("'ai_tools_applicable' must be an array")
-
-    rw = item.get("rebalanced_week")
-    if not isinstance(rw, dict):
-        errors.append("'rebalanced_week' must be an object")
-    else:
-        if "before" not in rw:
-            errors.append("'rebalanced_week' missing 'before'")
-        if "after" not in rw:
-            errors.append("'rebalanced_week' missing 'after'")
-
-    return errors
+    errors = check_text(item, "title") + check_text(item, "evolution_story")
+    errors += check_time_savings(item)
+    for key in REQUIRED_ARRAYS:
+        errors += check_array(item, key)
+    return errors + check_rebalanced_week(item)
 
 
 # ---------------------------------------------------------------------------
 # LLM interaction
 # ---------------------------------------------------------------------------
 
+def validate_narrative(item):
+    """Reject a narrative the model returned incomplete."""
+    validation_errors = validate_result(item)
+    if validation_errors:
+        raise ValueError(
+            f"Validation failed for '{item.get('title', '?')}': "
+            f"{'; '.join(validation_errors)}"
+        )
+
+
 def generate_batch(client, occupation_contexts, model):
     """Send one batch of occupations to the LLM and parse the response."""
-    user_prompt = build_batch_prompt(occupation_contexts)
+    request = ChatRequest(system_prompt=SYSTEM_PROMPT, model=model,
+                          timeout=180, retry_statuses=(402, 429),
+                          max_tokens=4096)
+    return call_model(client, request,
+                      build_batch_prompt(occupation_contexts),
+                      validate_narrative)
 
-    last_error = None
-    for attempt in range(MAX_RETRIES):
-        try:
-            response = client.post(
-                API_URL,
-                headers={
-                    "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
-                },
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "temperature": 0.2,
-                    "max_tokens": 4096,
-                },
-                timeout=180,
-            )
-            response.raise_for_status()
-            content = response.json()["choices"][0]["message"]["content"]
-            content = strip_code_fences(content)
-            content = fix_json(content)
-            results = json.loads(content)
 
-            # Validate the response structure
-            if not isinstance(results, list):
-                raise ValueError(
-                    f"Expected a JSON array, got {type(results).__name__}"
-                )
-            for item in results:
-                validation_errors = validate_result(item)
-                if validation_errors:
-                    raise ValueError(
-                        f"Validation failed for '{item.get('title', '?')}': "
-                        f"{'; '.join(validation_errors)}"
-                    )
+def narrative_entry(ctx, result):
+    """Build the record stored for one narrated occupation."""
+    return {
+        "uri": ctx["uri"],
+        "title": ctx["title"],
+        "evolution_story": result["evolution_story"],
+        "time_savings_pct": int(result["time_savings_pct"]),
+        "automated_tasks": result["automated_tasks"],
+        "amplified_capabilities": result["amplified_capabilities"],
+        "ai_tools_applicable": result["ai_tools_applicable"],
+        "rebalanced_week": result["rebalanced_week"],
+        "timeline": result.get("timeline", ""),
+        "advice": result.get("advice", ""),
+    }
 
-            return results
 
-        except httpx.HTTPStatusError as e:
-            last_error = e
-            status = e.response.status_code
-            # Retry on payment/rate limit (402, 429) or server errors (5xx)
-            if status in (402, 429) or status >= 500:
-                backoff = INITIAL_BACKOFF * (2 ** attempt)
-                print(
-                    f"\n    Rate limited/server error ({status}), "
-                    f"retrying in {backoff:.0f}s (attempt {attempt + 1}/"
-                    f"{MAX_RETRIES})...",
-                    flush=True,
-                )
-                time.sleep(backoff)
-                continue
-            raise
-        except (json.JSONDecodeError, ValueError, KeyError) as e:
-            last_error = e
-            if attempt < MAX_RETRIES - 1:
-                backoff = INITIAL_BACKOFF * (2 ** attempt)
-                print(
-                    f"\n    Parse error: {e}, retrying in {backoff:.0f}s "
-                    f"(attempt {attempt + 1}/{MAX_RETRIES})...",
-                    flush=True,
-                )
-                time.sleep(backoff)
-                continue
-            raise
+@dataclass
+class NarrativeState:
+    """The narratives collected so far and the average printed per batch."""
 
-    raise last_error
+    narrated: dict = field(default_factory=dict)
+    count: int = 0
+    savings: float = 0.0
+
+    def add(self, ctx, result):
+        """Record one narrated occupation and fold in its time saving."""
+        entry = narrative_entry(ctx, result)
+        self.narrated[entry["uri"]] = entry
+        self.count += 1
+        self.savings += entry["time_savings_pct"]
+
+    def progress(self):
+        """The line printed after a batch the model answered."""
+        avg_savings = self.savings / self.count if self.count else 0
+        return (f"OK ({self.count} narrated, "
+                f"avg time_savings={avg_savings:.1f}%)")
+
+
+def narrate_all(to_narrate, state, output, args):
+    """Narrate every remaining occupation, checkpointing after each batch."""
+    client = httpx.Client()
+
+    def handle(batch, errors):
+        collect_results(state, batch,
+                        generate_batch(client, batch, args.model), errors)
+        print(state.progress())
+
+    errors = run_batches(BatchLoop(
+        batches=iter_batches(to_narrate, args.batch_size),
+        noun="occupations",
+        handle=handle,
+        checkpoint=lambda: save_checkpoint(output, state.narrated),
+        delay=args.delay,
+    ))
+    client.close()
+    return errors
+
+
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
+
+def savings_label(bucket):
+    """Format one ten-point time-savings bucket for the distribution."""
+    return f"{bucket}-{bucket + 9}%".rjust(8)
+
+
+def print_quadrant_breakdown(contexts):
+    """Print how the occupations divide over the four quadrants."""
+    counts = tally(ctx["quadrant"] for ctx in contexts)
+    print("\nQuadrant breakdown:")
+    for quadrant in QUADRANTS:
+        count = counts.get(quadrant, 0)
+        pct = count / len(contexts) * 100 if contexts else 0
+        print(f"  {quadrant:12s}: {count:4d} ({pct:5.1f}%)")
+
+
+def print_savings_by_quadrant(vals, contexts):
+    """Print the average time saving within each quadrant."""
+    quadrant_of = {ctx["uri"]: ctx["quadrant"] for ctx in contexts}
+    totals = {}
+    counts = {}
+    for narrative in vals:
+        quadrant = quadrant_of.get(narrative["uri"])
+        if quadrant:
+            totals[quadrant] = (totals.get(quadrant, 0)
+                                + narrative["time_savings_pct"])
+            counts[quadrant] = counts.get(quadrant, 0) + 1
+    print("\nAverage time savings by quadrant:")
+    for quadrant in QUADRANTS:
+        print(f"  {quadrant:12s}: " + (
+            f"{totals[quadrant] / counts[quadrant]:5.1f}% (n={counts[quadrant]})"
+            if counts.get(quadrant) else "n/a"))
+
+
+def print_summary(narrated, contexts):
+    """Print the closing statistics over everything narrated so far."""
+    vals = [n for n in narrated.values() if "time_savings_pct" in n]
+    if not vals:
+        return
+    avg_savings = sum(n["time_savings_pct"] for n in vals) / len(vals)
+    print(f"\nSummary across {len(vals)} occupations:")
+    print(f"  Average time_savings_pct: {avg_savings:.1f}%")
+    print_histogram("Time savings distribution:",
+                    tally((n["time_savings_pct"] // 10) * 10 for n in vals),
+                    savings_label)
+    print_quadrant_breakdown(contexts)
+    print_savings_by_quadrant(vals, contexts)
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-def main():
+def parse_args():
+    """Parse the command line."""
     parser = argparse.ArgumentParser(
         description="Generate AI evolution narratives for ESCO occupations"
     )
@@ -380,220 +452,35 @@ def main():
                         help="Re-generate even if already cached")
     parser.add_argument("--output", default=None,
                         help="Output file path (default: data/occupation_narratives.json)")
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def main():
+    args = parse_args()
     # Allow per-shard output files for parallel execution
-    if args.output:
-        global OUTPUT_FILE
-        OUTPUT_FILE = args.output
+    output = args.output or OUTPUT_FILE
+    contexts = build_occupation_contexts(
+        load_json(OCCUPATIONS_FILE)[args.start:args.end],
+        index_skill_scores(load_json(SKILL_SCORES_FILE)),
+    )
+    state = NarrativeState(narrated=load_checkpoint(output, args.force))
 
-    # ------------------------------------------------------------------
-    # 1. Load input data
-    # ------------------------------------------------------------------
-    with open(OCCUPATIONS_FILE) as f:
-        all_occupations = json.load(f)
-
-    with open(SKILL_SCORES_FILE) as f:
-        skill_scores_list = json.load(f)
-
-    # Build skill_scores lookup: uri -> {automation_risk, amplification_potential, rationale}
-    skill_scores = {}
-    for s in skill_scores_list:
-        uri = s.get("uri", "")
-        if uri and s.get("automation_risk") is not None:
-            skill_scores[uri] = {
-                "automation_risk": float(s["automation_risk"]),
-                "amplification_potential": float(s["amplification_potential"]),
-                "rationale": s.get("rationale", ""),
-            }
-
-    subset = all_occupations[args.start:args.end]
-
-    # ------------------------------------------------------------------
-    # 2. Pre-compute occupation contexts (scores, quadrants, skills)
-    # ------------------------------------------------------------------
-    occupation_contexts = []
-    for occ in subset:
-        result = aggregate_occupation_scores(occ, skill_scores)
-        if result is None:
-            continue
-        auto_avg, amp_avg, scored_essential, scored_optional = result
-        quadrant = assign_quadrant(auto_avg, amp_avg)
-        occupation_contexts.append({
-            "uri": occ["uri"],
-            "title": occ["title"],
-            "isco_code": occ.get("isco_code", ""),
-            "quadrant": quadrant,
-            "auto_avg": auto_avg,
-            "amp_avg": amp_avg,
-            "essential": scored_essential,
-            "optional": scored_optional,
-        })
-
-    # ------------------------------------------------------------------
-    # 3. Load existing narratives for resume support
-    # ------------------------------------------------------------------
-    narrated = {}
-    if os.path.exists(OUTPUT_FILE) and not args.force:
-        with open(OUTPUT_FILE) as f:
-            for entry in json.load(f):
-                narrated[entry["uri"]] = entry
-
-    print(f"Generating narratives for {len(occupation_contexts)} occupations "
+    print(f"Generating narratives for {len(contexts)} occupations "
           f"with {args.model}")
     print(f"Batch size: {args.batch_size}")
-    print(f"Already narrated: {len(narrated)}")
-
-    # Filter out already-narrated occupations (preserve order)
-    to_narrate = [c for c in occupation_contexts if c["uri"] not in narrated]
+    print(f"Already narrated: {len(state.narrated)}")
+    to_narrate = pending(contexts, state.narrated)
     print(f"Remaining to narrate: {len(to_narrate)}")
 
     if not to_narrate:
         print("Nothing to narrate. Use --force to re-generate all.")
         return
 
-    # ------------------------------------------------------------------
-    # 4. Split into batches and process
-    # ------------------------------------------------------------------
-    batches = []
-    for i in range(0, len(to_narrate), args.batch_size):
-        batches.append(to_narrate[i : i + args.batch_size])
-
-    errors = []
-    client = httpx.Client()
-    total_narrated = 0
-    sum_time_savings = 0.0
-
-    for batch_idx, batch in enumerate(batches):
-        titles = [c["title"] for c in batch]
-        print(
-            f"\n  Batch {batch_idx + 1}/{len(batches)} "
-            f"({len(batch)} occupations): {titles[0]!r} ... {titles[-1]!r}",
-            end=" ",
-            flush=True,
-        )
-
-        try:
-            results = generate_batch(client, batch, args.model)
-
-            # Match results back to occupations by position (fallback to title)
-            result_by_title = {r["title"].lower(): r for r in results}
-
-            for ctx in batch:
-                # Try positional match first, then title match
-                idx_in_batch = batch.index(ctx)
-                if idx_in_batch < len(results):
-                    result = results[idx_in_batch]
-                else:
-                    result = result_by_title.get(ctx["title"].lower())
-
-                if result is None:
-                    print(f"\n    WARNING: No result for '{ctx['title']}'")
-                    errors.append(ctx["uri"])
-                    continue
-
-                narrated[ctx["uri"]] = {
-                    "uri": ctx["uri"],
-                    "title": ctx["title"],
-                    "evolution_story": result["evolution_story"],
-                    "time_savings_pct": int(result["time_savings_pct"]),
-                    "automated_tasks": result["automated_tasks"],
-                    "amplified_capabilities": result["amplified_capabilities"],
-                    "ai_tools_applicable": result["ai_tools_applicable"],
-                    "rebalanced_week": result["rebalanced_week"],
-                    "timeline": result.get("timeline", ""),
-                    "advice": result.get("advice", ""),
-                }
-                total_narrated += 1
-                sum_time_savings += int(result["time_savings_pct"])
-
-            # Progress
-            avg_savings = (
-                sum_time_savings / total_narrated if total_narrated else 0
-            )
-            print(
-                f"OK ({total_narrated} narrated, "
-                f"avg time_savings={avg_savings:.1f}%)"
-            )
-
-        except Exception as e:
-            print(f"ERROR: {e}")
-            for ctx in batch:
-                errors.append(ctx["uri"])
-
-        # Incremental checkpoint after each batch
-        with open(OUTPUT_FILE, "w") as f:
-            json.dump(list(narrated.values()), f, indent=2)
-
-        # Delay between batches (skip after last)
-        if batch_idx < len(batches) - 1:
-            time.sleep(args.delay)
-
-    client.close()
-
-    print(f"\nDone. Total narrated: {len(narrated)}, errors: {len(errors)}.")
-    if errors:
-        print(f"Failed URIs ({len(errors)}):")
-        for uri in errors[:10]:
-            print(f"  {uri}")
-        if len(errors) > 10:
-            print(f"  ... and {len(errors) - 10} more")
-
-    # ------------------------------------------------------------------
-    # Summary statistics
-    # ------------------------------------------------------------------
-    vals = [n for n in narrated.values() if "time_savings_pct" in n]
-    if vals:
-        avg_savings = sum(n["time_savings_pct"] for n in vals) / len(vals)
-        print(f"\nSummary across {len(vals)} occupations:")
-        print(f"  Average time_savings_pct: {avg_savings:.1f}%")
-
-        # time_savings_pct distribution (bucketed by 10s)
-        print("\nTime savings distribution:")
-        savings_dist = {}
-        for n in vals:
-            bucket = (n["time_savings_pct"] // 10) * 10
-            label = f"{bucket}-{bucket + 9}%"
-            savings_dist[bucket] = savings_dist.get(bucket, 0) + 1
-        for k in sorted(savings_dist):
-            label = f"{k}-{k + 9}%"
-            count = savings_dist[k]
-            bar = "\u2588" * count
-            print(f"  {label:>8}: {bar} ({count})")
-
-        # Quadrant breakdown
-        print("\nQuadrant breakdown:")
-        quad_counts = {}
-        for ctx in occupation_contexts:
-            q = ctx["quadrant"]
-            quad_counts[q] = quad_counts.get(q, 0) + 1
-        total_occ = len(occupation_contexts)
-        for q in ["TRANSFORM", "SHRINK", "EVOLVE", "STABLE"]:
-            count = quad_counts.get(q, 0)
-            pct = count / total_occ * 100 if total_occ else 0
-            print(f"  {q:12s}: {count:4d} ({pct:5.1f}%)")
-
-        # Average time_savings by quadrant
-        print("\nAverage time savings by quadrant:")
-        quad_savings = {}
-        quad_savings_count = {}
-        for n in vals:
-            # Find this occupation's context to get the quadrant
-            ctx = next(
-                (c for c in occupation_contexts if c["uri"] == n["uri"]),
-                None,
-            )
-            if ctx:
-                q = ctx["quadrant"]
-                quad_savings[q] = quad_savings.get(q, 0) + n["time_savings_pct"]
-                quad_savings_count[q] = quad_savings_count.get(q, 0) + 1
-        for q in ["TRANSFORM", "SHRINK", "EVOLVE", "STABLE"]:
-            count = quad_savings_count.get(q, 0)
-            if count:
-                avg = quad_savings[q] / count
-                print(f"  {q:12s}: {avg:5.1f}% (n={count})")
-            else:
-                print(f"  {q:12s}: n/a")
+    errors = narrate_all(to_narrate, state, output, args)
+    print(f"\nDone. Total narrated: {len(state.narrated)}, "
+          f"errors: {len(errors)}.")
+    print_failures(errors)
+    print_summary(state.narrated, contexts)
 
 
 if __name__ == "__main__":

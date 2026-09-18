@@ -1,0 +1,35 @@
+Portfolio data builder
+============================================================
+  Occupations loaded: 9
+  Skill scores loaded: 17
+  Skills with valid scores: 17
+  Occupation narratives loaded: 3
+  Unique skills across occupations: 15
+  Short IDs generated: 15
+  Occupations with scored skills: 9
+
+Computing Jaccard adjacency (essential skills only)...
+  Adjacency pairs (>= 0.15 overlap): 7
+
+Skills in output: 15
+
+============================================================
+Output summary
+============================================================
+  Output file: site/portfolio_data_typesafe.json
+  File size: 4,411 bytes (0.00 MB)
+  Skills: 15
+  Occupations: 9
+  Skills with scores: 15 / 15
+  Skills with rationales: 14 / 15
+  Occupations with narratives: 2 / 9
+  Occupations with adjacency: 5 / 9
+  Adjacent occupations per entry: avg=0.7  min=0  max=2
+
+  Quadrant distribution:
+    TRANSFORM   :    1 ( 11.1%)
+    SHRINK      :    1 ( 11.1%)
+    EVOLVE      :    3 ( 33.3%)
+    STABLE      :    4 ( 44.4%)
+
+Done.

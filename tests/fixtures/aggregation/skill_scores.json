@@ -1,0 +1,97 @@
+[
+  {
+    "uri": "http://example.org/esco/skill/a1",
+    "title": "type documents",
+    "automation_risk": 9.0,
+    "amplification_potential": 2.0,
+    "rationale": "Templates and dictation cover most of it."
+  },
+  {
+    "uri": "http://example.org/esco/skill/a2",
+    "title": "scan invoices",
+    "automation_risk": 8.5,
+    "amplification_potential": 2.1,
+    "rationale": "OCR does the reading."
+  },
+  {
+    "uri": "http://example.org/esco/skill/a3",
+    "title": "file records",
+    "automation_risk": 8.0,
+    "amplification_potential": 2.4
+  },
+  {
+    "uri": "http://example.org/esco/skill/a4",
+    "title": "sort post",
+    "automation_risk": 7.4,
+    "amplification_potential": 2.6
+  },
+  {
+    "uri": "http://example.org/esco/skill/a5",
+    "title": "copy ledgers",
+    "automation_risk": 7.0,
+    "amplification_potential": 2.8
+  },
+  {
+    "uri": "http://example.org/esco/skill/b1",
+    "title": "advise clients",
+    "automation_risk": 2.0,
+    "amplification_potential": 9.0,
+    "rationale": "Judgement and trust stay human."
+  },
+  {
+    "uri": "http://example.org/esco/skill/b2",
+    "title": "design systems",
+    "automation_risk": 2.3,
+    "amplification_potential": 8.5
+  },
+  {
+    "uri": "http://example.org/esco/skill/b3",
+    "title": "négocier contracts",
+    "automation_risk": 2.4,
+    "amplification_potential": 8.0,
+    "rationale": "Accented on purpose."
+  },
+  {
+    "uri": "http://example.org/esco/skill/b4",
+    "title": "train staff",
+    "automation_risk": 2.6,
+    "amplification_potential": 7.5
+  },
+  {
+    "uri": "http://example.org/esco/skill/b5",
+    "title": "plan budgets",
+    "automation_risk": 2.8,
+    "amplification_potential": 7.1
+  },
+  {
+    "uri": "http://example.org/esco/skill/c2",
+    "title": "",
+    "automation_risk": 5.0,
+    "amplification_potential": 6.0
+  },
+  {
+    "uri": "http://example.org/esco/skill/d1",
+    "title": "curate datasets",
+    "automation_risk": 8.0,
+    "amplification_potential": 8.6,
+    "rationale": "Both axes at once."
+  },
+  {
+    "uri": "http://example.org/esco/skill/d2",
+    "title": "tune models",
+    "automation_risk": 7.0,
+    "amplification_potential": 9.4
+  },
+  {
+    "uri": "",
+    "title": "no uri at all",
+    "automation_risk": 5.0,
+    "amplification_potential": 5.0
+  },
+  {
+    "uri": "http://example.org/esco/skill/z1",
+    "title": "half scored",
+    "automation_risk": 5.0,
+    "amplification_potential": null
+  }
+]
