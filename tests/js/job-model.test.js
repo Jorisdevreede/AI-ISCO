@@ -94,9 +94,17 @@ test('skill ids resolve to objects, and ids the data does not know are dropped',
     auto: 8.2,
     amp: 9.0,
     rationale: 'A made-up rationale.',
+    rationaleFrom: null,
     essential: true,
   });
   assert.deepEqual(resolveSkills(DATA.skills, null), []);
+});
+
+test('a rationale another model wrote keeps who wrote it and for which scores', () => {
+  const skills = { bbb: { t: 'sort post', a: 7.4, m: 2.8, r: 'Borrowed.', rf: { s: 'gemini', a: 9, m: 3 } } };
+  const [skill] = resolveSkills(skills, ['bbb']);
+  assert.equal(skill.rationale, 'Borrowed.');
+  assert.deepEqual(skill.rationaleFrom, { s: 'gemini', a: 9, m: 3 });
 });
 
 test('a half-scored skill keeps its scored half and nulls the other', () => {

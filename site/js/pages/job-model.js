@@ -55,7 +55,8 @@ export function findOccupation(data, slug) {
  * @param {Object<string, Object>} skills the `skills` map of portfolio_data
  * @param {Array<string>} ids
  * @param {boolean} [essential=false] marks the skill as required by the job
- * @returns {Array<{id, title, auto, amp, rationale, essential}>} unknown ids dropped
+ * @returns {Array<{id, title, auto, amp, rationale, rationaleFrom, essential}>}
+ *   unknown ids dropped; `rationaleFrom` is set when another model wrote the rationale
  */
 export function resolveSkills(skills, ids, essential = false) {
   const map = skills || {};
@@ -68,6 +69,7 @@ export function resolveSkills(skills, ids, essential = false) {
       auto: isScored(skill.a) ? skill.a : null,
       amp: isScored(skill.m) ? skill.m : null,
       rationale: skill.r || null,
+      rationaleFrom: skill.rf || null,
       essential,
     }));
 }

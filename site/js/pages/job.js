@@ -15,6 +15,8 @@ import { LoadError, loadJSON, whenSlow } from '../data.js';
 import { createCombobox } from '../combobox.js';
 import { rankOccupations, nearestTitles } from '../search.js';
 import { renderQuadrantBadge } from '../badge.js';
+import { renderInfoNote } from '../info-note.js';
+import { borrowedRationaleNote, rationaleWriterLine } from '../rationale.js';
 import { THRESHOLD } from '../quadrant.js';
 import { NOT_SCORED, formatCount, formatPercent, formatScore, isScored } from '../format.js';
 import { groupHref, jobHref, parseHash, skillHref, withScorer } from '../urlstate.js';
@@ -581,9 +583,19 @@ function skillCard(skill) {
   const more = el('p');
   more.appendChild(link(skillHref(skill.id), `Look up ${skill.title} →`));
   const body = el('div', 'skill-card-body');
-  body.append(el('p', null, skill.rationale || 'The model wrote no rationale for this skill.'), more);
+  body.append(...rationaleNodes(skill), more);
   card.append(summary, body);
   return card;
+}
+
+/** The rationale, with an "i" and its note when another model wrote it. */
+function rationaleNodes(skill) {
+  const text = el('p', null, skill.rationale || 'The model wrote no rationale for this skill.');
+  const borrowed = skill.rationale && borrowedRationaleNote(skill.rationaleFrom);
+  if (!borrowed) return [text];
+  const { button, note } = renderInfoNote(borrowed);
+  text.append(' ', button);
+  return [text, note];
 }
 
 function renderCards(occupation, words) {
@@ -594,6 +606,7 @@ function renderCards(occupation, words) {
     list.replaceChildren(el('p', 'muted', 'This job lists no essential skills.'));
     return;
   }
+  byId('cards-writer').textContent = rationaleWriterLine(skills);
   list.replaceChildren(...skills.map(skillCard));
 }
 

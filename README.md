@@ -413,8 +413,8 @@ git push origin master
 uv sync --dev
 uv run pytest --ignore=tests/e2e --cov --cov-branch    # Python: unit and characterisation tests
 npm test                                               # JavaScript: node --test over the pure modules
-uv run ruff check .
-uv run radon cc -s -n B .                              # anything more complex than grade A
+uvx ruff check aiisco tests build_*.py aggregate_scores.py ingest_esco.py score_skills*.py
+uv run radon cc -s -n B aiisco                         # anything more complex than grade A
 ```
 
 | What | How it is kept |

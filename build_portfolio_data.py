@@ -7,7 +7,9 @@ between occupations, identifies gap skills, and outputs a deduplicated
 compact JSON to site/portfolio_data.json.
 
 With --scorer typesafe it reads data/skill_scores_typesafe.json and writes
-site/portfolio_data_typesafe.json, leaving the Gemini file untouched.
+site/portfolio_data_typesafe.json, leaving the Gemini file untouched. That
+scorer returns numbers only, so each skill borrows the Gemini rationale, marked
+with who wrote it and for which scores ("rf").
 
 Usage:
     uv run python build_portfolio_data.py
@@ -33,6 +35,7 @@ from aiisco.rollup import QUADRANTS, index_skill_scores, scorer_suffix
 
 DATA_DIR = "data"
 SITE_DIR = "site"
+PUBLISHED_SCORER = "gemini"  # the scorer behind the unsuffixed files; it writes rationales
 
 
 # ---------------------------------------------------------------------------
@@ -44,6 +47,40 @@ def rationale_of(entry):
     return {"rationale": entry["rationale"]} if entry.get("rationale") else {}
 
 
+def published_rationales(suffix):
+    """The published scorer's entries that carry a rationale, by skill URI.
+
+    Empty for the published scorer itself, which has nothing to borrow.
+    """
+    path = os.path.join(DATA_DIR, "skill_scores.json")
+    if not suffix or not os.path.exists(path):
+        return {}
+    published = index_skill_scores(load_json(path), rationale_of)
+    return {uri: entry for uri, entry in published.items() if "rationale" in entry}
+
+
+def written_for(entry):
+    """Who wrote a borrowed rationale, and the scores they wrote it for."""
+    return {"scorer": PUBLISHED_SCORER,
+            "automation_risk": entry["automation_risk"],
+            "amplification_potential": entry["amplification_potential"]}
+
+
+def borrow_rationales(skill_scores, published):
+    """Give skills without a rationale the published one, marked as borrowed.
+
+    A scorer that returns numbers only writes no text. The page shows the
+    borrowed text with a note saying which model wrote it, and for which scores.
+    """
+    lacking = [uri for uri, scores in skill_scores.items()
+               if uri in published and "rationale" not in scores]
+    for uri in lacking:
+        skill_scores[uri].update(rationale=published[uri]["rationale"],
+                                 rationale_from=written_for(published[uri]))
+    if published:
+        print(f"  Rationales borrowed from the {PUBLISHED_SCORER} scores: {len(lacking)}")
+
+
 def load_inputs(suffix):
     """Load the occupations and the per-skill scores of the chosen scorer."""
     occupations = load_json(os.path.join(DATA_DIR, "esco_occupations.json"))
@@ -52,6 +89,7 @@ def load_inputs(suffix):
     print(f"  Skill scores loaded: {len(raw_scores)}")
     skill_scores = index_skill_scores(raw_scores, rationale_of)
     print(f"  Skills with valid scores: {len(skill_scores)}")
+    borrow_rationales(skill_scores, published_rationales(suffix))
     return occupations, skill_scores
 
 

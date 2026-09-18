@@ -141,6 +141,14 @@ def test_skill_record_keeps_a_rationale_when_there_is_one():
         "rationale": "because"}
 
 
+def test_skill_record_keeps_who_wrote_a_borrowed_rationale():
+    source = {"scorer": "gemini", "automation_risk": 9.0, "amplification_potential": 3.0}
+    scores = {"automation_risk": 7.4, "amplification_potential": 2.8,
+              "rationale": "because", "rationale_from": source}
+
+    assert skill_record({"uri": "u"}, scores)["rationale_from"] == source
+
+
 def test_collect_skill_info_keeps_the_first_title_a_uri_appears_with():
     occupations = [{"essential_skills": [{"uri": "u", "title": "first"}]},
                    {"optional_skills": [{"uri": "u", "title": "second"}]}]
@@ -262,6 +270,16 @@ def test_skill_entry_only_carries_a_rationale_when_there_is_one():
         {"t": "t", "a": 1.2, "m": None}
     assert skill_entry({"title": "t", "automation_risk": 1.0,
                         "amplification_potential": 2.0, "rationale": "r"})["r"] == "r"
+
+
+def test_skill_entry_marks_a_borrowed_rationale_with_its_writer_and_their_scores():
+    source = {"scorer": "gemini", "automation_risk": 9.04, "amplification_potential": 3.0}
+    entry = skill_entry({"title": "t", "automation_risk": 7.4, "amplification_potential": 2.8,
+                         "rationale": "r", "rationale_from": source})
+
+    assert entry["rf"] == {"s": "gemini", "a": 9.0, "m": 3.0}
+    assert "rf" not in skill_entry({"title": "t", "automation_risk": 1.0,
+                                    "amplification_potential": 2.0, "rationale": "r"})
 
 
 def test_build_skills_only_holds_referenced_skills():

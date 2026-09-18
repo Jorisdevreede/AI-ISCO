@@ -165,6 +165,21 @@ formatPercent(share, digits = 0)  → string   // 0.513 -> '51%'
 formatShare(part, whole, noun)    → string   // '1,509 of 3,043 jobs (50%)'
 ```
 
+### `rationale.js`
+
+```js
+scorerName(key)                   → string   // 'gemini' -> 'Gemini'
+rationaleWriterLine(skills)       → string   // the sentence above a list of rationales
+borrowedRationaleNote(skill.rf)   → { writer, label, text } | null
+```
+
+A scorer that returns numbers only writes no text, so the build lends its skills
+the rationale another model wrote and marks each with
+`rf: { s: scorer, a: its automation score, m: its amplification score }`.
+`borrowedRationaleNote` turns that mark into the note behind the "i"; it returns
+`null` for a skill without `rf`, whose rationale was written for the scores on
+screen. Pair it with `renderInfoNote` below.
+
 ---
 
 ## DOM modules
@@ -191,14 +206,14 @@ whenSlow(loadJSON('search_index'), 200, () => { skeleton.hidden = false; })
 ### `chrome.js`
 
 ```js
-NAV_ITEMS                         // [{ key, href, label }] x5
+NAV_ITEMS                         // [{ key, href, label }], one per page
 NOTICES_URL
 renderChrome({ active, search })  → { nav: HTMLElement, footer: HTMLElement }
 ```
 
-Injects the skip link, the brand, the five nav links (`aria-current="page"` on
+Injects the skip link, the brand, the nav links (`aria-current="page"` on
 the one whose `key` or `href` matches `active`) and the attribution footer.
-`active` is one of `index`, `groups`, `skill`, `insights`, `method`. `search`
+`active` is one of `index`, `groups`, `tree`, `skill`, `insights`, `method`. `search`
 defaults to `location.search` and its `?scorer=` is carried onto every link.
 
 The footer wording is copied verbatim from the original `site/index.html`: ESCO
@@ -230,6 +245,16 @@ A real `<button>` carrying the quadrant name, a "near the line" marker when
 `isNearLine`, and a popover holding `explainQuadrant(job)` plus a link to the
 method page. Escape closes it and returns focus to the button; a click outside
 closes it too. Returns a wrapper element — append it wherever the badge belongs.
+
+### `info-note.js`
+
+```js
+renderInfoNote({ label, text })   → { button: HTMLButtonElement, note: HTMLElement }
+```
+
+An "i" button that shows and hides a short note. A disclosure rather than a
+tooltip, so it works by tap and by keyboard and reports `aria-expanded`. Put the
+button after the text it is about and the note where it may take a full line.
 
 ---
 

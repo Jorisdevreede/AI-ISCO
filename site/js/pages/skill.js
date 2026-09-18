@@ -13,6 +13,8 @@ import { renderChrome } from '../chrome.js';
 import { createCombobox } from '../combobox.js';
 import { loadJSON, whenSlow } from '../data.js';
 import { NOT_SCORED, formatCount, formatScore, isScored } from '../format.js';
+import { renderInfoNote } from '../info-note.js';
+import { borrowedRationaleNote } from '../rationale.js';
 import { SORTS, sortOccupations } from '../groupstats.js';
 import { exposureWord } from '../quadrant.js';
 import { jobHref, parseHash, skillHref, withScorer } from '../urlstate.js';
@@ -181,13 +183,28 @@ function whySection() {
   return node;
 }
 
+const RATIONALE_CAVEAT = 'It is reasoning about the description, not a measurement of any workplace.';
+
+/** Who wrote the explanation: the model on screen, or the one it was borrowed from. */
+function rationaleSource(borrowed) {
+  if (!borrowed) {
+    return [el('p', 'rationale-source',
+      `The model’s own explanation, written as it scored the skill. ${RATIONALE_CAVEAT}`)];
+  }
+  const { button, note } = renderInfoNote(borrowed);
+  const source = el('p', 'rationale-source',
+    `Written by ${borrowed.writer} as it scored the skill. ${RATIONALE_CAVEAT} `);
+  source.appendChild(button);
+  return [source, note];
+}
+
 function rationaleBlock(data, id) {
-  const text = data && data.skills && data.skills[id] && data.skills[id].r;
-  if (!text) return el('p', 'muted small', 'The model wrote no explanation for this skill.');
+  const skill = data && data.skills && data.skills[id];
+  if (!skill || !skill.r) {
+    return el('p', 'muted small', 'The model wrote no explanation for this skill.');
+  }
   const quote = el('blockquote', 'rationale');
-  quote.append(el('p', null, text), el('p', 'rationale-source',
-    'The model’s own explanation, written as it scored the skill. It is reasoning about '
-    + 'the description, not a measurement of any workplace.'));
+  quote.append(el('p', null, skill.r), ...rationaleSource(borrowedRationaleNote(skill.rf)));
   return quote;
 }
 

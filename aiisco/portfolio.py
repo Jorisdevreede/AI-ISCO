@@ -132,8 +132,9 @@ def skill_record(skill, scores):
     record = {"title": skill.get("title", ""),
               "automation_risk": scores["automation_risk"] if scores else None,
               "amplification_potential": scores["amplification_potential"] if scores else None}
-    if scores and scores.get("rationale"):
-        record["rationale"] = scores["rationale"]
+    for key in ("rationale", "rationale_from"):
+        if scores and scores.get(key):
+            record[key] = scores[key]
     return record
 
 
@@ -284,13 +285,25 @@ def rounded(score):
     return None if score is None else round(score, 1)
 
 
+def rationale_source(source):
+    """Compact form of who wrote a borrowed rationale and for which scores."""
+    return {"s": source["scorer"],
+            "a": rounded(source["automation_risk"]),
+            "m": rounded(source["amplification_potential"])}
+
+
 def skill_entry(info):
-    """The compact record for one skill: title, both scores, rationale if any."""
+    """The compact record for one skill: title, both scores, rationale if any.
+
+    "rf" is present only when the rationale was written by another scorer.
+    """
     entry = {"t": info["title"],
              "a": rounded(info["automation_risk"]),
              "m": rounded(info["amplification_potential"])}
     if info.get("rationale"):
         entry["r"] = info["rationale"]
+    if info.get("rationale_from"):
+        entry["rf"] = rationale_source(info["rationale_from"])
     return entry
 
 
