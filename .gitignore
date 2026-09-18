@@ -46,3 +46,8 @@ scoring.log
 
 # bv (beads viewer) local config and caches
 .bv/
+
+# Test artefacts
+.coverage
+htmlcov/
+.pytest_cache/

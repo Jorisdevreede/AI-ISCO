@@ -11,3 +11,30 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "typesafe-sdk>=0.7.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "radon>=6.0.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.coverage.run]
+branch = true
+source = ["."]
+omit = [
+    "tests/*",
+    ".venv/*",
+    # Copied verbatim from karpathy/jobs (see THIRD-PARTY-NOTICES.md); not maintained here.
+    "score.py", "make_prompt.py", "build_site_data.py", "make_csv.py",
+    "process.py", "scrape.py", "parse_detail.py", "parse_occupations.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
