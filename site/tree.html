@@ -22,7 +22,7 @@
 <body>
 
 <!-- Must be static markup: scorer.js looks this element up by id. -->
-<nav id="site-nav"></nav>
+<nav id="site-nav" aria-label="Site"></nav>
 
 <main id="main" class="page tree-page">
 
@@ -31,7 +31,7 @@
     <p class="muted">Every ISCO-08 group opened level by level, down to the individual jobs. Pick a group to see how it splits, or a job to see its skills.</p>
   </header>
 
-  <p class="loading" id="tree-status" role="status" aria-live="polite" hidden>Loading the tree…</p>
+  <output class="loading" id="tree-status" aria-live="polite" hidden>Loading the tree…</output>
   <div class="error-block" id="tree-error" hidden></div>
 
   <div class="tree-layout" id="tree-layout" hidden>
@@ -47,7 +47,7 @@
         <button type="button" class="button button--quiet" id="tree-collapse">Collapse all</button>
       </div>
 
-      <p class="small muted tree-count-line" id="tree-count" role="status" aria-live="polite"></p>
+      <output class="small muted tree-count-line" id="tree-count" aria-live="polite"></output>
 
       <!-- A filter is a question about jobs, so it is answered with jobs. The
            hierarchy that holds them is the second question, and waits behind the

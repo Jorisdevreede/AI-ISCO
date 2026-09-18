@@ -148,6 +148,30 @@ test('nearestTitles offers the closest jobs when nothing matched', () => {
   assert.deepEqual(nearestTitles(INDEX, '   ', 3), []);
 });
 
+test('a title is placed by its nearest word, wherever in the title that word sits', () => {
+  // "bokeeping" is two edits from "bookkeeping", "asistant" one from "assistant",
+  // and no other word of any title is close enough to count. So two titles are
+  // one edit away and two are two edits away — but only if every near-miss a
+  // title offers is compared: the nearest word is the last one in "bookkeeping
+  // assistant" and the first one in "assistant bookkeeping clerk", so keeping
+  // either end of the list instead of the best of it reorders the suggestions.
+  const index = [
+    { t: 'bookkeeping clerk', s: 'bookkeeping-clerk', alt: [] },
+    { t: 'assistant bookkeeping clerk', s: 'assistant-bookkeeping-clerk', alt: [] },
+    { t: 'bookkeeping assistant', s: 'bookkeeping-assistant', alt: [] },
+    { t: 'bookkeeping supervisor', s: 'bookkeeping-supervisor', alt: [] },
+  ];
+  assert.deepEqual(nearestTitles(index, 'bokeeping asistant', 4).map((row) => row.s), [
+    'bookkeeping-assistant', // one edit away, and the shorter of the two
+    'assistant-bookkeeping-clerk', // one edit away
+    'bookkeeping-clerk', // two edits away, and the shorter of the two
+    'bookkeeping-supervisor',
+  ]);
+  // The cap keeps the nearest, not whichever came first out of the index.
+  assert.deepEqual(nearestTitles(index, 'bokeeping asistant', 2).map((row) => row.s),
+    ['bookkeeping-assistant', 'assistant-bookkeeping-clerk']);
+});
+
 // A5: the four queries the audit typed, against the published index.
 
 test('a query with a word the site knows offers that word\'s jobs', () => {

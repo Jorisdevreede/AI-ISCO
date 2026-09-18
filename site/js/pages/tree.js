@@ -450,7 +450,7 @@ function refreshSkills() {
 // wait and offers a way on rather than repeating itself.
 function setLoadingStage(stage) {
   const host = byId('skills-block');
-  if (!host || !host.querySelector('.loading')) return;
+  if (!host?.querySelector('.loading')) return;
   if (stage === 'start') {
     host.replaceChildren(el('p', { class: 'loading', text: 'Loading this job’s skills…' }));
     return;
@@ -566,13 +566,19 @@ function sortBy(column) {
   if (header) header.focus();
 }
 
+// The three values aria-sort takes: only the sorted column claims a direction.
+function ariaSortValue(sorted, descending) {
+  if (!sorted) return 'none';
+  return descending ? 'descending' : 'ascending';
+}
+
 function headerCell(column) {
   const sorted = state.skillSort.key === column.key;
   const cell = el('th', {
     scope: 'col',
     'data-key': column.key,
     class: column.numeric ? 'numeric' : null,
-    'aria-sort': sorted ? (state.skillSort.descending ? 'descending' : 'ascending') : 'none',
+    'aria-sort': ariaSortValue(sorted, state.skillSort.descending),
   });
   const button = el('button', { type: 'button', class: 'th-sort', text: column.label });
   button.addEventListener('click', () => sortBy(column));

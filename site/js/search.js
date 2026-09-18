@@ -90,7 +90,7 @@ function matchRow(row, query) {
   const title = fold(row.t);
   const direct = titleTier(title, query);
   const alt = bestAlt(row, query);
-  if (alt && alt.sub === 0 && (!direct || direct.tier > TIERS.TITLE_PREFIX)) {
+  if (alt?.sub === 0 && (!direct || direct.tier > TIERS.TITLE_PREFIX)) {
     return { row, tier: TIERS.ALT_EXACT, sub: 0, alt: alt.label, title };
   }
   if (direct && (!alt || direct.tier < TIERS.ALT)) {
@@ -107,8 +107,15 @@ function matchRow(row, query) {
  * assistant", 3221) when both match the query equally well.
  */
 function majorGroup(match) {
-  const code = String((match.row && match.row.c) ?? '');
+  const code = String(match.row?.c ?? '');
   return /^\d/.test(code) ? Number(code[0]) : 10;
+}
+
+/** The last tie-break of both orderings: plain string order, so ties are stable. */
+function compareTitle(a, b) {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
 }
 
 function compareMatches(a, b) {
@@ -116,7 +123,7 @@ function compareMatches(a, b) {
     || a.sub - b.sub
     || majorGroup(a) - majorGroup(b)
     || a.title.length - b.title.length
-    || (a.title < b.title ? -1 : a.title > b.title ? 1 : 0);
+    || compareTitle(a.title, b.title);
 }
 
 /**
@@ -148,6 +155,18 @@ export function rankOccupations(index, query, limit = 12) {
     .map(({ row, tier, alt }) => ({ row, tier, alt }));
 }
 
+// One row of the edit-distance matrix, from the row above it: `previous` is that
+// row, `char` the character of the first string this row stands for, `i` its
+// number, which is also the cost of deleting everything up to it.
+function nextRow(previous, char, b, i) {
+  const current = [i];
+  for (let j = 1; j <= b.length; j += 1) {
+    const cost = char === b[j - 1] ? 0 : 1;
+    current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + cost);
+  }
+  return current;
+}
+
 /**
  * Levenshtein distance between two already-folded strings.
  * @param {string} a
@@ -158,14 +177,7 @@ export function editDistance(a, b) {
   if (a === b) return 0;
   if (!a.length || !b.length) return a.length || b.length;
   let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i += 1) {
-    const current = [i];
-    for (let j = 1; j <= b.length; j += 1) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + cost);
-    }
-    previous = current;
-  }
+  for (let i = 1; i <= a.length; i += 1) previous = nextRow(previous, a[i - 1], b, i);
   return previous[b.length];
 }
 
@@ -218,7 +230,7 @@ function compareTypos(a, b) {
   return a.distance - b.distance
     || Number(b.same) - Number(a.same)
     || a.title.length - b.title.length
-    || (a.title < b.title ? -1 : a.title > b.title ? 1 : 0);
+    || compareTitle(a.title, b.title);
 }
 
 function typoHits(index, list, n) {

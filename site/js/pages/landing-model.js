@@ -70,7 +70,7 @@ export function sentenceCase(text) {
  * @returns {Object|null}
  */
 export function rowBySlug(index, slug) {
-  return (index || []).find((row) => row && row.s === slug) || null;
+  return (index || []).find((row) => row?.s === slug) || null;
 }
 
 /** What a result row says beside a job whose type sits near a cut-off. */
@@ -89,7 +89,7 @@ function hasShares(row) {
  * @returns {string} '' for a row with no class at all
  */
 export function rowTypeLabel(row) {
-  return row && row.q ? typeShortLabel(row.q) : '';
+  return row?.q ? typeShortLabel(row.q) : '';
 }
 
 /**
@@ -103,8 +103,8 @@ export function rowTypeLabel(row) {
  * @returns {string}
  */
 export function optionMeta(row) {
-  const group = (row && row.mg) || 'Unclassified';
-  if (!hasShares(row)) return `${group} · ${typeLabel(row && row.q)}`;
+  const group = row?.mg || 'Unclassified';
+  if (!hasShares(row)) return `${group} · ${typeLabel(row?.q)}`;
   const parts = [group, typeShortLabel(row.q),
     `AI can take over ${sharePercents(row.sh)[0].percent}%`];
   if (row.nl) parts.push(NEAR_HINT);

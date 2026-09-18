@@ -15,14 +15,14 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/groups.css">
-<!-- No <link rel="preload"> for the two index files: which set they come from
-     is decided by site/scorer.js at run time, so a preload of the unsuffixed
-     name downloads a megabyte the default set never reads. -->
+<!-- No preload link for the two index files: which set they come from is
+     decided by site/scorer.js at run time, so a preload of the unsuffixed name
+     downloads a megabyte the default set never reads. -->
 </head>
 <body>
 
 <!-- Must be static markup: scorer.js looks this element up by id. -->
-<nav id="site-nav"></nav>
+<nav id="site-nav" aria-label="Site"></nav>
 
 <main id="main" class="page">
 
@@ -36,7 +36,7 @@
 
     <div class="group-tools">
       <button type="button" class="button button--quiet" id="copy-link">Copy link</button>
-      <span class="small muted" id="copy-status" role="status" aria-live="polite"></span>
+      <output class="small muted" id="copy-status" aria-live="polite"></output>
     </div>
 
     <div class="picker-row">
@@ -44,13 +44,13 @@
         <label for="group-picker">Go to a group</label>
         <input type="text" id="group-picker" placeholder="Professionals, Software developers…">
         <ul id="group-picker-list"></ul>
-        <p class="visually-hidden" id="group-picker-status" role="status" aria-live="polite"></p>
+        <output class="visually-hidden" id="group-picker-status" aria-live="polite"></output>
       </div>
       <div class="combobox picker">
         <label for="compare-picker">Compare with another group</label>
         <input type="text" id="compare-picker" placeholder="Type a second group…">
         <ul id="compare-picker-list"></ul>
-        <p class="visually-hidden" id="compare-picker-status" role="status" aria-live="polite"></p>
+        <output class="visually-hidden" id="compare-picker-status" aria-live="polite"></output>
       </div>
     </div>
 
@@ -60,7 +60,7 @@
     </div>
   </header>
 
-  <p class="loading" id="page-status" role="status" aria-live="polite" hidden>Loading the groups…</p>
+  <output class="loading" id="page-status" aria-live="polite" hidden>Loading the groups…</output>
   <div class="error-block" id="page-error" hidden></div>
 
   <div id="group-body" hidden>
@@ -78,7 +78,7 @@
       <h2 id="views-heading">Four views of these jobs</h2>
       <div class="tabs" role="tablist" aria-label="Views of this group" id="tablist"></div>
       <div id="panel" role="tabpanel" tabindex="0"></div>
-      <p class="visually-hidden" id="chart-live" role="status" aria-live="polite"></p>
+      <output class="visually-hidden" id="chart-live" aria-live="polite"></output>
     </section>
 
     <section class="card-grid" aria-labelledby="exposure-heading">

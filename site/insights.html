@@ -22,7 +22,7 @@
 <body>
 
 <!-- Must be static markup: scorer.js looks this element up by id. -->
-<nav id="site-nav"></nav>
+<nav id="site-nav" aria-label="Site"></nav>
 
 <main id="main" class="page">
   <div class="hero">
@@ -32,7 +32,7 @@
     <dl id="hero-stats" class="hero-stats"></dl>
   </div>
 
-  <p id="insights-status" class="loading" role="status" aria-live="polite"></p>
+  <output id="insights-status" class="loading" aria-live="polite"></output>
   <div id="insights-error"></div>
 
   <section class="section" aria-labelledby="split-heading">

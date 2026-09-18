@@ -14,9 +14,9 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
-<!-- No <link rel="preload"> for search_index: site/scorer.js decides at run
-     time which set the page reads, so preloading the unsuffixed name downloads
-     half a megabyte the default set never uses. -->
+<!-- No preload link for search_index: site/scorer.js decides at run time which
+     set the page reads, so preloading the unsuffixed name downloads half a
+     megabyte the default set never uses. -->
 <style>
 /* Page-specific rules for the landing page only. Shared components and tokens
    live in css/app.css; nothing here may be needed by another page. */
@@ -138,7 +138,7 @@
 <body>
 
 <!-- Must be static markup: scorer.js looks this element up by id. -->
-<nav id="site-nav"></nav>
+<nav id="site-nav" aria-label="Site"></nav>
 
 <main id="main" class="page">
 
@@ -154,7 +154,7 @@
         <div id="search-hint" class="search-hint" hidden></div>
         <ul id="job-listbox"></ul>
       </div>
-      <p id="search-status" class="visually-hidden" role="status" aria-live="polite"></p>
+      <output id="search-status" class="visually-hidden" aria-live="polite"></output>
       <p id="search-loading" class="loading" hidden>Loading job titles…</p>
       <div id="search-error"></div>
     </div>

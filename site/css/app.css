@@ -102,6 +102,13 @@ h2 { font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.6rem); }
 h3 { font-size: 1.05rem; }
 p { margin: 0 0 var(--space-4); }
 
+/* Every live region on this site is an <output>: the element already carries
+ * role="status", so the attribute would only repeat it. <output> is inline by
+ * default and each one here stands where a paragraph stood, so it keeps a
+ * paragraph's box. .visually-hidden and .tree-count-line win on specificity
+ * and keep their own margins; the two that sit in a flex row reset it. */
+output { display: block; margin: 0 0 var(--space-4); }
+
 a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 a:hover { color: var(--fg); }
 

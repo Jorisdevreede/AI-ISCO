@@ -16,7 +16,7 @@ import { SHARES, schemeOfCode } from './scheme.js';
 function scoredBySlug(rows) {
   const map = new Map();
   for (const row of rows || []) {
-    if (row && row.s && isScored(row.a) && isScored(row.m)) map.set(row.s, row);
+    if (row?.s && isScored(row.a) && isScored(row.m)) map.set(row.s, row);
   }
   return map;
 }
@@ -132,7 +132,7 @@ export function isQuadrantRows(rows) {
 export function slugUniverse(first, second) {
   const slugs = new Set();
   for (const rows of [first, second]) {
-    for (const row of rows || []) if (row && row.s) slugs.add(row.s);
+    for (const row of rows || []) if (row?.s) slugs.add(row.s);
   }
   return slugs.size;
 }

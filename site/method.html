@@ -22,7 +22,7 @@
 <body>
 
 <!-- Must be static markup: scorer.js looks this element up by id. -->
-<nav id="site-nav"></nav>
+<nav id="site-nav" aria-label="Site"></nav>
 
 <main id="main" class="page prose">
   <h1>How sure is this?</h1>
@@ -32,7 +32,7 @@
     think about the shape of a job, not a measurement of anyone's job.
   </p>
 
-  <p id="method-status" class="loading" role="status" aria-live="polite"></p>
+  <output id="method-status" class="loading" aria-live="polite"></output>
   <div id="method-error"></div>
 
   <!-- Two score sets of two different shapes are published side by side, so the
@@ -314,7 +314,7 @@
     </p>
     <!-- The heading and the note above stand as soon as the page knows a second
          run is deployed; everything below waits for the two index files. -->
-    <p id="agreement-status" class="muted small" role="status" hidden></p>
+    <output id="agreement-status" class="muted small" hidden></output>
     <div id="agreement-body" hidden>
       <p>
         That older rubric &mdash; two scores from 1 to 10, cut at 6, four boxes &mdash; was given
@@ -347,7 +347,17 @@
             <span data-agree="secondLabel">&mdash;</span> in the columns. The diagonal is where
             the two agree.
           </caption>
-          <thead></thead>
+          <!-- The four boxes are fixed, so the header row stands before the two
+               score files arrive; js/pages/method.js rewrites it in place. -->
+          <thead>
+            <tr>
+              <td></td>
+              <th scope="col" class="numeric">Transform</th>
+              <th scope="col" class="numeric">Stable</th>
+              <th scope="col" class="numeric">Evolve</th>
+              <th scope="col" class="numeric">Shrink</th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
       </div>

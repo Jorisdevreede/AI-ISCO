@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import {
   QUADRANTS, SHARES, SKILL_CLASS_ORDER, TYPE_DESCRIPTIONS, TYPE_NAMES, TYPE_ORDER,
   SKILL_NEAR_MARGIN, TYPE_RULES, TYPE_SHORT, colorVarOf, explain, explainType, isNear, isSkillNear, orderForCounts,
-  orderOf, schemeOf, schemeOfCode, skillClassName, skillClassOf, splitOf, thresholdOf,
-  typeDescription, typeLabel, typeRule, typeShortLabel,
+  orderOf, schemeOf, schemeOfCode, skillClassColorVar, skillClassName, skillClassOf, splitOf,
+  thresholdOf, typeDescription, typeLabel, typeRule, typeShortLabel,
 } from '../../site/js/scheme.js';
 
 const JOB = {
@@ -120,6 +120,18 @@ test('skill classes have names and colours; the quadrant scheme has none', () =>
   assert.equal(skillClassOf({ c: 'M' }, QUADRANTS), null);
   assert.equal(skillClassOf({ c: '2512' }), null, 'an ISCO code is not a class');
   assert.equal(skillClassOf(null), null);
+});
+
+test('each skill class names the custom property that colours it', () => {
+  assert.equal(skillClassColorVar('S'), '--class-substituted');
+  assert.equal(skillClassColorVar('A'), '--class-assisted');
+  assert.equal(skillClassColorVar('M'), '--class-mechanised');
+  assert.equal(skillClassColorVar('I'), '--class-insulated');
+  // Every class in the order the legend draws has a colour, and nothing else has.
+  assert.equal(SKILL_CLASS_ORDER.every((code) => skillClassColorVar(code)), true);
+  assert.equal(skillClassColorVar('TRANSFORM'), null, 'a quadrant is not a skill class');
+  assert.equal(skillClassColorVar('s'), null, 'the codes are upper case');
+  assert.equal(skillClassColorVar(undefined), null);
 });
 
 test('explainType says which rule matched, in words, with the job\'s own numbers', () => {

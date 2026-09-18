@@ -23,7 +23,7 @@ export function scorerName(key) {
  * @param {Array<{rationaleFrom?: Object|null}>} skills
  */
 export function rationaleWriterLine(skills) {
-  const borrowed = (skills || []).find((skill) => skill && skill.rationaleFrom);
+  const borrowed = (skills || []).find((skill) => skill?.rationaleFrom);
   if (!borrowed) return 'Each rationale is what the model wrote while it scored that skill.';
   return `Each explanation below was written by ${scorerName(borrowed.rationaleFrom.s)} for `
     + 'its own, older scores. Each one says which score it was written for, and where that '

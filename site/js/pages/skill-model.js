@@ -30,7 +30,7 @@ export const NO_MATCH_HINT =
 const WORD_BREAK = /[^a-z0-9]/;
 
 function wordPrefix(title, query) {
-  return title.split(WORD_BREAK).some((word) => word && word.startsWith(query));
+  return title.split(WORD_BREAK).some((word) => word?.startsWith(query));
 }
 
 /** The tier a folded title earns for a folded query, or null for no match. */
@@ -41,10 +41,17 @@ function tierOf(title, query) {
   return title.includes(query) ? SKILL_TIERS.SUBSTRING : null;
 }
 
+/** The tie-break both sorts here use: -1, 0 or 1, in plain `<`/`>` order. */
+function compareText(a, b) {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
 function compareMatches(a, b) {
   return a.tier - b.tier
     || a.title.length - b.title.length
-    || (a.title < b.title ? -1 : a.title > b.title ? 1 : 0);
+    || compareText(a.title, b.title);
 }
 
 /**
@@ -99,7 +106,7 @@ function countOverlap(entry, target) {
 }
 
 function byCountThenId(a, b) {
-  return b.n - a.n || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  return b.n - a.n || compareText(a.id, b.id);
 }
 
 /**
@@ -272,8 +279,9 @@ export const CLASS_MEANINGS = {
     + 'gives them a clear gain across most of it.',
   M: 'The model is more likely than not that physical equipment — production lines, '
     + 'machines, robots — does nearly all of this work.',
-  I: 'None of the three reached that point. That is not the same as AI being no help here: '
-    + 'many skills in this class still gain clearly on part of the work.',
+  I: 'None of the three chances reached one in two: neither an AI system nor machinery gets '
+    + 'most of the way through this work. AI can still help with parts of it, and many '
+    + 'skills in this class gain clearly on part of the work.',
 };
 
 /**
@@ -327,7 +335,7 @@ export function probabilitySentence(probs) {
 /* --- the occupations that need a skill ------------------------------------ */
 
 function shareAt(row, index) {
-  return isShares(row && row.sh) ? row.sh[index] : -1;
+  return isShares(row?.sh) ? row.sh[index] : -1;
 }
 
 function numberOf(value) {
@@ -343,10 +351,10 @@ export const SHARE_SORTS = {
     label: 'Most assisted', descending: true, value: (row) => shareAt(row, 1),
   },
   mechanical: {
-    label: 'Most mechanical', descending: true, value: (row) => numberOf(row && row.k),
+    label: 'Most mechanical', descending: true, value: (row) => numberOf(row?.k),
   },
   title: {
-    label: 'A to Z', descending: false, value: (row) => String((row && row.t) ?? ''),
+    label: 'A to Z', descending: false, value: (row) => String(row?.t ?? ''),
   },
 };
 
@@ -399,8 +407,8 @@ export function sortSkillOccupations(rows, sortKey, scheme) {
 }
 
 function shareParts(row) {
-  const parts = sharePercents(row && row.sh);
-  const type = { label: 'type ', text: typeShortLabel(row && row.q, SHARES) };
+  const parts = sharePercents(row?.sh);
+  const type = { label: 'type ', text: typeShortLabel(row?.q, SHARES) };
   if (!parts.length) return [type, { label: 'shares ', text: NOT_SCORED }];
   return [
     type,
@@ -423,8 +431,8 @@ export function occupationScores(row, scheme) {
   return {
     separator: ' / ',
     parts: [
-      { label: 'automation ', text: formatScore(row && row.a) },
-      { label: 'amplification ', text: formatScore(row && row.m) },
+      { label: 'automation ', text: formatScore(row?.a) },
+      { label: 'amplification ', text: formatScore(row?.m) },
     ],
   };
 }
@@ -453,8 +461,8 @@ export function neededNote(scheme) {
  * @returns {string}
  */
 export function optionMeta(row, scheme) {
-  if (scheme === SHARES) return skillClassName(row && row.c);
-  return `${formatScore(row && row.a)} / ${formatScore(row && row.m)}`;
+  if (scheme === SHARES) return skillClassName(row?.c);
+  return `${formatScore(row?.a)} / ${formatScore(row?.m)}`;
 }
 
 const QUADRANT_LOOKUP_INTRO = 'Every skill in the ESCO classification was scored on two '
@@ -522,7 +530,7 @@ const JOBS_COLUMN = column('n', 'Jobs that need it', true,
   (row) => formatCount(usedIn(row)), (row) => usedIn(row));
 
 function carries(rows, key) {
-  return (rows || []).some((row) => row && row[key]);
+  return (rows || []).some((row) => row?.[key]);
 }
 
 /**
@@ -555,7 +563,7 @@ export function listColumns(scheme, rows) {
 /** A column sorts the way it reads: biggest first for a number, A to Z for a name. */
 function naturalDirection(columns, key) {
   const found = columns.find((item) => item.key === key);
-  return found && found.numeric ? 'desc' : 'asc';
+  return found?.numeric ? 'desc' : 'asc';
 }
 
 function positiveInt(value) {
@@ -707,10 +715,10 @@ export function classFilterOptions(rows) {
 /* --- how a skill is scored ------------------------------------------------ */
 
 function choicesOf(source) {
-  if (Array.isArray(source && source.options)) {
+  if (Array.isArray(source?.options)) {
     return source.options.map((option) => ({ name: option.name, text: option.text }));
   }
-  return ((source && source.levels) || []).map((text) => ({ name: null, text }));
+  return (source?.levels || []).map((text) => ({ name: null, text }));
 }
 
 /**
@@ -722,7 +730,7 @@ function choicesOf(source) {
  * @returns {Array<{id, label, kind, instructions, choices, knowledge}>}
  */
 export function rubricQuestions(rubric) {
-  return ((rubric && rubric.questions) || []).map((question) => ({
+  return (rubric?.questions || []).map((question) => ({
     id: question.id,
     label: question.label || question.id,
     kind: question.kind,
@@ -762,7 +770,7 @@ const CLASS_RULES_IN_WORDS = {
  * @returns {Array<{code, siteName, rule, meaning}>}
  */
 export function rubricClasses(rubric) {
-  return ((rubric && rubric.classes) || []).map((entry) => ({
+  return (rubric?.classes || []).map((entry) => ({
     code: entry.code,
     siteName: skillClassName(entry.code),
     rule: CLASS_RULES_IN_WORDS[entry.code] || '',
@@ -779,15 +787,15 @@ export function rubricClasses(rubric) {
  * @returns {{lead: string, preamble: string, display: string}}
  */
 export function rubricIntro(rubric, scored) {
-  const model = (rubric && rubric.model) || 'a judgment model';
+  const model = rubric?.model || 'a judgment model';
   const count = isScored(scored) ? `${formatCount(scored)} skills` : 'every skill';
   return {
     lead: `Each of the ${count} went to ${model} on its own, as six questions. The model `
       + 'answers with a probability for every level rather than picking one, so what comes '
       + 'back is how sure it is, not a verdict.',
-    preamble: (rubric && rubric.preamble) || '',
+    preamble: rubric?.preamble || '',
     display: `The 1 to 10 scores on this page are the answers put on a scale — `
-      + `${(rubric && rubric.display) || ''} — where position is the probability-weighted `
+      + `${rubric?.display || ''} — where position is the probability-weighted `
       + 'level. No class depends on them.',
   };
 }
@@ -872,7 +880,7 @@ export function confidenceWord(value) {
 
 function confidenceOf(question, entry) {
   const key = CONFIDENCE_KEYS[question.id];
-  const value = key && entry.cf && entry.cf[key];
+  const value = key && entry.cf?.[key];
   if (typeof value !== 'number') return null;
   return { share: value, percent: formatPercent(value), word: confidenceWord(value) };
 }
@@ -907,5 +915,5 @@ export function answerSections(rubric, entry) {
 
 /** True when the skill was asked the knowledge-item wording of a question. */
 export function askedAsKnowledge(entry) {
-  return Boolean(entry && entry.ty === 'k');
+  return entry?.ty === 'k';
 }

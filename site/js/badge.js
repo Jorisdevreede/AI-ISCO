@@ -18,7 +18,7 @@ let badgeCount = 0;
 export const METHOD_URL = 'method.html';
 
 function schemeFor(job, scheme) {
-  return scheme || schemeOfCode(job && job.q) || QUADRANTS;
+  return scheme || schemeOfCode(job?.q) || QUADRANTS;
 }
 
 function buildPopover(id, explanation, search) {

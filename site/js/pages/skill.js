@@ -239,7 +239,7 @@ const RATIONALE_CAVEAT = 'It is reasoning about the description, not a measureme
  */
 function rationaleBlock(note, row) {
   const verdict = borrowedRationale({
-    text: note && note.r, source: note && note.rf, score: row && row.a,
+    text: note?.r, source: note?.rf, score: row?.a,
   });
   if (!verdict.show) {
     return el('p', 'muted small', verdict.why
@@ -260,7 +260,7 @@ function loadRationale(id) {
   };
   return whenSlow(loadJSON(`skill_notes/${shardOf(id)}`), SLOW_MS,
     () => fill(el('p', 'loading', 'Loading the model’s explanation…')))
-    .then((notes) => fill(rationaleBlock(notes && notes[id], state.byId.get(id))))
+    .then((notes) => fill(rationaleBlock(notes?.[id], state.byId.get(id))))
     .catch(() => fill(el('p', 'muted small',
       'The model’s explanation could not be loaded. The scores above do not depend on it.')));
 }
@@ -473,7 +473,7 @@ function fillColumn(kind, rows) {
 }
 
 function renderLists() {
-  const entry = state.occupations && state.occupations[state.current];
+  const entry = state.occupations?.[state.current];
   if (!entry || !state.bySlug) return;
   const lists = neededBy(entry, state.bySlug);
   fillColumn('essential', lists.essential);
@@ -606,7 +606,7 @@ function classRules(rubric) {
 
 function scoringSection(rubric) {
   const node = section('scoring-heading', 'How a skill is scored');
-  const intro = rubricIntro(rubric, state.stats && state.stats.skills_scored);
+  const intro = rubricIntro(rubric, state.stats?.skills_scored);
   const preamble = el('blockquote', 'rubric-preamble');
   preamble.appendChild(el('p', null, intro.preamble));
   node.append(
@@ -664,12 +664,24 @@ function pushList(changes, replace) {
   renderList();
 }
 
+/** The direction a column sorts in when it is picked up fresh. */
+function firstDir(column) {
+  return column.numeric ? 'desc' : 'asc';
+}
+
+function flipDir(dir) {
+  return dir === 'asc' ? 'desc' : 'asc';
+}
+
+/** Clicking the column that already sorts, still in its first direction, reverses it. */
+function nextDir(column) {
+  const first = firstDir(column);
+  if (state.list.sort !== column.key || state.list.dir !== first) return first;
+  return flipDir(first);
+}
+
 function sortBy(column) {
-  const same = state.list.sort === column.key;
-  const dir = same && state.list.dir === (column.numeric ? 'desc' : 'asc')
-    ? (column.numeric ? 'asc' : 'desc')
-    : (column.numeric ? 'desc' : 'asc');
-  pushList({ sort: column.key, dir });
+  pushList({ sort: column.key, dir: nextDir(column) });
   const header = state.table.head.querySelector(`th[data-key="${column.key}"] button`);
   if (header) header.focus();
 }
@@ -816,11 +828,15 @@ function syncControls() {
   }
 }
 
+/** The aria-sort value one header cell carries. */
+function sortAttr(active) {
+  if (!active) return 'none';
+  return state.list.dir === 'asc' ? 'ascending' : 'descending';
+}
+
 function markSort() {
   for (const cell of state.table.head.querySelectorAll('th')) {
-    const active = cell.dataset.key === state.list.sort;
-    cell.setAttribute('aria-sort', active
-      ? (state.list.dir === 'asc' ? 'ascending' : 'descending') : 'none');
+    cell.setAttribute('aria-sort', sortAttr(cell.dataset.key === state.list.sort));
   }
 }
 
@@ -866,7 +882,7 @@ function showSkill(id) {
   dom.intro.hidden = true;
   dom.table.hidden = true;
   dom.scoring.hidden = true;
-  const row = state.byId && state.byId.get(id);
+  const row = state.byId?.get(id);
   if (!row) {
     showUnknown(id);
     return;

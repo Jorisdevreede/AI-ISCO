@@ -69,11 +69,11 @@ function compareValues(a, b, key) {
  * Sort for the ranked view. Never mutates the input; ties break by title so
  * the order is stable.
  * @param {Array<Object>} rows
- * @param {string} [sortKey='automation'] a key of SORTS
+ * @param {string} [sortKey] a key of SORTS; left out or unknown means 'automation'
  * @param {boolean} [descending] overrides the sort's own direction
  * @returns {Array<Object>} a new array
  */
-export function sortOccupations(rows, sortKey = 'automation', descending) {
+export function sortOccupations(rows, sortKey, descending) {
   const sort = SORTS[sortKey] || SORTS.automation;
   const down = descending === undefined ? sort.descending : descending;
   return [...(rows || [])].sort((a, b) => {

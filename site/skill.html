@@ -20,12 +20,12 @@
 <body>
 
 <!-- Must be static markup: scorer.js looks this element up by id. -->
-<nav id="site-nav"></nav>
+<nav id="site-nav" aria-label="Site"></nav>
 
 <main id="main" class="page">
   <h1 id="skill-title" tabindex="-1">Skill scores</h1>
   <p id="skill-meta" class="meta-line" hidden></p>
-  <p id="skill-status" class="loading" role="status" aria-live="polite"></p>
+  <output id="skill-status" class="loading" aria-live="polite"></output>
   <div id="skill-error"></div>
 
   <div id="skill-detail"></div>
@@ -42,7 +42,7 @@
       <input id="skill-input" type="text" placeholder="Try &ldquo;manage budgets&rdquo;">
       <ul id="skill-listbox"></ul>
     </div>
-    <p id="skill-combobox-status" class="visually-hidden" role="status" aria-live="polite"></p>
+    <output id="skill-combobox-status" class="visually-hidden" aria-live="polite"></output>
     <p id="skill-hint" class="muted small"></p>
     <div class="examples">
       <h3 id="examples-heading">Some to start with</h3>

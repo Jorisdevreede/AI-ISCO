@@ -111,5 +111,5 @@ export function shareSegments(shares) {
 export function largestShare(shares) {
   const parts = sharePercents(shares);
   if (!parts.length) return null;
-  return parts.reduce((best, part) => (part.percent > best.percent ? part : best));
+  return parts.reduce((best, part) => (part.percent > best.percent ? part : best), parts[0]);
 }

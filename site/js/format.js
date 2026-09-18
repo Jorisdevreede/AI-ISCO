@@ -82,3 +82,15 @@ export function largestRemainder(parts) {
   }
   return exact.map((part) => part.floor);
 }
+
+/**
+ * A count with its noun, pluralised: 1 -> "1 occupation", 3039 -> "3,039 occupations".
+ * Only the regular -s plural, which is all the nouns the pages use.
+ *
+ * @param {number} count
+ * @param {string} [noun='occupation']
+ * @returns {string}
+ */
+export function plural(count, noun = 'occupation') {
+  return `${formatCount(count)} ${noun}${count === 1 ? '' : 's'}`;
+}

@@ -156,7 +156,7 @@ export function quadrantRuleRows(split) {
  * @returns {Array<{code, name, rule, count, share}>}
  */
 export function skillClassRows(stats) {
-  const source = (stats && stats.skill_classes) || {};
+  const source = stats?.skill_classes || {};
   const counts = source.counts || {};
   const shares = source.shares || {};
   const total = SKILL_CLASS_ORDER.reduce((sum, code) => sum + (counts[code] || 0), 0);
@@ -181,10 +181,10 @@ export function skillClassRows(stats) {
  * @returns {Object<string, string>}
  */
 export function methodValues(stats, nearDistance) {
-  const nearLine = (stats && stats.near_line) || {};
+  const nearLine = stats?.near_line || {};
   const threshold = thresholdOf(stats);
-  const types = ((stats && stats.types) || {}).counts || {};
-  const typeShares = ((stats && stats.types) || {}).shares || {};
+  const types = stats?.types?.counts || {};
+  const typeShares = stats?.types?.shares || {};
   return {
     skills: formatCount(stats.skills_scored),
     occupations: formatCount(stats.occupations),

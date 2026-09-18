@@ -19,7 +19,7 @@
 <body>
 
 <!-- Must be static markup: scorer.js looks this element up by id. -->
-<nav id="site-nav"></nav>
+<nav id="site-nav" aria-label="Site"></nav>
 
 <main id="main" class="page job-page">
 
@@ -31,20 +31,20 @@
         <input id="job-find" type="text" placeholder="Type a job title" spellcheck="false">
         <ul id="job-find-list"></ul>
       </div>
-      <p id="job-find-status" class="visually-hidden" role="status" aria-live="polite"></p>
+      <output id="job-find-status" class="visually-hidden" aria-live="polite"></output>
     </div>
   </div>
 
-  <p id="job-loading" class="loading" role="status" aria-live="polite" hidden></p>
+  <output id="job-loading" class="loading" aria-live="polite" hidden></output>
   <div id="job-error"></div>
 
   <header class="job-head">
     <h1 id="job-title" tabindex="-1">Will AI change this job?</h1>
     <p id="job-meta" class="job-meta"></p>
     <div id="job-tools" class="job-tools" hidden>
-      <a id="job-framing" class="button button--quiet" href="index.html"></a>
+      <a id="job-framing" class="button button--quiet" href="index.html">Reading this for someone else? Switch to neutral wording</a>
       <button id="job-copy" class="button button--quiet" type="button">Copy link</button>
-      <p id="job-copy-status" class="small muted" role="status" aria-live="polite"></p>
+      <output id="job-copy-status" class="small muted" aria-live="polite"></output>
     </div>
     <p id="job-note" class="job-note" hidden></p>
   </header>
@@ -54,7 +54,7 @@
   <article id="job-article" hidden>
 
     <section class="card">
-      <h2 id="scores-heading"></h2>
+      <h2 id="scores-heading">How exposed this job is</h2>
       <p id="scores-intro" class="small muted"></p>
       <div id="job-shares" class="job-shares" hidden></div>
       <div id="score-list" class="score-grid"></div>
@@ -67,7 +67,7 @@
     <div id="advice-top"></div>
 
     <section class="card">
-      <h2 id="scatter-heading"></h2>
+      <h2 id="scatter-heading">Where this job’s skills sit</h2>
       <p id="scatter-intro" class="small muted"></p>
       <div class="scatter-wrap">
         <canvas id="scatter" role="img" aria-label="Skill scatter plot"></canvas>
@@ -84,8 +84,17 @@
       <div id="scatter-table-wrap" class="table-scroll" hidden>
         <table>
           <caption id="scatter-caption"></caption>
+          <!-- The columns of the default, four-share view. js/pages/job.js
+               replaces the row when it knows which score set is active. -->
           <thead>
-            <tr id="scatter-head"></tr>
+            <tr id="scatter-head">
+              <th scope="col">Skill</th>
+              <th scope="col">What AI can do with it</th>
+              <th scope="col" class="numeric">AI substitution (out of 10)</th>
+              <th scope="col" class="numeric">AI assistance (out of 10)</th>
+              <th scope="col" class="numeric">Machine automation (out of 10)</th>
+              <th scope="col">In this job</th>
+            </tr>
           </thead>
           <tbody id="scatter-rows"></tbody>
         </table>
@@ -97,42 +106,42 @@
     <p id="stays-human" class="stays-human small muted" hidden></p>
 
     <section class="card">
-      <h2 id="cards-heading"></h2>
+      <h2 id="cards-heading">Why each essential skill scores as it does</h2>
       <p class="small muted"><span id="cards-writer">Each rationale is what the model wrote while it scored that skill.</span> <span id="cards-key"></span></p>
       <div id="cards-list"></div>
     </section>
 
     <section id="sec-story" class="card">
-      <h2 id="story-heading"></h2>
+      <h2 id="story-heading">How the work could change</h2>
       <p id="story-note" class="job-note" hidden></p>
       <p id="story-facts" class="story-facts"></p>
       <div id="story-text" class="story-text"></div>
     </section>
 
     <section id="sec-tasks" class="card">
-      <h2 id="tasks-heading"></h2>
+      <h2 id="tasks-heading">What AI takes on, and what it amplifies</h2>
       <div id="tasks-grid" class="card-grid"></div>
     </section>
 
     <section id="sec-week" class="card">
-      <h2 id="week-heading"></h2>
+      <h2 id="week-heading">The working week, rebalanced</h2>
       <div id="week-bars"></div>
     </section>
 
     <div id="advice-bottom"></div>
 
     <section class="card">
-      <h2 id="paths-heading"></h2>
+      <h2 id="paths-heading">Nearby jobs, and how they differ</h2>
       <p id="paths-intro" class="small muted"></p>
       <div id="paths-grid" class="path-grid"></div>
-      <h3 id="sideways-heading"></h3>
+      <h3 id="sideways-heading">Other nearby jobs, and how they actually differ</h3>
       <p id="sideways-note" class="small muted"></p>
       <div id="sideways-grid" class="path-grid"></div>
       <div id="paths-needle" class="paths-needle" hidden></div>
     </section>
 
     <section class="card">
-      <h2 id="learn-heading"></h2>
+      <h2 id="learn-heading">Skills someone in this role could learn</h2>
       <p id="learn-intro" class="small muted"></p>
       <ul id="learn-list" class="learn-list"></ul>
     </section>

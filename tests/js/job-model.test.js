@@ -383,7 +383,9 @@ test('the quadrant lists are untouched by the shares branch', () => {
 test('the skills no list covers are counted, and "stays human" is not "AI is no help"', () => {
   const note = staysHumanNote(writerSkills());
   assert.match(note, /The other 3 of the 8 skills in this job stay human/);
-  assert.match(note, /not the same as AI being no help/);
+  assert.match(note, /AI can still help with parts of it/);
+  // C14: the reassurance is a positive sentence, not a negated negative.
+  assert.doesNotMatch(note, /not the same as|no help/);
   assert.equal(staysHumanNote([]), '');
 });
 

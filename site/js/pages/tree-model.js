@@ -11,7 +11,7 @@
 // three thousand.
 
 import {
-  NOT_SCORED, formatCount, formatScore, isScored, largestRemainder,
+  NOT_SCORED, formatCount, formatScore, isScored, largestRemainder, plural,
 } from '../format.js';
 import { QUADRANT_ORDER } from '../groupstats.js';
 import {
@@ -42,7 +42,12 @@ const LEVEL_LABELS = {
 };
 
 /** ISCO codes nest by digit: 2512 sits in 251, in 25, in 2. */
-const LEVEL_WIDTHS = [['unit', 4], ['minor', 3], ['sub', 2], ['major', 1]];
+const LEVEL_WIDTHS = [
+  { level: 'unit', width: 4 },
+  { level: 'minor', width: 3 },
+  { level: 'sub', width: 2 },
+  { level: 'major', width: 1 },
+];
 
 /* --- the model ------------------------------------------------------------ */
 
@@ -85,8 +90,8 @@ export function buildModel(groups, index) {
 export function unitChain(code) {
   const digits = String(code || '').replace(/\D/g, '');
   return LEVEL_WIDTHS
-    .filter(([, width]) => digits.length >= width)
-    .map(([level, width]) => `${level}:${digits.slice(0, width)}`);
+    .filter(({ width }) => digits.length >= width)
+    .map(({ level, width }) => `${level}:${digits.slice(0, width)}`);
 }
 
 /* --- nodes ---------------------------------------------------------------- */
@@ -145,7 +150,7 @@ export function childrenOf(model, key, filter = null) {
 
 function isExpanded(view, key) {
   if (view.filter) return view.filter.keys.has(key);
-  return Boolean(view.expanded && view.expanded.has(key));
+  return Boolean(view.expanded?.has(key));
 }
 
 function pushLevel(walk, key, level) {
@@ -225,7 +230,7 @@ export function filterMatches(model, query, limit = FILTER_LIMIT) {
  * @returns {Array<{slug, title, code, group, alt}>} empty without a filter
  */
 export function resultRows(model, filter) {
-  if (!filter || !filter.hits) return [];
+  if (!filter?.hits) return [];
   return filter.hits.map((hit) => {
     const key = `unit:${String(hit.row.c || '')}`;
     const group = model.groups[key];
@@ -241,7 +246,7 @@ export function resultRows(model, filter) {
 
 /** "also matches “programmer”" — why a row without the word in its title is here. */
 export function alsoMatches(row) {
-  return row && row.alt ? `also matches “${row.alt}”` : '';
+  return row?.alt ? `also matches “${row.alt}”` : '';
 }
 
 /** What the live region says while the filter is on. */
@@ -288,8 +293,8 @@ export function readState(hash) {
 /** The hash a state writes. Inverse of readState. */
 export function treeHash(selection, query) {
   const params = {};
-  if (selection && selection.kind === 'job') params.job = selection.id;
-  if (selection && selection.kind === 'group') params.g = selection.id;
+  if (selection?.kind === 'job') params.job = selection.id;
+  if (selection?.kind === 'group') params.g = selection.id;
   if (query) params.q = query;
   return buildHash(null, params);
 }
@@ -396,16 +401,9 @@ export function typeAheadIndex(rows, from, prefix) {
 // the four boxes, the seven types or the four skill classes. `attribute` is the
 // data-* name the view paints the colour from, so the view never has to know
 // which scheme it is drawing.
-/**
- * A count with the right noun: "1 job", "3,039 jobs". English agrees with the
- * number beside the noun, so "1 of 1 job" and "1 of 3 jobs" are both right.
- * @param {number} count
- * @param {string} noun the singular form
- * @returns {string}
- */
-export function plural(count, noun) {
-  return `${formatCount(count)} ${noun}${count === 1 ? '' : 's'}`;
-}
+// A count with the right noun ("1 job", "3,039 jobs") lives in format.js now.
+// It is re-exported because the view and the tests read it from here.
+export { plural };
 
 /** "0%" is a lie about a group that has one job in that class. */
 function percentText(percent, count) {
@@ -468,7 +466,7 @@ export function mixSegments(counts) {
  * @returns {Array<Object>} empty under a scheme that has no skill classes
  */
 export function classSegments(stats) {
-  const counts = (stats && stats.skill_classes && stats.skill_classes.counts) || null;
+  const counts = stats?.skill_classes?.counts || null;
   if (!counts) return [];
   return barSegments(SKILL_CLASS_ORDER, counts,
     { attribute: 'data-class', noun: 'skill', label: skillClassName });
@@ -516,7 +514,7 @@ export function nearLineCaveat(stats) {
 /* --- one job, as a leaf --------------------------------------------------- */
 
 function isSharesNode(node) {
-  return schemeOfCode(node && node.q) === SHARES || isShares(node && node.sh);
+  return schemeOfCode(node?.q) === SHARES || isShares(node?.sh);
 }
 
 /**
@@ -527,7 +525,7 @@ function isSharesNode(node) {
  */
 export function leafFigure(node) {
   if (!isSharesNode(node)) {
-    return `${formatScore(node && node.a)} / ${formatScore(node && node.m)}`;
+    return `${formatScore(node?.a)} / ${formatScore(node?.m)}`;
   }
   const parts = sharePercents(node.sh);
   return parts.length ? `${parts[0].percent}% AI can take over` : NOT_SCORED;
@@ -543,7 +541,7 @@ export function leafParts(node) {
   const shares = isSharesNode(node);
   return {
     attribute: shares ? 'data-type' : 'data-quadrant',
-    code: (node && node.q) || '',
+    code: node?.q || '',
     name: shares ? typeShortLabel(node.q, SHARES) : typeLabel(node.q, QUADRANTS),
     figure: leafFigure(node),
   };
@@ -604,7 +602,7 @@ function resolveSkills(skills, ids, essential, cut) {
 
 /** The occupation a slug names inside portfolio_data.json, or null. */
 export function findOccupation(portfolio, slug) {
-  const rows = (portfolio && portfolio.occupations) || [];
+  const rows = portfolio?.occupations || [];
   return rows.find((row) => row.s === slug) || null;
 }
 
@@ -616,10 +614,10 @@ export function findOccupation(portfolio, slug) {
  * @returns {Array<{id, title, auto, amp, mech, cls, near, essential, quadrant}>}
  */
 export function skillRows(portfolio, occupation, cut) {
-  const skills = (portfolio && portfolio.skills) || {};
+  const skills = portfolio?.skills || {};
   return [
-    ...resolveSkills(skills, occupation && occupation.se, true, cut),
-    ...resolveSkills(skills, occupation && occupation.so, false, cut),
+    ...resolveSkills(skills, occupation?.se, true, cut),
+    ...resolveSkills(skills, occupation?.so, false, cut),
   ];
 }
 

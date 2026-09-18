@@ -364,6 +364,18 @@ test('Right opens a closed group, then steps into it', () => {
   assert.deepEqual(horizontalMove(open, 1, 'ArrowRight'), { action: 'move', index: 2 });
 });
 
+test('Right does nothing on a job: a leaf has no children and is not a way down', () => {
+  const open = visibleRows(model, view({
+    expanded: new Set(['major:2', 'sub:25', 'minor:251', 'unit:2512']),
+  }));
+  assert.deepEqual(open[5].key, 'unit:2512');
+  assert.deepEqual(horizontalMove(open, 5, 'ArrowRight'), { action: 'move', index: 6 });
+  assert.equal(open[6].kind, 'job');
+  assert.ok(open.length - 1 > 7, 'the jobs must sit mid-list, not at the end');
+  assert.equal(horizontalMove(open, 6, 'ArrowRight'), null);
+  assert.equal(horizontalMove(open, 7, 'ArrowRight'), null);
+});
+
 test('Left closes an open group, then steps out to the parent', () => {
   const open = visibleRows(model, view({ expanded: new Set(['major:2']) }));
   assert.deepEqual(horizontalMove(open, 1, 'ArrowLeft'), { action: 'collapse', key: 'major:2' });

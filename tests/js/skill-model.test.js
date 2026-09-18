@@ -67,6 +67,20 @@ test('shorter titles win a tie, then alphabet, so the order is stable', () => {
   assert.deepEqual(titles(rankSkills(SKILLS, 'MANAGE')), titles(results));
 });
 
+test('two skills with the same title keep the order the index gave them', () => {
+  // ESCO has near-duplicate wordings, so two rows can tie on tier and on length
+  // and then on the title itself. With nothing left to decide it, the sort must
+  // leave the pair where it found it rather than shuffle it.
+  const duplicates = [
+    { id: 'aaaa0001', t: 'manage budgets', a: 5.0, m: 8.0, ne: 1, no: 0 },
+    { id: 'bbbb0002', t: 'manage staff', a: 3.0, m: 6.0, ne: 1, no: 0 },
+    { id: 'cccc0003', t: 'manage budgets', a: 7.0, m: 4.0, ne: 1, no: 0 },
+  ];
+  const ids = (rows) => rankSkills(rows, 'manage').map((result) => result.row.id);
+  assert.deepEqual(ids(duplicates), ['bbbb0002', 'aaaa0001', 'cccc0003']);
+  assert.deepEqual(ids([...duplicates].reverse()), ['bbbb0002', 'cccc0003', 'aaaa0001']);
+});
+
 test('an empty or unmatched query returns nothing, and the hint teaches ESCO wording', () => {
   assert.deepEqual(rankSkills(SKILLS, '   '), []);
   assert.deepEqual(rankSkills(SKILLS, 'budgeting'), []);
@@ -189,7 +203,9 @@ test('the note under the bars explains three measures and disowns the class', ()
 });
 
 test('"Stays human" is never read as "AI is of no help here"', () => {
-  assert.match(classMeaning('I'), /not the same as AI being no help/);
+  assert.match(classMeaning('I'), /AI can still help with parts of it/);
+  // C14: said the way round a reader can act on, with no double negative.
+  assert.doesNotMatch(classMeaning('I'), /not the same as|no help/);
   assert.match(classMeaning('A'), /clear gain across most of it/);
   assert.match(classMeaning('S'), /nearly all of this work by itself/);
   assert.match(classMeaning('M'), /physical equipment/);
@@ -491,7 +507,7 @@ test('the class rules read as words, never as the rubric’s identifiers (R1)', 
     assert.doesNotMatch(entry.rule, /SUB|COMP|MECH|>=|0\.5|Substituted|Mechanised/, entry.code);
     assert.equal('name' in entry, false, 'the rubric’s internal name never reaches a page');
   }
-  assert.match(classes[3].meaning, /not the same as AI being no help/);
+  assert.match(classes[3].meaning, /AI can still help with parts of it/);
   assert.deepEqual(rubricClasses(undefined), []);
 });
 
