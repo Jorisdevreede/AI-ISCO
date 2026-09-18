@@ -49,7 +49,23 @@ def test_the_job_page_scatter_offers_a_real_table(desktop, open_job):
     canvas = page.locator("#scatter")
     expect(canvas).to_have_attribute("role", "img")
     assert (canvas.get_attribute("aria-label") or "").strip()
-    toggle = page.get_by_role("button", name="View as table")
+    toggle = page.locator("#scatter-toggle")
     expect(toggle).to_have_attribute("aria-expanded", "false")
     toggle.click()
     expect(page.locator("#scatter-table-wrap table tbody tr").first).to_be_visible()
+
+
+def test_the_job_scatter_table_carries_the_class_and_all_three_scores(desktop, open_job):
+    """Under the default the plot is not a class boundary — a skill's class
+    comes from the model's own probabilities — so the table has to say both."""
+    page = open_job(desktop, "job.html#software-developer")
+    page.locator("#scatter-toggle").click()
+    headers = page.locator("#scatter-head th").all_inner_texts()
+    assert headers == ["Skill", "What AI can do with it", "AI substitution (out of 10)",
+                       "AI assistance (out of 10)", "Machine automation (out of 10)",
+                       "In this job"]
+    legend = page.locator("#scatter-classes")
+    expect(legend).to_be_visible()
+    assert page.locator("#scatter-threshold").inner_text() == ""
+    assert "no lines are drawn across it" in (
+        page.locator("#scatter").get_attribute("aria-label").lower())

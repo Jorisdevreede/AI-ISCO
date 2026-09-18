@@ -57,5 +57,7 @@ def test_the_in_page_finder_moves_the_focus_to_the_new_heading(desktop):
     page.locator("#job-article").wait_for(state="visible", timeout=15_000)
     type_and_open(page, "job-find", SECOND)
     page.wait_for_url(re.compile(rf"/job\.html#{SECOND}$"))
-    assert active_id(page) == "job-title"
+    # The new job's own file has to arrive before there is a heading to move to,
+    # so the focus follows the render rather than the URL.
     expect(page.locator("h1")).to_have_text(re.compile(SECOND, re.IGNORECASE))
+    assert active_id(page) == "job-title"
