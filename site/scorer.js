@@ -43,6 +43,11 @@
   window.scorerFetch = name =>
     active.then(scorer => fetch(name + SCORERS[scorer].suffix + '.json'));
 
+  // For a page that compares the two sets: null where only the default set exists.
+  window.scorerAlternative = hasAlternative.then(ok => (ok
+    ? { suffix: SCORERS.typesafe.suffix, labels: [SCORERS[DEFAULT].label, SCORERS.typesafe.label] }
+    : null));
+
   function choose(name) {
     store(name);
     const url = new URL(location.href);

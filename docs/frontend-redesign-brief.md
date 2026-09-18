@@ -63,7 +63,7 @@ In-page navigation uses `history.pushState`, never `replaceState`, so the browse
 
 ## Uncertainty copy
 
-Everything said about certainty must be computable from the published data, never typed into the prose. When this brief was written the second scoring run was private, so the pages quote only facts about the default score set. Now that both sets are published, the agreement between them (README, Step 2b) is the better uncertainty evidence, and putting it on the method page, computed from the two data files, is a planned increment.
+Everything said about certainty must be computable from the published data, never typed into the prose. When this brief was written the second scoring run was private, so the pages quote only facts about the default score set. Now that both sets are published, the agreement between them is the better uncertainty evidence: the method page computes it from the two search indexes as it loads (`site/js/agreement.js`), and the README's Step 2b has the per-skill detail.
 
 What can be said, because it is true of the published data alone:
 - the scores are model estimates; nobody measured a real job; there is no ground truth here

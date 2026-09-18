@@ -1,15 +1,17 @@
 // "How sure is this?" — audit flow D5, within the brief's restrictions.
 //
-// The page's prose is static; every number in it is read from stats.json at
-// load, so a rebuild of the data rewrites the page instead of contradicting it.
-// Nothing here may state or imply a result from any second scoring run: the
-// only uncertainty this site is allowed to quote is what the published data
-// shows on its own.
+// The page's prose is static; every number in it is computed at load, so a
+// rebuild of the data rewrites the page instead of contradicting it. The counts
+// come from stats.json. Where a second score set is deployed, the agreement
+// between the two sets is computed from both search indexes (site/js/agreement.js);
+// without it that section stays hidden.
 
 import { renderChrome } from '../chrome.js';
-import { loadJSON, whenSlow } from '../data.js';
+import { compareScoreSets } from '../agreement.js';
+import { loadBothSets, loadJSON, whenSlow } from '../data.js';
 import { formatCount, formatPercent } from '../format.js';
 import { NEAR_LINE, QUADRANT_NAMES, THRESHOLD } from '../quadrant.js';
+import { agreementTable, agreementValues } from './method-model.js';
 
 const SLOW_MS = 200;
 
@@ -86,6 +88,53 @@ function showError(error, retry) {
   errorSlot.replaceChildren(block);
 }
 
+// --- the second model ---------------------------------------------------------
+
+function fillAgreementSlots(values) {
+  for (const slot of document.querySelectorAll('[data-agree]')) {
+    const value = values[slot.dataset.agree];
+    if (value !== undefined) slot.textContent = value;
+  }
+}
+
+function headerRow(columns) {
+  const row = el('tr');
+  row.appendChild(el('td'));
+  for (const label of columns) {
+    const cell = el('th', 'numeric', label);
+    cell.scope = 'col';
+    row.appendChild(cell);
+  }
+  return row;
+}
+
+function matrixRow(entry) {
+  const row = el('tr');
+  const name = el('th', null, entry.label);
+  name.scope = 'row';
+  row.appendChild(name);
+  for (const cell of entry.cells) {
+    row.appendChild(el('td', cell.agrees ? 'numeric agrees' : 'numeric', cell.text));
+  }
+  return row;
+}
+
+function renderAgreement(sets) {
+  const result = sets && compareScoreSets(sets.first, sets.second);
+  if (!result) return;
+  fillAgreementSlots(agreementValues(result, sets.labels));
+  const matrix = agreementTable(result);
+  const grid = document.getElementById('agreement-table');
+  grid.querySelector('thead').replaceChildren(headerRow(matrix.columns));
+  grid.querySelector('tbody').replaceChildren(...matrix.rows.map(matrixRow));
+  document.getElementById('agreement').hidden = false;
+}
+
+/** The section is a bonus: if its files fail to load it stays hidden, the page stands. */
+function loadAgreement() {
+  loadBothSets('search_index').then(renderAgreement).catch(() => {});
+}
+
 function load() {
   errorSlot.replaceChildren();
   whenSlow(loadJSON('stats'), SLOW_MS, () => setStatus('Loading the current counts…'))
@@ -103,3 +152,4 @@ function load() {
 renderChrome({ active: 'method' });
 setStatus('');
 load();
+loadAgreement();

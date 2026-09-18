@@ -199,7 +199,7 @@ The two models rank skills and occupations much alike, but they use the scale di
 | **EVOLVE** | 671 | 102 | 538 | 250 |
 | **STABLE** | 1 | 170 | 11 | 608 |
 
-58% of the 3,043 occupations land in the same quadrant under both models. The largest single move is 671 occupations from EVOLVE to TRANSFORM: same amplification story, but jev sees more of the work as automatable. This is the most useful uncertainty estimate the project has. A quadrant label depends on which model you ask and on a threshold, so read it as a region, not a verdict. Neither set is ground truth: nobody measured a real job.
+58% of the 3,043 occupations land in the same quadrant under both models. The largest single move is 671 occupations from EVOLVE to TRANSFORM: same amplification story, but jev sees more of the work as automatable. This is the most useful uncertainty estimate the project has, and the [How sure is this?](https://jorisdevreede.github.io/AI-ISCO/method.html) page computes the same comparison live (over the 3,039 occupations in the site's index, so its counts differ by a few). A quadrant label depends on which model you ask and on a threshold, so read it as a region, not a verdict. Neither set is ground truth: nobody measured a real job.
 
 The largest per-skill disagreements are instructive. jev rates physical and sensory skills as far more automatable than Gemini does ("display spirits" 2 vs 8.7, "sing" 2 vs 8.3, "use hand pliers" 2 vs 7.1), which suggests it reads the rubric's "automation" as including machinery, where Gemini reads it as AI software. Agreement is also not highest where jev is most confident: in its top confidence band the same-band rate drops again.
 
@@ -375,7 +375,7 @@ Aggregated findings across all occupations, written up as a newspaper-style arti
 
 ### How sure is this? ([method.html](https://jorisdevreede.github.io/AI-ISCO/method.html))
 
-What the scores are (model estimates, nobody measured a real job), how the quadrants are cut, and how many occupations sit close enough to a cut-off that a small change in the scores would move them.
+What the scores are (model estimates, nobody measured a real job), how the quadrants are cut, how many occupations sit close enough to a cut-off that a small change in the scores would move them, and how far a second model agrees: the share of occupations in the same quadrant, the rank correlations and the quadrant-by-quadrant table, computed in the browser from the two published score files.
 
 ### How the front end is put together
 

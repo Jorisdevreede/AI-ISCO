@@ -265,3 +265,12 @@ td.q-bar-cell { width: 40%; min-width: 90px; }
   .article-body p { font-size: 1rem; }
   .article-body .pullquote { font-size: 1.0625rem; }
 }
+
+/* --- method page: the two-model table ------------------------------------- */
+
+#agreement-table caption { caption-side: top; text-align: left; padding-bottom: var(--space-2);
+  color: var(--fg-muted); font-size: 0.8125rem; }
+/* The diagonal is where the two models agree: marked by weight and a rule, not colour alone. */
+#agreement-table td.agrees { font-weight: 700; color: var(--fg);
+  box-shadow: inset 0 -2px 0 var(--accent); }
+#agreement .table-scroll + p { margin-top: var(--space-3); }

@@ -104,6 +104,49 @@
     </p>
   </section>
 
+  <section id="agreement" aria-labelledby="agreement-heading" hidden>
+    <h2 id="agreement-heading">Ask a second model and the map changes</h2>
+    <p>
+      The same rubric was given to a second, different kind of model
+      (<span data-agree="secondLabel">&mdash;</span>, which returns probabilities per rubric
+      band instead of text). Neither model is ground truth, so the only thing that can be
+      measured is how far the two agree. These numbers are computed from the two published
+      score files as this page loads.
+    </p>
+    <p class="method-figure">
+      <strong class="figure-value" data-agree="share">&mdash;</strong>
+      <span class="figure-note">
+        of the <span data-agree="n">&mdash;</span> occupations land in the same box under both
+        models. The other <span data-agree="moved">&mdash;</span> change box.
+      </span>
+    </p>
+    <p>
+      The two models rank occupations much alike: the rank correlation is
+      <strong data-agree="rhoAutomation">&mdash;</strong> for automation risk and
+      <strong data-agree="rhoAmplification">&mdash;</strong> for amplification, where 1 means
+      the same order. They differ in how they use the scale. The average automation score is
+      <span data-agree="meanAutomation">&mdash;</span> and the average amplification score is
+      <span data-agree="meanAmplification">&mdash;</span>. With a hard cut-off, a shift like
+      that carries many occupations across a line while their ranking barely moves.
+      <span data-agree="move"></span>
+    </p>
+    <div class="table-scroll">
+      <table id="agreement-table">
+        <caption>
+          Occupations by box: <span data-agree="firstLabel">&mdash;</span> in the rows,
+          <span data-agree="secondLabel">&mdash;</span> in the columns. The diagonal is where
+          the two agree.
+        </caption>
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="muted small">
+      Use the &ldquo;Scores from&rdquo; switch in the navigation to see any page with the other
+      model&rsquo;s scores.
+    </p>
+  </section>
+
   <section aria-labelledby="means-heading">
     <h2 id="means-heading">What this means for you</h2>
     <p>
