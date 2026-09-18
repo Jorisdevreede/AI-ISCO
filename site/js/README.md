@@ -106,9 +106,9 @@ explainQuadrant(job)      → { heading: string, sentences: string[], nearLine: 
 `job` is `{ t?, a, m, q? }`. `explainQuadrant` is the **only** place the
 uncertainty copy lives. It says: which side of the cut-off each score falls, how
 far this job sits from the line, that the scores are model estimates with no
-ground truth, and that the boxes are a hard cut at 6. It must never state or
-imply anything about a second scoring run — that data is private. There is a
-test asserting exactly that; keep it.
+ground truth, and that the boxes are a hard cut at 6. Every number in it is
+computed from the job's own scores; it quotes nothing about the second scoring
+run, and a test keeps typed-in figures out of it.
 
 ### `urlstate.js`
 
@@ -133,8 +133,8 @@ groups.html#g=major:2&view=ranked
 skill.html#59b27e7b
 ```
 
-Every in-site link goes through `withScorer(href, location.search)`, or the local
-second score set resets when the visitor follows it.
+Every in-site link goes through `withScorer(href, location.search)`, or a shared
+`?scorer=` link loses its score set when the visitor follows it.
 
 ### `groupstats.js`
 
@@ -304,7 +304,7 @@ Rebuild with:
 
 ```
 uv run python build_site_indexes.py
-uv run python build_site_indexes.py --scorer typesafe   # local only, gitignored
+uv run python build_site_indexes.py --scorer typesafe   # the second score set
 ```
 
 The build fails if a file misses its gzipped budget. One budget was raised from

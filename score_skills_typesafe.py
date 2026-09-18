@@ -18,10 +18,9 @@ checkpoints so it can be resumed.
 The API key is read from TYPESAFE_API_KEY (.env works), falling back to the
 macOS login keychain item "typesafe-api-key".
 
-TypeSafe's customer agreement (section 2.3(f)) prohibits publishing benchmarks
-or performance information about their service. Treat this script's output,
-timings and any comparison built on it as private unless TypeSafe has agreed
-in writing; data/skill_scores_typesafe.json is gitignored for that reason.
+The output of the full run is committed as data/skill_scores_typesafe.json, and
+the README's Step 2b compares it with the Gemini scores. This project is not
+affiliated with or endorsed by TypeSafe AI, Inc.
 
 Usage:
     uv run python score_skills_typesafe.py

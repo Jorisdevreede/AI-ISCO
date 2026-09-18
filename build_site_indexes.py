@@ -12,7 +12,7 @@ deliberately not read: it is a stale copy of an older scoring run and none of th
 five outputs needs a field that only it carries.
 
 --scorer typesafe reads site/portfolio_data_typesafe.json and writes every output
-with a _typesafe suffix. Those files are gitignored and must stay local.
+with a _typesafe suffix, which is what the site's "Scores from" switch loads.
 
 Exits non-zero when an output misses its gzipped budget.
 """

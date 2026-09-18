@@ -1,11 +1,9 @@
 // Which set of skill scores the site shows.
 //
-// The published site has one set: the Gemini scores in data.json and
-// portfolio_data.json. A second set, built with `--scorer typesafe`, can sit next
-// to them as data_typesafe.json and portfolio_data_typesafe.json. Those files are
-// gitignored (TypeSafe's customer agreement does not allow publishing them), so
-// the switch below only appears where they exist, which in practice means a local
-// checkout. Without them the site behaves exactly as before.
+// The default set is the Gemini scores in data.json, portfolio_data.json and the
+// index files. A second set, built with `--scorer typesafe`, sits next to them
+// with a _typesafe suffix on every file. The switch below appears wherever that
+// second set exists; a checkout without it behaves as a single-scorer site.
 //
 // Pages load their data with scorerFetch('data') instead of fetch('data.json').
 // The choice comes from ?scorer=typesafe, then localStorage, then the default.
@@ -16,9 +14,9 @@
     typesafe: {
       label: 'TypeSafe',
       suffix: '_typesafe',
-      note: 'Local experiment: scores from TypeSafe, same rubric. Narratives and ' +
-        'skill rationales were written from the Gemini scores and may not match ' +
-        'these numbers.',
+      note: 'Scores from TypeSafe’s jev model, same rubric. It returns numbers only, so ' +
+        'the narratives and skill rationales are the ones Gemini wrote for its own ' +
+        'scores and may not match these numbers.',
     },
   };
   const DEFAULT = 'gemini';
@@ -36,12 +34,10 @@
   if (!SCORERS[wanted]) wanted = DEFAULT;
   if (SCORERS[fromUrl]) store(fromUrl);
 
-  // Is the second set deployed here at all? Only look where it can exist: on a
-  // local checkout, or when someone asked for it. The published site never probes.
-  const isLocal = ['localhost', '127.0.0.1', ''].includes(location.hostname);
-  const hasAlternative = (isLocal || wanted !== DEFAULT)
-    ? fetch('data_typesafe.json', { method: 'HEAD' }).then(response => response.ok, () => false)
-    : Promise.resolve(false);
+  // Is the second set deployed here at all? One HEAD request decides whether the
+  // switch is offered, so a checkout without those files never shows a dead option.
+  const hasAlternative = fetch('data_typesafe.json', { method: 'HEAD' })
+    .then(response => response.ok, () => false);
   const active = hasAlternative.then(ok => (ok ? wanted : DEFAULT));
 
   window.scorerFetch = name =>

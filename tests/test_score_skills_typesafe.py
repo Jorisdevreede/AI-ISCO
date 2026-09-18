@@ -1,8 +1,7 @@
 """Behaviour of the TypeSafe skill scorer: rubric, keys, pool, checkpoints.
 
-Every number here is invented. The script's real output is private under
-TypeSafe's customer agreement (section 2.3(f)), so no measurement of theirs is
-recorded in this repository, and nothing is written outside tmp_path.
+Every number here is invented, no request leaves the machine, and nothing is
+written outside tmp_path. The real run's output is data/skill_scores_typesafe.json.
 """
 
 import hashlib
@@ -106,9 +105,9 @@ def offline(monkeypatch):
     )
 
 
-def test_the_module_keeps_the_terms_note():
-    assert "section 2.3(f)" in typesafe.__doc__
-    assert "prohibits publishing benchmarks" in typesafe.__doc__
+def test_the_module_says_where_its_output_lives_and_claims_no_affiliation():
+    assert "data/skill_scores_typesafe.json" in typesafe.__doc__
+    assert "endorsed by TypeSafe AI, Inc." in typesafe.__doc__
 
 
 def test_constants_pin_the_cli_contract():

@@ -33,7 +33,7 @@ Jobs where both scores are high don't just disappear — they **transform** into
 | A story per occupation | 3,039 evolution narratives with time savings, a rebalanced work week, timeline and career advice |
 | Career moves | Adjacent occupations by skill overlap, plus the gap skills to learn |
 | Pages built around questions | "How will my job be affected?", "which sectors, and how differently?", "how will this skill evolve?" and "how sure is this?" each have a page ([The frontend](#the-frontend)) |
-| A second scorer you can run yourself | The same rubric through a different kind of model, for your own private comparison ([Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy)) |
+| A second opinion on every score | The same rubric through a different kind of model, with both score sets and their comparison published ([Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy)) |
 | No build step | Static pages in vanilla JS, served from `site/` |
 
 Started from [karpathy/jobs](https://github.com/karpathy/jobs), whose BLS pipeline is still in this repository (see [Licensing and attribution](#licensing-and-attribution)). The ESCO skill-level pipeline, the narratives and every page of the site were written for this project. This publication uses the [ESCO](https://esco.ec.europa.eu/) classification of the European Commission.
@@ -49,7 +49,7 @@ python3 -m http.server 8000 --directory site
 # open http://localhost:8000
 ```
 
-Re-run part of the analysis yourself. This scores a 300-skill sample with the optional TypeSafe scorer and compares it, privately, with the published scores (read the note in [Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy) before sharing any of it):
+Re-run part of the analysis yourself. This scores a 300-skill sample with the optional TypeSafe scorer and compares it with the published Gemini scores (results of the full run are in [Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy)):
 
 ```bash
 uv sync
@@ -95,9 +95,9 @@ ESCO CSVs ─→ ingest_esco.py ─→ esco_occupations.json + esco_skills.json
                                 skill on 2 axes)             rubric as typed judgments)
                                          │                              │
                                skill_scores.json            skill_scores_typesafe.json
-                               (13,939 skills scored)                   │
-                                         │                  (private: gitignored, and
-                                         │                   not part of the site build)
+                               (13,939 skills scored)       (committed; every later step
+                                         │                   takes --scorer typesafe and
+                                         │                   writes *_typesafe.json files)
                                          │
                      aggregate_scores.py (weighted avg per occupation)
                                          │
@@ -163,7 +163,47 @@ QUESTIONS = {
 response = client.system_one(state={"skill": {...}}, questions=QUESTIONS, model=DEFAULT_MODEL)
 ```
 
-> **No TypeSafe results are published here, on purpose.** TypeSafe's customer agreement (section 2.3(f)) prohibits publishing benchmarks or performance information about their service. This repository therefore contains the code only: no TypeSafe scores, no comparison with the Gemini scores, no timings and no cost figures. `data/skill_scores_typesafe.json` and `site/*_typesafe.json` are gitignored. If you run this yourself, keep the output and anything `compare_skill_scores.py` prints private unless TypeSafe has agreed otherwise in writing. This project is not affiliated with or endorsed by TypeSafe AI, Inc.
+**One request, as it went out and came back.** The state is the ESCO skill; the answer for each question is a probability per rubric band, a score and a confidence:
+
+```python
+state = {"skill": {"title": "operate cash register",
+                   "description": "Register and handle cash transactions by using point of sale register.",
+                   "type": "skill"}}
+
+# answer, as stored in data/skill_scores_typesafe.json (model jev-1.13.0)
+{"automation_probs":    [0.00, 0.00, 0.08, 0.55, 0.37],   # cannot … fully automatable
+ "amplification_probs": [0.26, 0.51, 0.19, 0.04, 0.00],   # minimal … transformative
+ "automation_risk": 8.04,          "automation_confidence": 0.62,
+ "amplification_potential": 3.54,  "amplification_confidence": 0.56}
+```
+
+Gemini gave the same skill 9 and 3, with the sentence "Self-checkout and automated payment systems have already largely automated this role." jev returns no text, so on the site its scores borrow Gemini's rationale, marked with an "i" that says who wrote it and for which scores.
+
+**What came out.** All 13,939 skills were scored in one run of about 16 minutes with no failed requests. The full output is in `data/skill_scores_typesafe.json`. After `uv run python ingest_esco.py`, `uv run python compare_skill_scores.py --occupations` reproduces every number below from it and the published Gemini scores (13,475 skills appear in both sets).
+
+| | Automation risk | Amplification |
+|---|---|---|
+| Rank correlation with Gemini, per skill (Spearman) | 0.82 | 0.86 |
+| Same rubric band | 42% | 54% |
+| Within one band | 92% | 98% |
+| Mean gap on the 1-10 scale | 1.26 | 1.03 |
+| Mean score, Gemini → jev | 4.97 → 5.80 | 6.17 → 5.49 |
+| Rank correlation per occupation, after the roll-up | 0.93 | 0.94 |
+
+The two models rank skills and occupations much alike, but they use the scale differently: jev scores automation about 0.8 higher and amplification about 0.7 lower. Because the quadrants are a hard cut at 6, that shift moves a lot of occupations across a line even though their ranking barely changes:
+
+| Gemini ↓ / jev → | TRANSFORM | SHRINK | EVOLVE | STABLE |
+|---|---|---|---|---|
+| **TRANSFORM** | 432 | 75 | 0 | 1 |
+| **SHRINK** | 0 | 182 | 0 | 2 |
+| **EVOLVE** | 671 | 102 | 538 | 250 |
+| **STABLE** | 1 | 170 | 11 | 608 |
+
+58% of the 3,043 occupations land in the same quadrant under both models. The largest single move is 671 occupations from EVOLVE to TRANSFORM: same amplification story, but jev sees more of the work as automatable. This is the most useful uncertainty estimate the project has. A quadrant label depends on which model you ask and on a threshold, so read it as a region, not a verdict. Neither set is ground truth: nobody measured a real job.
+
+The largest per-skill disagreements are instructive. jev rates physical and sensory skills as far more automatable than Gemini does ("display spirits" 2 vs 8.7, "sing" 2 vs 8.3, "use hand pliers" 2 vs 7.1), which suggests it reads the rubric's "automation" as including machinery, where Gemini reads it as AI software. Agreement is also not highest where jev is most confident: in its top confidence band the same-band rate drops again.
+
+This project is not affiliated with or endorsed by TypeSafe AI, Inc.
 
 How the two scorers differ in shape:
 
@@ -173,8 +213,8 @@ How the two scorers differ in shape:
 | Request shape | 10 skills per call, JSON array back | 1 skill per call, two typed answers back |
 | Output handling | Strip code fences, fix trailing commas, `json.loads`, retry on malformed output | None, the SDK returns typed objects |
 | Score | Integer 1-10 | Continuous, plus per-band probabilities and a confidence per axis |
-| Rationale text | Yes, 1-2 sentences per skill | No |
-| On the published site | Yes | No |
+| Rationale text | Yes, 1-2 sentences per skill | No; the site borrows Gemini's, marked as such |
+| On the published site | Yes, the default | Yes, through the "Scores from" switch |
 
 **Commands:**
 
@@ -185,18 +225,19 @@ uv run python score_skills_typesafe.py --start 0 --end 50   # a slice
 uv run python score_skills_typesafe.py --workers 6 --rps 15 # concurrency and request starts per second
 uv run python score_skills_typesafe.py --force              # ignore the checkpoint and re-score
 
-uv run python compare_skill_scores.py                       # private comparison with the Gemini scores
+uv run python compare_skill_scores.py                       # comparison with the Gemini scores
 uv run python compare_skill_scores.py --occupations         # plus occupation roll-up and quadrant table
 
-uv run python aggregate_scores.py --scorer typesafe         # local site data: site/data_typesafe.json
-uv run python build_portfolio_data.py --scorer typesafe     # local site data: site/portfolio_data_typesafe.json
+uv run python aggregate_scores.py --scorer typesafe         # site/data_typesafe.json
+uv run python build_portfolio_data.py --scorer typesafe     # site/portfolio_data_typesafe.json, with borrowed rationales
+uv run python build_site_indexes.py --scorer typesafe       # the *_typesafe.json index files
 ```
 
-- **Output:** `data/skill_scores_typesafe.json` (gitignored), same fields as `skill_scores.json` plus `automation_probs`, `amplification_probs`, a confidence per axis and the model version
+- **Output:** `data/skill_scores_typesafe.json` (committed), same fields as `skill_scores.json` plus `automation_probs`, `amplification_probs`, a confidence per axis and the model version
 - **Resume:** checkpoints every 250 skills and on exit; re-running skips what is already scored
 - **Rate limit:** keep `--rps` under the limit in TypeSafe's own documentation; the SDK retries with backoff on 429
 - **Key:** `TYPESAFE_API_KEY` in `.env`, or the macOS keychain item `typesafe-api-key`. Never commit it
-- **Seeing it in the site:** once the two `_typesafe` site files exist locally, a "Scores from" switch appears in the navigation bar (see [The frontend](#the-frontend))
+- **Seeing it in the site:** the "Scores from" switch in the navigation bar, or `?scorer=typesafe` on any page (see [The frontend](#the-frontend))
 
 ### Step 3: Aggregate to occupations (`aggregate_scores.py`)
 
@@ -300,7 +341,7 @@ groups.html#g=major:2&view=ranked|scatter|treemap|table
 skill.html#59b27e7b
 ```
 
-`site/scorer.js` lets a local checkout show a second set of scores. When `site/data_typesafe.json` and `site/portfolio_data_typesafe.json` exist (they are gitignored, so not on the published site), a **Scores from** switch appears in the navigation bar, remembers the choice across pages, and can be set with `?scorer=typesafe`. A banner then notes that the narratives and skill rationales were written from the Gemini scores. Without those files the pages load `data.json` and `portfolio_data.json` exactly as before.
+`site/scorer.js` lets every page show a second set of scores. Next to `data.json`, `portfolio_data.json` and the index files sit `_typesafe` copies built with `--scorer typesafe`. A **Scores from** switch in the navigation bar chooses between them, remembers the choice across pages, and can be set with `?scorer=typesafe`. With the second set on screen a banner says that the narratives and skill rationales were written by Gemini for its own scores, and each borrowed rationale carries an "i" with the scores it was written for. A checkout without the `_typesafe` files shows no switch.
 
 ### Find a job ([index.html](https://jorisdevreede.github.io/AI-ISCO/))
 
@@ -437,7 +478,7 @@ The shared Python code lives in the `aiisco/` package: `esco.py` (reading ESCO),
 | `ingest_esco.py` | Parse ESCO v1.2.1 CSVs into structured JSON |
 | `score_skills.py` | Dual-axis LLM scoring of all 13,939 skills |
 | `score_skills_typesafe.py` | Experiment: the same rubric scored as typed judgments with TypeSafe |
-| `compare_skill_scores.py` | Private comparison of the TypeSafe scores with the published scores (do not publish its output) |
+| `compare_skill_scores.py` | Compares the TypeSafe scores with the published Gemini scores: per skill, per occupation and per quadrant |
 | `aggregate_scores.py` | Weighted skill→occupation aggregation + quadrant assignment |
 | `generate_narratives.py` | LLM-generated AI evolution narratives for each occupation |
 | `merge_narrative_shards.py` | Consolidate parallel narrative shards |
@@ -488,7 +529,8 @@ The shared Python code lives in the `aiisco/` package: `esco.py` (reading ESCO),
 - **English labels only.** The pipeline reads the `_en` ESCO files.
 - **The job page downloads one large file.** `site/portfolio_data.json` holds every occupation's skills, so the first job page you open loads about 13 MB (less over the wire, and cached afterwards). It shows a loading state while it does. One file per job is a planned increment.
 - **The per-skill Gemini scores are not committed.** They survive only in compressed form inside `site/portfolio_data.json`, so re-aggregating from scratch means re-scoring.
-- **The optional TypeSafe scorer returns scores only,** no rationale text, and its results cannot be published here (see Step 2b).
+- **The optional TypeSafe scorer returns scores only,** no rationale text. With its scores on screen the site shows Gemini's rationales and narratives, marked as written for different numbers.
+- **Two models, two answers.** The second scorer puts 58% of occupations in the same quadrant as the first (see Step 2b). Treat a quadrant as a region, not a verdict.
 
 ## FAQ
 
@@ -499,10 +541,10 @@ Not to browse. The scored data is committed, so `python3 -m http.server 8000 --d
 An occupation-level number cannot tell you which part of the job changes. Scoring the 13,939 skills and rolling them up (essential skills weighted 2x) shows which skills pull an occupation towards automation and which towards amplification, and it is what makes the Skill Portfolio Analyzer possible.
 
 **Which scorer produced the numbers on the site?**
-Gemini Flash, via `score_skills.py`. The published site shows nothing else.
+Gemini Flash, via `score_skills.py`, by default. The "Scores from" switch shows the same rubric scored by TypeSafe's jev model instead.
 
-**Why are there no TypeSafe scores or comparisons in this repo?**
-TypeSafe's customer agreement prohibits publishing benchmarks or performance information about their service, so only the code is here. You can run it for your own private evaluation; see [Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy).
+**How much do the two scorers agree?**
+They rank skills and occupations much alike (rank correlation 0.82 to 0.86 per skill, 0.93 to 0.94 per occupation) but use the scale differently, so only 58% of occupations land in the same quadrant. The table is in [Step 2b](#step-2b-experiment-the-same-rubric-as-typed-judgments-score_skills_typesafepy).
 
 **How is Evolution Potential calculated?**
 `(automation_risk × amplification_potential) / 10`, on the occupation-level weighted averages.

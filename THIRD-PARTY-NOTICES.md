@@ -55,7 +55,9 @@ karpathy/jobs publishes no licence, so no licence is granted for these files her
 
 ### TypeSafe
 
-`score_skills_typesafe.py` calls the TypeSafe System One API through `typesafe-sdk` (MIT). This project is not affiliated with or endorsed by TypeSafe AI, Inc. No TypeSafe output is included in this repository: their customer agreement prohibits publishing benchmarks or performance information about the service.
+`score_skills_typesafe.py` calls the TypeSafe System One API through `typesafe-sdk` (MIT). This project is not affiliated with or endorsed by TypeSafe AI, Inc.; "TypeSafe" and "jev" are their names.
+
+The scores their model returned are published here for reading and for checking the comparison in the README: `data/skill_scores_typesafe.json` and the `site/*_typesafe.json` files built from it. TypeSafe's customer agreement assigns the output to the customer, but those files are not covered by this repository's CC BY 4.0 grant: reuse them only as far as TypeSafe's own terms allow. The rationales inside `site/portfolio_data_typesafe.json` are the Gemini ones and are covered.
 
 ## Names and emblems
 

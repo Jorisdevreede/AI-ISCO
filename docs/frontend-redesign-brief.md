@@ -55,7 +55,7 @@ In-page navigation uses `history.pushState`, never `replaceState`, so the browse
 
 ## Decisions on the audit's open questions
 
-1. **Canonical scores: the published Gemini run.** The local second score set stays a local-only switch.
+1. **Canonical scores: the Gemini run.** It is the default everywhere. A second score set (same rubric, TypeSafe's jev model) sits behind the "Scores from" switch; it was local-only until its publication was cleared on 2026-09-18.
 2. **Keep the four quadrant names, hedge them.** A badge is a button that explains why the job landed there and how close it sits to a cut-off. A job within 0.5 of a cut-off on either axis is marked "near the line".
 3. **Demote "Evolution Potential".** It stays in the data. The UI calls it "AI exposure", never colours a first view by it, and never derives a health verdict from it. The "At Risk" banner goes; a job page never delivers a bad verdict without a next step.
 4. **"Someone else's profession" without new model calls.** `&for=other` switches headings, labels and the advice heading to neutral wording, stops writing to recently viewed, and adds a line saying the story below is addressed to the job holder. Third-person narratives need a model pass and are a later increment.
@@ -63,7 +63,7 @@ In-page navigation uses `history.pushState`, never `replaceState`, so the browse
 
 ## Uncertainty copy
 
-Everything said about certainty must be computable from the published data. Never state or imply results from the private second scoring run: no agreement rates, correlations or counts from it, on the site or in the docs.
+Everything said about certainty must be computable from the published data, never typed into the prose. When this brief was written the second scoring run was private, so the pages quote only facts about the default score set. Now that both sets are published, the agreement between them (README, Step 2b) is the better uncertainty evidence, and putting it on the method page, computed from the two data files, is a planned increment.
 
 What can be said, because it is true of the published data alone:
 - the scores are model estimates; nobody measured a real job; there is no ground truth here

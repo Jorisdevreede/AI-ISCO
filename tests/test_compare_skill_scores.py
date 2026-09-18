@@ -1,8 +1,7 @@
 """Tests for compare_skill_scores.py.
 
-All numbers here are synthetic: the script compares a private TypeSafe run with
-the published scores and its real output may not be published, so the fixtures
-are made-up skills with made-up scores.
+All numbers here are synthetic: the fixtures are made-up skills with made-up
+scores, so a test never depends on the real run (its results are in the README).
 
 The first tests are characterisation tests: they run main() over that dataset in
 a tmp directory and compare the whole printed report and the joined output file
