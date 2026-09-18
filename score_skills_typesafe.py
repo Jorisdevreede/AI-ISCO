@@ -31,16 +31,19 @@ Usage:
 """
 
 import argparse
-import json
 import os
 import random
 import subprocess
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
 from typesafe_sdk import Score, TypeSafeClient, TypeSafeError
+
+from aiisco.checkpoint import load_checkpoint, pending, save_checkpoint_atomically
+from aiisco.jsonio import load_json
 
 load_dotenv()
 
@@ -162,20 +165,29 @@ class RateLimiter:
             time.sleep(start - now)
 
 
-def score_skill(client, limiter, skill, model):
-    """Score one skill on both axes in a single request."""
-    limiter.wait()
-    state = {
+def skill_state(skill):
+    """The state a System One request judges: one skill, trimmed."""
+    return {
         "skill": {
             "title": skill["title"],
             "description": skill.get("description", "").strip(),
             "type": skill.get("type", ""),
         }
     }
-    questions = QUESTIONS
+
+
+def questions_for(skill):
+    """The two questions to ask, with the knowledge wording where it applies."""
     if skill.get("type") == "knowledge":
-        questions = {**QUESTIONS, "automation": KNOWLEDGE_AUTOMATION}
-    response = client.system_one(state=state, questions=questions, model=model)
+        return {**QUESTIONS, "automation": KNOWLEDGE_AUTOMATION}
+    return QUESTIONS
+
+
+def score_skill(client, limiter, skill, model):
+    """Score one skill on both axes in a single request."""
+    limiter.wait()
+    response = client.system_one(state=skill_state(skill),
+                                 questions=questions_for(skill), model=model)
     auto = response.answers["automation"]
     amp = response.answers["amplification"]
     return {
@@ -193,13 +205,94 @@ def score_skill(client, limiter, skill, model):
 
 
 def save(scored):
-    tmp = OUTPUT_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(list(scored.values()), f, indent=1)
-    os.replace(tmp, OUTPUT_FILE)
+    """Checkpoint the scores collected so far, through a temporary file."""
+    save_checkpoint_atomically(OUTPUT_FILE, scored, indent=1)
 
 
-def main():
+@dataclass
+class PoolRun:
+    """What the worker pool writes to, and what the progress lines report."""
+
+    scored: dict
+    total: int
+    started: float
+    errors: list = field(default_factory=list)
+    done: int = 0
+    tokens: int = 0
+
+
+def collect(run, future, skill):
+    """Fold one finished request into the run, recording a refused skill."""
+    try:
+        entry = future.result()
+    except TypeSafeError as e:
+        run.errors.append(skill["uri"])
+        print(f"\n  ERROR {skill['title']!r}: {e}")
+        return
+    run.scored[entry["uri"]] = entry
+    run.tokens += entry["input_tokens"]
+
+
+def print_progress(run):
+    """Print the throughput line written at every checkpoint."""
+    rate = run.done / (time.monotonic() - run.started)
+    print(
+        f"  {run.done}/{run.total} "
+        f"({rate:.1f}/s, {run.tokens:,} tokens, "
+        f"errors {len(run.errors)})",
+        flush=True,
+    )
+
+
+def score_all(to_score, scored, client, args):
+    """Run every remaining skill through the pool, checkpointing as it goes."""
+    limiter = RateLimiter(args.rps)
+    run = PoolRun(scored=scored, total=len(to_score), started=time.monotonic())
+    try:
+        with ThreadPoolExecutor(args.workers) as pool:
+            futures = {
+                pool.submit(score_skill, client, limiter, s, args.model): s
+                for s in to_score
+            }
+            for future in as_completed(futures):
+                collect(run, future, futures[future])
+                run.done += 1
+                if run.done % CHECKPOINT_EVERY == 0:
+                    save(run.scored)
+                    print_progress(run)
+    finally:
+        save(run.scored)
+    return run
+
+
+def select_skills(all_skills, args):
+    """Take the requested slice, then the fixed random sample if asked for."""
+    subset = all_skills[args.start:args.end]
+    if args.sample:
+        random.seed(args.seed)
+        subset = random.sample(subset, min(args.sample, len(subset)))
+    return subset
+
+
+def print_summary(run):
+    """Print the closing totals, the refused skills and the two averages."""
+    elapsed = time.monotonic() - run.started
+    print(f"\nDone in {elapsed:.0f}s. Total scored: {len(run.scored)}, "
+          f"errors: {len(run.errors)}.")
+    print(f"Input tokens this run: {run.tokens:,}")
+    for uri in run.errors[:10]:
+        print(f"  failed: {uri}")
+
+    vals = list(run.scored.values())
+    avg_risk = sum(s["automation_risk"] for s in vals) / len(vals)
+    avg_amp = sum(s["amplification_potential"] for s in vals) / len(vals)
+    print(f"\nSummary across {len(vals)} skills:")
+    print(f"  Average automation risk:         {avg_risk:.2f}")
+    print(f"  Average amplification potential: {avg_amp:.2f}")
+
+
+def parse_args():
+    """Parse the command line."""
     parser = argparse.ArgumentParser(
         description="Score ESCO skills with TypeSafe System One"
     )
@@ -216,23 +309,15 @@ def main():
                              "documented rate limit")
     parser.add_argument("--force", action="store_true",
                         help="Re-score even if already cached")
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    with open(INPUT_FILE) as f:
-        all_skills = json.load(f)
 
-    subset = all_skills[args.start:args.end]
-    if args.sample:
-        random.seed(args.seed)
-        subset = random.sample(subset, min(args.sample, len(subset)))
+def main():
+    args = parse_args()
+    subset = select_skills(load_json(INPUT_FILE), args)
+    scored = load_checkpoint(OUTPUT_FILE, args.force)
+    to_score = pending(subset, scored)
 
-    scored = {}
-    if os.path.exists(OUTPUT_FILE) and not args.force:
-        with open(OUTPUT_FILE) as f:
-            for entry in json.load(f):
-                scored[entry["uri"]] = entry
-
-    to_score = [s for s in subset if s["uri"] not in scored]
     print(f"Scoring {len(subset)} skills with {args.model}")
     print(f"Already scored: {len(scored)}")
     print(f"Remaining to score: {len(to_score)}")
@@ -241,53 +326,7 @@ def main():
         return
 
     client = TypeSafeClient(api_key=load_api_key())
-    limiter = RateLimiter(args.rps)
-    errors = []
-    done = 0
-    tokens = 0
-    started = time.monotonic()
-
-    try:
-        with ThreadPoolExecutor(args.workers) as pool:
-            futures = {
-                pool.submit(score_skill, client, limiter, s, args.model): s
-                for s in to_score
-            }
-            for future in as_completed(futures):
-                skill = futures[future]
-                try:
-                    entry = future.result()
-                    scored[entry["uri"]] = entry
-                    tokens += entry["input_tokens"]
-                except TypeSafeError as e:
-                    errors.append(skill["uri"])
-                    print(f"\n  ERROR {skill['title']!r}: {e}")
-                done += 1
-                if done % CHECKPOINT_EVERY == 0:
-                    save(scored)
-                    rate = done / (time.monotonic() - started)
-                    print(
-                        f"  {done}/{len(to_score)} "
-                        f"({rate:.1f}/s, {tokens:,} tokens, "
-                        f"errors {len(errors)})",
-                        flush=True,
-                    )
-    finally:
-        save(scored)
-
-    elapsed = time.monotonic() - started
-    print(f"\nDone in {elapsed:.0f}s. Total scored: {len(scored)}, "
-          f"errors: {len(errors)}.")
-    print(f"Input tokens this run: {tokens:,}")
-    for uri in errors[:10]:
-        print(f"  failed: {uri}")
-
-    vals = list(scored.values())
-    avg_risk = sum(s["automation_risk"] for s in vals) / len(vals)
-    avg_amp = sum(s["amplification_potential"] for s in vals) / len(vals)
-    print(f"\nSummary across {len(vals)} skills:")
-    print(f"  Average automation risk:         {avg_risk:.2f}")
-    print(f"  Average amplification potential: {avg_amp:.2f}")
+    print_summary(score_all(to_score, scored, client, args))
 
 
 if __name__ == "__main__":

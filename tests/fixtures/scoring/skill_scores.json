@@ -1,0 +1,29 @@
+[
+  {
+    "uri": "http://example.org/skill/a",
+    "title": "brew coffee",
+    "automation_risk": 7,
+    "amplification_potential": 4,
+    "rationale": "Machines already pour."
+  },
+  {
+    "uri": "http://example.org/skill/b",
+    "title": "types of sugars",
+    "automation_risk": 9,
+    "amplification_potential": 8,
+    "rationale": "A reference lookup."
+  },
+  {
+    "uri": "http://example.org/skill/c",
+    "title": "café management",
+    "automation_risk": 3,
+    "amplification_potential": 9,
+    "rationale": "People work stays human."
+  },
+  {
+    "uri": "http://example.org/skill/unscored",
+    "title": "ride a bike",
+    "automation_risk": null,
+    "amplification_potential": null
+  }
+]

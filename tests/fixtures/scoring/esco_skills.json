@@ -1,0 +1,25 @@
+[
+  {
+    "uri": "http://example.org/skill/a",
+    "title": "brew coffee",
+    "description": "Prepare coffee drinks for guests.",
+    "type": "skill"
+  },
+  {
+    "uri": "http://example.org/skill/b",
+    "title": "types of sugars",
+    "description": "",
+    "type": "knowledge"
+  },
+  {
+    "uri": "http://example.org/skill/c",
+    "title": "café management",
+    "description": "Run a small café.",
+    "type": "skill"
+  },
+  {
+    "uri": "http://example.org/skill/d",
+    "title": "wash dishes",
+    "type": "skill"
+  }
+]
