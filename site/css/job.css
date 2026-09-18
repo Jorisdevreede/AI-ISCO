@@ -50,7 +50,11 @@
   font-size: 0.875rem;
   color: var(--fg-muted);
 }
-.job-meta .job-meta-sep { color: var(--line-strong); }
+.job-meta a + a::before {
+  content: '·';
+  margin-right: var(--space-2);
+  color: var(--line-strong);
+}
 
 .job-tools {
   display: flex;
@@ -105,6 +109,100 @@
 .score-card--amp .score-fill { background: var(--blue); }
 .score-hint { margin: 0; font-size: 0.8125rem; color: var(--fg-muted); }
 
+/* The three display scores of the shares scheme, coloured by the class each one
+ * is about, so a card and a bar segment of the same idea look the same. */
+.score-card--sub .score-value { color: var(--class-substituted); }
+.score-card--sub .score-fill { background: var(--class-substituted); }
+.score-card--assist .score-value { color: var(--class-assisted); }
+.score-card--assist .score-fill { background: var(--class-assisted); }
+.score-card--mech .score-value { color: var(--class-mechanised); }
+.score-card--mech .score-fill { background: var(--class-mechanised); }
+
+/* --- what the job is made of (shares scheme) ------------------------------ */
+
+.job-shares { margin-bottom: var(--space-4); }
+.job-shares .shares-legend { margin-bottom: var(--space-3); }
+
+/* C6. The one sentence the first screen carries, after the bar. */
+.job-headline {
+  margin: var(--space-3) 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+/* Everything else that is a number lives behind this. */
+.job-numbers {
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+}
+.job-numbers > summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.job-numbers > summary:hover { color: var(--fg); }
+.job-numbers #score-list { margin-top: var(--space-3); }
+
+.share-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+.share-lines li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.share-lines li:last-child { border-bottom: 0; }
+.share-line-name {
+  flex: 0 0 auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.share-line-text { flex: 1 1 14rem; min-width: 0; color: var(--fg-muted); }
+
+.share-line-name[data-class='S'] { color: var(--class-substituted); }
+.share-line-name[data-class='A'] { color: var(--class-assisted); }
+.share-line-name[data-class='M'] { color: var(--class-mechanised); }
+.share-line-name[data-class='I'] { color: var(--class-insulated); }
+
+/* A class, named. Never the bare letter, and never colour on its own. */
+.class-chip {
+  flex: 0 0 auto;
+  padding: 1px var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+.class-chip[data-class='S'] { color: var(--class-substituted); background: rgba(239, 106, 94, 0.12); }
+.class-chip[data-class='A'] { color: var(--class-assisted); background: rgba(106, 169, 232, 0.12); }
+.class-chip[data-class='M'] { color: var(--class-mechanised); background: rgba(199, 155, 240, 0.12); }
+.class-chip[data-class='I'] { color: var(--class-insulated); background: rgba(85, 192, 119, 0.12); }
+
+/* C12. The same marker the job badge uses, at skill scale. */
+.near-chip {
+  flex: 0 0 auto;
+  padding: 1px var(--space-2);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--fg-muted);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  cursor: help;
+}
+
 /* --- what to do next ------------------------------------------------------ */
 
 .card--advice {
@@ -151,7 +249,47 @@
 }
 .legend-dot--essential { background: var(--fg-muted); }
 
+/* The four skill classes of the scatter: one shape as well as one colour each,
+ * in the same order the shares bar uses. */
+.scatter-classes { margin-bottom: var(--space-2); }
+.legend-mark { width: 11px; height: 11px; flex: 0 0 11px; }
+.legend-mark[data-class='S'] { background: var(--class-substituted); border-radius: 50%; }
+.legend-mark[data-class='A'] {
+  background: var(--class-assisted);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.legend-mark[data-class='M'] { background: var(--class-mechanised); }
+.legend-mark[data-class='I'] {
+  background: var(--class-insulated);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
 #scatter-table-wrap { margin-top: var(--space-3); }
+
+/* --- touch targets (WCAG 2.2 2.5.8) --------------------------------------- */
+
+/* Every link that is a row, a cell or a chip in its own right gets the --tap
+ * token in both directions. Links inside a sentence keep the inline exception. */
+.job-back a,
+.skill-list a,
+.learn-list a,
+.job-intro li a,
+#scatter-table-wrap td a,
+#scatter-table-wrap th a,
+#cards-list .skill-card-body a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+/* A meta link is inline-BLOCK, not inline-flex: its "·" is inline content of
+ * the link, so it can never be left on a line of its own, and a title that
+ * wraps to two lines keeps the separator on the first of them. */
+.job-meta a {
+  display: inline-block;
+  min-height: var(--tap);
+  padding-block: 2px;
+}
 
 /* --- skill lists ---------------------------------------------------------- */
 
@@ -180,9 +318,24 @@
 .skill-list li:last-child { border-bottom: 0; }
 .skill-list a { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
 .sk-score { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; }
+.sk-score ~ .sk-score { margin-left: 0; }
 .sk-score--auto { color: var(--red); }
 .sk-score--amp { color: var(--blue); }
+.sk-score--mech { color: var(--purple); }
 .sk-score--muted { color: var(--fg-muted); font-weight: 400; }
+
+/* The skills no list above covers, and the way to see every one of them. */
+.stays-human {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
 
 /* --- skill cards with rationales ------------------------------------------ */
 
@@ -203,15 +356,64 @@
   cursor: pointer;
 }
 .skill-card > summary::marker { color: var(--fg-muted); }
+/* C1. Name and class on the first line, the chances that decided it on the
+ * second, and the three scores after them — never a label alone beside numbers
+ * that look like they disagree with it. */
 .skill-card .sc-row {
-  display: inline-flex;
-  flex-wrap: wrap;
+  display: inline-grid;
+  grid-template-columns: 1fr auto;
   align-items: baseline;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-3);
   width: calc(100% - 1.4rem);
   vertical-align: top;
 }
-.skill-card .sc-name { flex: 1 1 60%; min-width: 0; overflow-wrap: anywhere; }
+.skill-card .sc-head {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.skill-card .sc-chances {
+  grid-column: 1;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.skill-card .sc-scores {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+.skill-card .sc-scores .sk-score { margin-left: 0; }
+.skill-card .sc-name { min-width: 0; overflow-wrap: anywhere; }
+
+/* C2. What a borrowed explanation was written for, and what this page shows. */
+.rationale-lead,
+.rationale-after,
+.rationale-missing {
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+.rationale-lead { margin-bottom: var(--space-1); }
+.rationale-missing { margin: 0; }
+
+/* C3. The two lists rebuilt from this job's own classes. */
+.ai-list-skills { list-style: none; padding-left: 0; }
+.ai-list-skills li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+.ai-list-skills a { min-height: var(--tap); display: inline-flex; align-items: center; }
+.ai-chance { flex: 0 0 auto; color: var(--fg-muted); font-size: 0.8125rem; }
 .skill-card-body { padding: 0 var(--space-3) var(--space-3); }
 .skill-card-body p { margin: 0 0 var(--space-2); font-size: 0.875rem; }
 .skill-card-body p:last-child { margin-bottom: 0; }
@@ -307,6 +509,8 @@
 .path-tag[data-kind='exposed'] { color: var(--red); background: rgba(239, 106, 94, 0.12); }
 .path-tag[data-kind='unknown'] { color: var(--fg-muted); background: rgba(255, 255, 255, 0.06); }
 
+.path-card .shares { margin-bottom: var(--space-2); }
+
 .path-stats {
   margin: 0;
   font-size: 0.8125rem;
@@ -334,12 +538,40 @@
 }
 .learn-from { flex-basis: 100%; font-size: 0.8125rem; color: var(--fg-muted); }
 
+/* --- what would move the needle ------------------------------------------- */
+
+.paths-needle {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(232, 185, 59, 0.08);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius-sm);
+}
+.paths-needle h3 { margin: 0 0 var(--space-2); font-size: 0.9375rem; color: var(--gold); }
+.paths-needle p { margin: 0; font-size: 0.875rem; }
+
 /* --- prompt and not-found states ------------------------------------------ */
 
 .job-intro ul { margin: 0 0 var(--space-4); padding-left: 1.1rem; }
 .job-intro .chip-row { margin-bottom: var(--space-4); }
 
+/* A23. `display: contents` lifts the two children of .job-topbar into the
+ * page's own flex flow, so the finder can sit after the title without moving in
+ * the source, which keeps the wide layout's single top row intact. */
+@media (max-width: 700px) {
+  .job-page { display: flex; flex-direction: column; }
+  .job-page > * { order: 4; }
+  .job-topbar { display: contents; }
+  .job-back { order: 0; margin-bottom: var(--space-3); }
+  #job-loading, #job-error { order: 1; }
+  .job-head { order: 2; margin-bottom: var(--space-3); }
+  .job-finder { order: 3; width: 100%; margin-bottom: var(--space-5); }
+  #job-intro { order: 5; }
+  #job-article { order: 6; }
+}
+
 @media (max-width: 640px) {
-  .job-topbar { flex-direction: column; align-items: stretch; }
   .skill-list { max-height: 260px; }
+  .skill-card .sc-row { grid-template-columns: 1fr; }
+  .skill-card .sc-scores { grid-column: 1; grid-row: auto; }
 }

@@ -4,11 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>How sure is this? — AI-ISCO</title>
-<meta name="description" content="What was scored, how a job gets its two scores, where the lines are hard, and what these numbers are not.">
+<meta name="description" content="What was scored, how a job gets its scores and its class, where the lines are hard, and what these numbers are not.">
+<meta property="og:site_name" content="AI-ISCO">
+<meta property="og:type" content="website">
+<meta property="og:title" content="How sure is this? — AI-ISCO">
+<meta property="og:description" content="What was scored, how a job gets its scores and its class, where the lines are hard, and what these numbers are not.">
+<meta property="og:url" content="https://jorisdevreede.github.io/AI-ISCO/method.html">
+<meta property="og:image" content="https://jorisdevreede.github.io/AI-ISCO/card.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/pages.css">
-<link rel="preload" href="stats.json" as="fetch" crossorigin>
+<!-- No rel=preload for the index files: which set is active is decided by
+     scorer.js at run time, so a static hint can only name the wrong one and
+     doubles the page weight (it fetched both sets: 3.5 MB). -->
 </head>
 <body>
 
@@ -26,7 +35,12 @@
   <p id="method-status" class="loading" role="status" aria-live="polite"></p>
   <div id="method-error"></div>
 
-  <section aria-labelledby="scored-heading">
+  <!-- Two score sets of two different shapes are published side by side, so the
+       prose below comes in two versions. js/pages/method.js reads `scheme` from
+       the stats file of the set that is on and shows one of them. Blocks with no
+       data-scheme belong to both. -->
+
+  <section data-scheme="quadrants" aria-labelledby="scored-heading">
     <h2 id="scored-heading">What was scored</h2>
     <p>
       All <strong data-stat="skills">&mdash;</strong> skills in the ESCO classification were
@@ -49,7 +63,92 @@
     </p>
   </section>
 
-  <section aria-labelledby="rollup-heading">
+  <section data-scheme="shares" aria-labelledby="asked-heading" hidden>
+    <h2 id="asked-heading">What was scored</h2>
+    <p>
+      All <strong data-stat="skills">&mdash;</strong> skills in the ESCO classification were
+      scored, one at a time, by a judgment model
+      (<span data-stat="model">&mdash;</span>) that answers with a probability for each level
+      of an answer rather than with a number it made up. It read the skill's own ESCO
+      description and nothing else.
+    </p>
+    <p>
+      Every question that mentions AI shares one preamble, so that &ldquo;the system&rdquo;
+      means the same thing in all of them: software that reads and writes text, code, tables,
+      documents and images and can call other software, with no body, no hands, no eyes in a
+      room and no physical presence.
+    </p>
+    <p>Six questions per skill:</p>
+    <dl class="question-list">
+      <dt>Digital output</dt>
+      <dd>Is the result of this work something that exists as data or a document?</dd>
+      <dt>AI substitution</dt>
+      <dd>
+        How much of the work can that system carry out itself, from none of it to all of it,
+        unsupervised?
+      </dd>
+      <dt>Machine automation</dt>
+      <dd>
+        AI set aside: how much of the work does physical equipment do &mdash; production lines,
+        CNC machines, robots, conveyors, process plant?
+      </dd>
+      <dt>AI assistance</dt>
+      <dd>
+        If the person keeps the work, how much better does it get with that system beside them,
+        from no difference to several times as much work?
+      </dd>
+      <dt>Mode</dt>
+      <dd>
+        How the skill is mainly exercised: on things, with people, directing others, through
+        software, or on paper in place.
+      </dd>
+      <dt>Deployment</dt>
+      <dd>
+        Whether such systems are in routine use, available, demonstrated, or not shown. This one
+        is descriptive only; it never decides a class.
+      </dd>
+    </dl>
+    <p>
+      Knowledge items get a variant of the two &ldquo;how much of the work&rdquo; questions that
+      asks about the work the knowledge is applied in, rather than about the knowledge itself.
+      No workplace was observed, no worker was asked, and no employment data went in.
+    </p>
+  </section>
+
+  <section data-scheme="shares" aria-labelledby="class-heading" hidden>
+    <h2 id="class-heading">How a skill gets its class</h2>
+    <p>
+      Each set of answers becomes a probability rather than an average: that the system could
+      take the work over, that the person gets a clear gain across most of it, that machinery
+      does it. Each is compared with the same cut,
+      <strong data-stat="classCut">&mdash;</strong>. The first rule that matches wins, so every
+      scored skill has exactly one class.
+    </p>
+    <div class="table-scroll rule-table">
+      <table id="class-table">
+        <caption>
+          The four skill classes, in the order the rules are tried, and how many of the
+          <span data-stat="skills">&mdash;</span> scored skills are in each.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Class</th>
+            <th scope="col">When a skill lands here</th>
+            <th scope="col" class="numeric">Skills</th>
+            <th scope="col" class="numeric">Share</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p>
+      The three scores shown beside a skill &mdash; AI substitution, AI assistance and machine
+      automation, each out of ten &mdash; are the same answers put on the older scale so they
+      can be read next to the first score set. No class depends on them.
+    </p>
+  </section>
+
+  <section data-scheme="quadrants" aria-labelledby="rollup-heading">
     <h2 id="rollup-heading">How a job gets its two scores</h2>
     <p>
       An occupation in ESCO is a list of skills, split into essential and optional ones. Its
@@ -64,7 +163,7 @@
     </p>
   </section>
 
-  <section aria-labelledby="boxes-heading">
+  <section data-scheme="quadrants" aria-labelledby="boxes-heading">
     <h2 id="boxes-heading">What the four boxes mean</h2>
     <p>
       The two averages are compared with one cut-off, <strong data-stat="threshold">&mdash;</strong>,
@@ -87,7 +186,84 @@
     </div>
   </section>
 
-  <section aria-labelledby="line-heading">
+  <section data-scheme="shares" aria-labelledby="types-heading" hidden>
+    <h2 id="types-heading">How a job gets four shares and one of seven types</h2>
+    <p>
+      An occupation in ESCO is a list of skills, split into essential and optional ones.
+      Essential skills count double. Add up that weight per class and you get four shares that
+      sum to one: how much of the job is work AI can take over, how much AI assists, how much
+      machines can do, and how much stays human. Skills with no scores are left out, and an
+      occupation with no scored skills at all shows as &ldquo;Not scored&rdquo; rather than as a
+      zero.
+    </p>
+    <p>
+      There is no cut-off on a pair of numbers here. The four shares are put through seven
+      rules, and the first that matches decides the type &mdash; which is why the order of the
+      table below is the order they are tried in.
+    </p>
+    <div class="table-scroll rule-table">
+      <table id="type-table">
+        <caption>
+          The seven types, in the order the rules are tried, and how many of the
+          <span data-stat="occupations">&mdash;</span> occupations are in each.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Type</th>
+            <th scope="col">When a job lands here</th>
+            <th scope="col" class="numeric">Occupations</th>
+            <th scope="col" class="numeric">Share</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p>
+      <strong data-stat="mixedCount">&mdash;</strong> occupations
+      (<span data-stat="mixedShare">&mdash;</span>) come out Mixed. That is the residual: no
+      rule matched, so the skills point in different directions and one label would mislead. It
+      is not a finding that AI will leave those jobs alone, and for them the four shares say
+      more than the badge does.
+    </p>
+  </section>
+
+  <section data-scheme="shares" aria-labelledby="choices-heading" hidden>
+    <h2 id="choices-heading">Two choices made after the run, stated openly</h2>
+    <p>
+      Every threshold above was fixed before the full run, with two exceptions that the run's
+      own distribution forced. Neither was tuned to make a particular job land anywhere; both
+      are structural, and both are worth knowing about before you trust a type.
+    </p>
+    <ul>
+      <li>
+        <strong>Assistance is read at the third level, not the second.</strong> The design first
+        counted any clear gain on part of the work. On the whole set that made most skills
+        &ldquo;AI assists&rdquo; and put roughly six occupations in seven into a single type
+        &mdash; a classification that says the same thing about almost everything. Read at the
+        level that asks for a clear gain across most of the work, the types spread out. The
+        looser reading is still published beside each skill, so the choice can be revisited
+        without re-scoring anything.
+      </li>
+      <li>
+        <strong>The first rule lost a condition.</strong> It used to require a low spread across
+        a job's skills as well as a high substituted share. But that share is built from
+        threshold probabilities, which sit close to nought or close to one by construction, so
+        the spread is largest exactly where the substituted share is high but not total.
+        Translators, accountants and data entry clerks fell through to Mixed because of it. The
+        spread is still published; it no longer gates a type.
+      </li>
+    </ul>
+    <p>
+      Two more readings, so the labels are not read as more than they are.
+      &ldquo;Machines can do&rdquo; is a floor: the wording of the machinery question is
+      deliberately conservative, so where that share is large the real figure is larger still.
+      And &ldquo;Stays human&rdquo; does not mean AI is of no help &mdash; many of those skills
+      still get a clear gain on part of the work, under the level this rubric counts as
+      assistance.
+    </p>
+  </section>
+
+  <section data-scheme="quadrants" aria-labelledby="line-heading">
     <h2 id="line-heading">How many jobs sit near a line</h2>
     <p>
       Because the cut-off is hard, the honest question is how many occupations sit close
@@ -104,50 +280,121 @@
     </p>
   </section>
 
-  <section id="agreement" aria-labelledby="agreement-heading" hidden>
-    <h2 id="agreement-heading">Ask a second model and the map changes</h2>
+  <section data-scheme="shares" aria-labelledby="near-heading" hidden>
+    <h2 id="near-heading">How many jobs sit near a cut-off</h2>
     <p>
-      The same rubric was given to a second, different kind of model
-      (<span data-agree="secondLabel">&mdash;</span>, which returns probabilities per rubric
-      band instead of text). Neither model is ground truth, so the only thing that can be
-      measured is how far the two agree. These numbers are computed from the two published
-      score files as this page loads.
+      Every rule has an edge, so the honest question is how many occupations sit close enough
+      to one that a small change in the shares would move them. A job counts as near a cut-off
+      when moving any single one of its four shares by five points in either direction would
+      give it a different type.
     </p>
     <p class="method-figure">
-      <strong class="figure-value" data-agree="share">&mdash;</strong>
+      <strong class="figure-value" data-stat="nearLineCount">&mdash;</strong>
       <span class="figure-note">
-        of the <span data-agree="n">&mdash;</span> occupations land in the same box under both
-        models. The other <span data-agree="moved">&mdash;</span> change box.
+        occupations &mdash; <span data-stat="nearLineShare">&mdash;</span> of the
+        <span data-stat="occupations">&mdash;</span> scored &mdash; sit near a cut-off in that
+        sense. Those jobs carry a &ldquo;near the line&rdquo; marker wherever they appear. Read
+        the split as a band rather than a count.
       </span>
-    </p>
-    <p>
-      The two models rank occupations much alike: the rank correlation is
-      <strong data-agree="rhoAutomation">&mdash;</strong> for automation risk and
-      <strong data-agree="rhoAmplification">&mdash;</strong> for amplification, where 1 means
-      the same order. They differ in how they use the scale. The average automation score is
-      <span data-agree="meanAutomation">&mdash;</span> and the average amplification score is
-      <span data-agree="meanAmplification">&mdash;</span>. With a hard cut-off, a shift like
-      that carries many occupations across a line while their ranking barely moves.
-      <span data-agree="move"></span>
-    </p>
-    <div class="table-scroll">
-      <table id="agreement-table">
-        <caption>
-          Occupations by box: <span data-agree="firstLabel">&mdash;</span> in the rows,
-          <span data-agree="secondLabel">&mdash;</span> in the columns. The diagonal is where
-          the two agree.
-        </caption>
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <p class="muted small">
-      Use the &ldquo;Scores from&rdquo; switch in the navigation to see any page with the other
-      model&rsquo;s scores.
     </p>
   </section>
 
-  <section aria-labelledby="means-heading">
+  <!-- The two index files this section compares are the largest download on the
+       page and answer a question most readers never asked, so they are fetched
+       only when the section is about to come into view. -->
+  <div id="agreement-sentinel" aria-hidden="true"></div>
+
+  <section id="agreement" aria-labelledby="agreement-heading" hidden>
+    <h2 id="agreement-heading">Ask a second model and the map changes</h2>
+    <p class="method-scope" data-scheme="shares" hidden>
+      <strong>This is about the older scoring, not the one you are reading.</strong>
+      The four-share scoring shown by default has been run once, so there is no second run of
+      it to compare it with. What follows compares the two runs that do exist, both of them of
+      the <em>older</em> two-score rubric.
+    </p>
+    <!-- The heading and the note above stand as soon as the page knows a second
+         run is deployed; everything below waits for the two index files. -->
+    <p id="agreement-status" class="muted small" role="status" hidden></p>
+    <div id="agreement-body" hidden>
+      <p>
+        That older rubric &mdash; two scores from 1 to 10, cut at 6, four boxes &mdash; was given
+        to two different kinds of model: <span data-agree="firstLabel">&mdash;</span>, which
+        writes text, and <span data-agree="secondLabel">&mdash;</span>, which returns a
+        probability per rubric band instead. Neither is ground truth, so the only thing that can
+        be measured is how far the two agree. These numbers are computed from those two published
+        score files as this page loads.
+      </p>
+      <p class="method-figure">
+        <strong class="figure-value" data-agree="share">&mdash;</strong>
+        <!-- One computed sentence: whether the two runs cover every occupation
+             decides how it has to be worded, so the model words all of it. -->
+        <span class="figure-note" data-agree="note">&mdash;</span>
+      </p>
+      <p>
+        The two models rank occupations much alike: the rank correlation is
+        <strong data-agree="rhoAutomation">&mdash;</strong> for automation risk and
+        <strong data-agree="rhoAmplification">&mdash;</strong> for amplification, where 1 means
+        the same order. They differ in how they use the scale. The average automation score is
+        <span data-agree="meanAutomation">&mdash;</span> and the average amplification score is
+        <span data-agree="meanAmplification">&mdash;</span>. With a hard cut-off, a shift like
+        that carries many occupations across a line while their ranking barely moves.
+        <span data-agree="move"></span>
+      </p>
+      <div class="table-scroll">
+        <table id="agreement-table">
+          <caption>
+            Occupations by box: <span data-agree="firstLabel">&mdash;</span> in the rows,
+            <span data-agree="secondLabel">&mdash;</span> in the columns. The diagonal is where
+            the two agree.
+          </caption>
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="muted small">
+        Use the &ldquo;Scores from&rdquo; switch in the navigation to see any page with the other
+        model&rsquo;s scores.
+      </p>
+    </div>
+  </section>
+
+  <section aria-labelledby="two-models-heading">
+    <h2 id="two-models-heading">Why there are two models of scoring here</h2>
+    <p>
+      The switch at the top of the page offers two score sets, and they are not two runs of the
+      same thing. The first rubric asked one question per axis &mdash; how likely AI is to
+      automate a skill, how much AI can amplify it &mdash; averaged a job's skills and cut the
+      two averages at 6. Measured on its own output that design had three problems worth
+      fixing.
+    </p>
+    <ul>
+      <li>
+        <strong>AI and machinery were the same axis.</strong> A welding robot and a language
+        model both pushed the automation score up, which are very different claims about a job.
+        They are now separate questions, and machine automation is reported on its own.
+      </li>
+      <li>
+        <strong>Knowledge was scored like activity.</strong> &ldquo;Tax law&rdquo; is not a task
+        anyone performs. Knowledge items are now asked about the work the knowledge is applied
+        in.
+      </li>
+      <li>
+        <strong>Averaging flattened everything, and the cut-off did the classifying.</strong>
+        A job is now described by the shares of its skills across four classes, so the shape of
+        the work survives the roll-up instead of collapsing into one number either side of a
+        line.
+      </li>
+    </ul>
+    <p>
+      Both sets stay published, because neither is ground truth and a reader is entitled to see
+      how much the answer depends on the question. The full specification of the newer one,
+      including the exact wording and the thresholds, is in
+      <a href="https://github.com/Jorisdevreede/AI-ISCO/blob/master/docs/scoring-v2.md">scoring-v2.md</a>
+      on GitHub.
+    </p>
+  </section>
+
+  <section data-scheme="quadrants" aria-labelledby="means-heading">
     <h2 id="means-heading">What this means for you</h2>
     <p>
       Trust the direction and the ranking more than the box. That one job scores higher on
@@ -157,6 +404,21 @@
     <p>
       If your job sits near a line, the honest answer is that it could go either way. And a
       0.2 difference between two jobs is not a difference worth acting on.
+    </p>
+  </section>
+
+  <section data-scheme="shares" aria-labelledby="means-v2-heading" hidden>
+    <h2 id="means-v2-heading">What this means for you</h2>
+    <p>
+      Trust the shape more than the label. That a job carries a large &ldquo;AI can take
+      over&rdquo; share and a small one for machinery is the sturdier part of this data; which
+      of seven types the rules then handed it is the fragile part, and for a job near a cut-off
+      it could genuinely go either way.
+    </p>
+    <p>
+      A large substituted share is not a verdict on anybody. It says which part of the week is
+      the first candidate for redesign, and it leaves three other shares &mdash; the assisted
+      part, the mechanised part and the part that stays human &mdash; as the ones worth growing.
     </p>
   </section>
 
@@ -191,10 +453,15 @@
         <strong>Employer data on what AI actually replaced.</strong> Which tasks moved to a
         tool, and what the people who used to do them do now.
       </li>
-      <li>
+      <li data-scheme="quadrants">
         <strong>A rubric that separates &ldquo;a machine already does this&rdquo; from
         &ldquo;AI could do this&rdquo;.</strong> Today both push the automation score up, and
         they are very different claims about a job.
+      </li>
+      <li data-scheme="shares" hidden>
+        <strong>Answers checked against the people who do the work.</strong> The model's
+        judgments have never been put to a nurse, a welder or a bookkeeper. Even a small panel
+        saying where the shares are wrong would be worth more than another model's opinion.
       </li>
     </ul>
   </section>
@@ -215,8 +482,15 @@
       </dd>
       <dt><a href="https://deepmind.google/technologies/gemini/flash/">Google Gemini Flash</a></dt>
       <dd>
-        The language model that read each skill description and produced the two scores and
-        the written rationale shown on every skill page.
+        The language model that read each skill description and produced the original rubric's
+        two scores and the written rationale shown on every skill page.
+      </dd>
+      <dt data-scheme="shares" hidden>TypeSafe System One</dt>
+      <dd data-scheme="shares" hidden>
+        The judgment model (<span data-stat="model">&mdash;</span>) behind the score set now on
+        screen. It returns probabilities and no text, so the rationale beside each skill is
+        still the one Gemini wrote for its own scores and is marked as borrowed wherever it
+        appears.
       </dd>
     </dl>
     <p class="muted small">

@@ -7,9 +7,25 @@ path from a page in `site/`:
 import { rankOccupations } from './js/search.js';
 ```
 
-Five of them are **pure** — they import nothing from the DOM and are unit-tested
-with `npm test` (`node --test tests/js/*.test.js`). Four are **thin DOM wrappers**: put logic in the
+Seven of them are **pure** — they import nothing from the DOM and are unit-tested
+with `npm test` (`node --test tests/js/*.test.js`). Five are **thin DOM wrappers**: put logic in the
 pure ones so it stays testable.
+
+## Two schemes
+
+The site publishes score sets of two shapes, and a page learns which one it has
+from the `scheme` field of the stats file it loaded:
+
+| `scheme` | sets | a job's class comes from | `job.q` holds |
+|---|---|---|---|
+| `quadrants` | Gemini (no suffix), `_typesafe` | two 1-10 scores cut at 6 | `TRANSFORM` `SHRINK` `EVOLVE` `STABLE` |
+| `shares` | `_v2` (TypeSafe) | four shares over the job's skills | one of seven type codes |
+
+`quadrant.js` owns the four boxes and is unchanged. `scheme.js` owns everything
+that has to work under both, and `shares.js` / `shares-bar.js` own the four-share
+figure. **Nothing outside `quadrant.js` should read `QUADRANT_NAMES` directly any
+more**: `typeLabel(code)` names a code of either scheme, and the two code sets are
+disjoint, so it almost never needs a `scheme` argument.
 
 A working example of everything below is [`_selftest.html`](./_selftest.html),
 served at `http://localhost:8001/js/_selftest.html`.
@@ -110,6 +126,73 @@ ground truth, and that the boxes are a hard cut at 6. Every number in it is
 computed from the job's own scores; it quotes nothing about the second scoring
 run, and a test keeps typed-in figures out of it.
 
+Unchanged by scoring v2, and still four boxes only. For a page that must work
+under either scheme, use `scheme.js` below.
+
+### `scheme.js`
+
+```js
+QUADRANTS, SHARES                      // 'quadrants', 'shares'
+TYPE_ORDER                             // the seven type codes, rule order
+TYPE_NAMES, TYPE_SHORT                 // code -> 'Insulated by physical work' / 'Physical work'
+TYPE_COLOR_VARS                        // code -> '--type-insulated-physical'
+TYPE_DESCRIPTIONS                      // code -> one sentence about the job
+TYPE_RULES                             // code -> the rule it matched, in plain words
+SKILL_CLASS_ORDER                      // ['S', 'A', 'M', 'I']
+SKILL_CLASS_NAMES                      // S -> 'AI can take over' … I -> 'Stays human'
+SKILL_CLASS_COLOR_VARS                 // S -> '--class-substituted'
+
+schemeOf(stats)          → 'quadrants'|'shares'   // missing field = quadrants
+schemeOfCode(code)       → 'quadrants'|'shares'|null
+orderOf(scheme)          → string[]               // a fresh array, in display order
+orderForCounts(counts)   → string[]               // the order a counts object is keyed by
+splitOf(stats)           → { scheme, order, counts, shares }   // stats.types OR stats.quadrants
+thresholdOf(stats)       → number|null            // null where the scheme has no cut-off
+
+typeLabel(code, scheme?)      → string    // 'Transform' | 'Transforming' | 'Not scored'
+typeShortLabel(code, scheme?) → string
+colorVarOf(code, scheme?)     → string|null
+typeDescription(code)         → string
+typeRule(code)                → string
+skillClassName(code)          → string
+skillClassColorVar(code)      → string|null
+skillClassOf(row, scheme?)    → 'S'|'A'|'M'|'I'|null   // null under quadrants
+
+explainType(job)         → { heading, sentences[], nearLine }
+explain(job, scheme?)    → { heading, sentences[], nearLine }   // either scheme
+isNear(job, scheme?)     → boolean        // quadrants: the 0.5 rule; shares: job.nl
+nearLineCaveat(stats)    → string         // the one permanent caveat beside a split
+```
+
+`explainType` mirrors `explainQuadrant`: it names the rule the job met in plain
+words, gives the four shares as one sentence, says whether the job sits near a
+cut-off, and says these are model estimates with no ground truth. For `MIXED` it
+adds that Mixed is a residual class, **not** a finding that AI will leave the job
+alone. Every figure comes from the job's own `sh`, `q` and `nl`; a test asserts
+that no other number can appear.
+
+`typeLabel(code)` with no scheme resolves the code itself, so the common page
+edit is a one-for-one swap of `QUADRANT_NAMES[x] || 'Not scored'`.
+
+### `shares.js`
+
+```js
+SHARE_ORDER                       // ['S', 'A', 'M', 'I'] — the order `sh` stores
+SHARE_LABELS                      // S -> 'AI can take over' … I -> 'stays human'
+
+isShares(sh)          → boolean   // four finite numbers adding up to ~1
+sharePercents(sh)     → Array<{ code, label, share, percent }>
+shareSentence(sh)     → string    // 'AI can take over 42% · AI assists 31% · machines 5% · stays human 22%'
+shareAriaLabel(sh, name?) → string
+shareSegments(sh)     → Array<{ code, label, percent, width }>   // drops the 0% parts
+largestShare(sh)      → { code, label, percent }|null
+```
+
+The percentages **always add up to 100**: rounding each on its own gives 99 or
+101 often enough to notice, so the remainder goes to the largest fractions
+(largest-remainder method) and a test pins it. Anything that is not a usable
+shares array degrades to `[]` / `''`, never to `NaN`.
+
 ### `urlstate.js`
 
 ```js
@@ -146,10 +229,17 @@ SORTS                 // { automation, amplification, title } -> { key, label, d
 groupPrefix(key)                              → string    // 'major:2' -> '2', 'all' -> ''
 occupationsInGroup(rows, key)                 → Array<Object>
 sortOccupations(rows, sortKey, descending?)   → Array<Object>   // new array, never mutates
-quadrantMix(rows)                             → { total, counts, shares, order }
-tableRows(rows)
+typeMix(rows, scheme?)                        → { total, counts, shares, order }
+quadrantMix(rows, scheme?)                    → the same function under its old name
+tableColumns(scheme?)                         → TABLE_COLUMNS, last one named 'Type' under shares
+tableRows(rows, scheme?)
   → Array<{ slug, title, cells: Array<{ key, text, numeric }> }>
 ```
+
+With no `scheme`, `typeMix` reads the codes the rows carry: a shares set counts
+and orders the seven types, a quadrant set counts the four boxes exactly as
+before. `tableRows` names the last cell with `typeLabel`, so it prints a type
+name rather than "Not scored" under a shares set.
 
 All of it works on `search_index.json` rows, so the group page never has to load
 the 13 MB portfolio file.
@@ -237,14 +327,38 @@ stale responses are discarded.
 ### `badge.js`
 
 ```js
-METHOD_URL                              // 'method.html'
-renderQuadrantBadge(job, { search })    → HTMLElement
+METHOD_URL                                      // 'method.html'
+renderQuadrantBadge(job, { search })            → HTMLElement
+renderTypeBadge(job, { scheme, search })        → HTMLElement
 ```
 
-A real `<button>` carrying the quadrant name, a "near the line" marker when
-`isNearLine`, and a popover holding `explainQuadrant(job)` plus a link to the
-method page. Escape closes it and returns focus to the button; a click outside
-closes it too. Returns a wrapper element — append it wherever the badge belongs.
+A real `<button>` carrying the class name, a "near the line" marker when
+`isNear`, and a popover holding `explain(job)` plus a link to the method page.
+Escape closes it and returns focus to the button; a click outside closes it too.
+Returns a wrapper element — append it wherever the badge belongs.
+
+`renderQuadrantBadge` is the four-box badge and is unchanged: a job from a shares
+set renders as "Not scored" there. **`renderTypeBadge` is what a page should call
+now** — it follows the active scheme, and with no `scheme` option it resolves one
+from `job.q`. Pass the whole row (`{ t, q, a, m, sh, nl }`) so the popover has
+the shares it explains from. The button carries `data-quadrant` under quadrants
+and `data-type` under shares.
+
+### `shares-bar.js`
+
+```js
+renderSharesBar(sh, { name, compact })   → HTMLElement
+```
+
+The four-share stacked bar: one `role="img"` whose `aria-label` is the whole
+sentence, plus a legend repeating every part in words. `name` is the job title
+and goes into the accessible name. `compact` swaps the four-row legend for the
+one-line sentence, for a list row. Shares that are missing or malformed render as
+a "Shares not scored" note, never as an empty bar.
+
+Colour is never the only signal: each segment carries a stripe angle, each legend
+swatch a different shape and its class letter, and the numbers are in the text
+beside them.
 
 ### `info-note.js`
 
@@ -281,6 +395,44 @@ Rules to keep:
 
 ---
 
+## Adapting a page to the shares scheme
+
+A recipe, in the order that costs least.
+
+1. **Load the scheme once.** `const scheme = schemeOf(await loadJSON('stats'))`.
+   Pass it down; never sniff the URL or the file names for it.
+2. **Names.** Replace every `QUADRANT_NAMES[x] || 'Not scored'` with
+   `typeLabel(x)`. It resolves either scheme from the code, so this is a
+   one-for-one swap with no new argument.
+3. **Orders.** Replace `QUADRANT_ORDER` with `orderOf(scheme)` where you know the
+   scheme, or `orderForCounts(counts)` where you are iterating a counts object —
+   a four-box loop over a seven-type tally silently totals zero, which renders as
+   a confident and completely invented split.
+4. **The badge.** `renderQuadrantBadge(job, …)` → `renderTypeBadge(job, …)`, and
+   pass the whole row so the popover has `sh` and `nl`.
+5. **The split.** `stats.quadrants.counts` → `splitOf(stats)`, which reads
+   `stats.types` under shares and `stats.quadrants` otherwise, and never returns
+   `undefined`.
+6. **The pair of numbers.** Lead with `renderSharesBar(row.sh, { name: row.t })`
+   and demote the display scores to secondary detail, renamed "AI substitution"
+   (`a`), "AI assistance" (`m`) and "Machine automation" (`k` / `ak`).
+7. **Skill rows.** `skillClassOf(row, scheme)` gives `S`/`A`/`M`/`I`;
+   `skillClassName(code)` gives the words. Never print the letter.
+8. **Copy.** Anything that says "cut-off", "6", "box" or "either side of the
+   line" is quadrant copy. `nearLineCaveat(stats)` and `explain(job, scheme)`
+   already say the right thing for both; the rest is yours.
+9. **Colour.** `colorVarOf(code, scheme)` and `skillClassColorVar(code)` give the
+   custom-property names. `app.css` defines all eleven. Pair every one with a
+   name or a shape — a test and the audit both require it.
+
+Two traps worth naming. `c` means the ISCO code on an occupation row and the
+skill class on a skill row, so never put skill rows through `groupstats.js`.
+And `isNear(job, scheme)` reads `job.nl` under shares — the distance rule in
+`isNearLine(a, m)` has no meaning there, because the two scores are not class
+boundaries any more.
+
+---
+
 ## Data files
 
 Built by `build_site_indexes.py` (see `aiisco/site_indexes.py`).
@@ -292,6 +444,11 @@ Built by `build_site_indexes.py` (see `aiisco/site_indexes.py`).
 | `stats.json` | `{built, threshold, occupations, skills_scored, quadrants:{counts,shares}, near_line:{count,share}}` | 0.2 KB |
 | `skill_index.json` | `[{id, t, a, m, ne, no}]` sorted by title | 259 KB |
 | `skill_occupations.json` | `{"<skill_id>": {e: [slug], o: [slug]}}` — load only on `skill.html` | 737 KB |
+
+The `_v2` set carries the same files with a `_v2` suffix and the extra fields
+`docs/scoring-v2.md` specifies: `sh` and `nl` on an occupation, `k` everywhere,
+`c` and `p` on a skill, `types` and `skill_classes` in `stats_v2.json`, and `q`
+holding a type code. `stats_v2.json` has **no** `quadrants` and no `threshold`.
 
 Group keys are `all`, `major:2`, `sub:25`, `minor:251`, `unit:2512`. `parent`
 walks up (`unit → minor → sub → major → all`), and `all.parent` is `null`.

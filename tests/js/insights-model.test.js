@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  ARTICLE, articleValues, blockText, buildArticle, deriveInsights, fillTemplate,
+  ARTICLE, SHARES_ARTICLE, SHARES_NOTES, articleValues, blockText, buildArticle,
+  deriveInsights, fillTemplate,
 } from '../../site/js/pages/insights-model.js';
 
 // A synthetic stats.json: 20 occupations, shares that do not round to the counts
@@ -168,9 +169,251 @@ test('when every major group has a Shrink occupation the clause changes', () => 
 });
 
 test('no figure from the private second scoring run appears anywhere', () => {
-  const text = `${prose} ${JSON.stringify(ARTICLE)}`;
+  const text = `${prose} ${JSON.stringify(ARTICLE)} ${JSON.stringify(SHARES_ARTICLE)}`
+    + ` ${JSON.stringify(SHARES_NOTES)} ${sharesProse}`;
   for (const forbidden of ['57.8', '81.8', '671', '0.93', '0.94', 'second scoring run',
     'agreement', 'changed box', 'correlat']) {
     assert.equal(text.includes(forbidden), false, `article mentions ${forbidden}`);
   }
+});
+
+/* --- the shares scheme ---------------------------------------------------- */
+
+// A synthetic stats_v2.json: seven types and four skill classes, with counts
+// that no percentage in the prose could match by accident.
+const SHARES_STATS = {
+  built: '2026-02-03',
+  scheme: 'shares',
+  model: 'jev-test',
+  occupations: 40,
+  skills_scored: 200,
+  types: {
+    order: ['AUTOMATION_HEAVY', 'TRANSFORMING', 'AUGMENTED', 'MECHANISABLE',
+      'INSULATED_PHYSICAL', 'INSULATED_PEOPLE', 'MIXED'],
+    counts: {
+      AUTOMATION_HEAVY: 2,
+      TRANSFORMING: 3,
+      AUGMENTED: 12,
+      MECHANISABLE: 4,
+      INSULATED_PHYSICAL: 14,
+      INSULATED_PEOPLE: 4,
+      MIXED: 1,
+    },
+    shares: {
+      AUTOMATION_HEAVY: 0.05,
+      TRANSFORMING: 0.075,
+      AUGMENTED: 0.3,
+      MECHANISABLE: 0.1,
+      INSULATED_PHYSICAL: 0.35,
+      INSULATED_PEOPLE: 0.1,
+      MIXED: 0.025,
+    },
+  },
+  skill_classes: {
+    counts: { S: 25, A: 38, M: 19, I: 118 },
+    shares: { S: 0.125, A: 0.19, M: 0.095, I: 0.59 },
+  },
+  near_line: { count: 11, share: 0.275 },
+};
+
+const SHARES_GROUPS = {
+  all: { label: 'All occupations', level: 'all', n: 40, q: {} },
+  'major:3': {
+    label: 'Technicians', level: 'major', n: 15,
+    q: { AUGMENTED: 9, TRANSFORMING: 3, MIXED: 3 },
+    auto: { mean: 5.4 }, amp: { mean: 6.2 }, sh: [0.21, 0.46, 0.05, 0.28],
+  },
+  'major:7': {
+    label: 'Craft workers', level: 'major', n: 15,
+    q: { INSULATED_PHYSICAL: 11, MECHANISABLE: 4 },
+    auto: { mean: 3.9 }, amp: { mean: 4.1 }, sh: [0.08, 0.14, 0.31, 0.47],
+  },
+  'major:9': {
+    label: 'Elementary occupations', level: 'major', n: 10,
+    q: { INSULATED_PHYSICAL: 6, INSULATED_PEOPLE: 4 },
+    auto: { mean: 3.2 }, amp: { mean: 3.6 }, sh: [0.06, 0.1, 0.18, 0.66],
+  },
+};
+
+const share = (s, t, q, sh) => ({ t, s, c: '0000', mg: 'Test', a: 5, m: 5, k: 3, q, sh, nl: false });
+
+const SHARES_INDEX = [
+  share('data-typist', 'data typist', 'AUTOMATION_HEAVY', [0.72, 0.14, 0.0, 0.14]),
+  share('ledger-clerk', 'ledger clerk', 'AUTOMATION_HEAVY', [0.61, 0.2, 0.04, 0.15]),
+  share('tax-adviser', 'tax adviser', 'TRANSFORMING', [0.38, 0.29, 0.02, 0.31]),
+  share('ward-nurse', 'ward nurse', 'AUGMENTED', [0.12, 0.48, 0.02, 0.38]),
+  share('press-operator', 'press operator', 'MECHANISABLE', [0.05, 0.1, 0.55, 0.3]),
+  share('stone-mason', 'stone mason', 'INSULATED_PHYSICAL', [0.02, 0.06, 0.09, 0.83]),
+  share('roof-tiler', 'roof tiler', 'INSULATED_PHYSICAL', [0.04, 0.08, 0.12, 0.76]),
+  share('youth-worker', 'youth worker', 'INSULATED_PEOPLE', [0.03, 0.15, 0.01, 0.81]),
+  share('site-foreman', 'site foreman', 'MIXED', [0.22, 0.24, 0.26, 0.28]),
+];
+
+const sharesFacts = deriveInsights({
+  stats: SHARES_STATS, groups: SHARES_GROUPS, index: SHARES_INDEX,
+});
+const sharesArticle = buildArticle(sharesFacts);
+const sharesProse = sharesArticle.map(blockText).join(' ');
+
+test('a shares set derives its own totals, classes and largest class', () => {
+  assert.equal(sharesFacts.scheme, 'shares');
+  assert.equal(sharesFacts.occupations, 40);
+  assert.equal(sharesFacts.threshold, null);
+  assert.deepEqual(sharesFacts.classes.map((row) => row.code), ['S', 'A', 'M', 'I']);
+  assert.deepEqual(sharesFacts.classes.map((row) => row.shareText),
+    ['13%', '19%', '9%', '59%']);
+  assert.equal(sharesFacts.topClass.code, 'I');
+});
+
+test('the seven types come back largest first', () => {
+  assert.deepEqual(sharesFacts.quadrants.slice(0, 3).map((row) => row.code),
+    ['INSULATED_PHYSICAL', 'AUGMENTED', 'MECHANISABLE']);
+  assert.equal(sharesFacts.quadrants[0].name, 'Insulated by physical work');
+  assert.equal(sharesFacts.quadrants.length, 7);
+});
+
+test('each ranked list is ranked by its own share', () => {
+  assert.deepEqual(sharesFacts.lists.substituted.slice(0, 2).map((row) => row.s),
+    ['data-typist', 'ledger-clerk']);
+  assert.equal(sharesFacts.lists.assisted[0].s, 'ward-nurse');
+  assert.equal(sharesFacts.lists.mechanised[0].s, 'press-operator');
+  assert.equal(sharesFacts.lists.insulated[0].s, 'stone-mason');
+  assert.equal(sharesFacts.lists.substituted.every((row) => Array.isArray(row.sh)), true);
+});
+
+test('the examples are the clearest case of each type, not the list heads', () => {
+  assert.equal(sharesFacts.examples.substituted.s, 'data-typist');
+  assert.equal(sharesFacts.examples.physical.s, 'stone-mason');
+  assert.equal(sharesFacts.examples.people.s, 'youth-worker');
+});
+
+test('a major group carries its mean shares and its largest type', () => {
+  const craft = sharesFacts.majors.find((row) => row.key === 'major:7');
+  assert.deepEqual(craft.sh, [0.08, 0.14, 0.31, 0.47]);
+  assert.equal(craft.topType, 'INSULATED_PHYSICAL');
+  assert.equal(sharesFacts.groupShares.assisted.label, 'Technicians');
+  assert.equal(sharesFacts.groupShares.mechanised.label, 'Craft workers');
+  assert.equal(sharesFacts.groupShares.insulated.label, 'Elementary occupations');
+});
+
+test('every placeholder in the shares article and its notes has a value', () => {
+  const values = articleValues(sharesFacts);
+  const templates = [...SHARES_ARTICLE.map((block) => block.text),
+    ...Object.values(SHARES_NOTES)];
+  for (const template of templates) {
+    for (const [, name] of template.matchAll(/\{(\w+)\}/g)) {
+      assert.ok(values[name] !== undefined, `no value for {${name}}`);
+    }
+  }
+  assert.equal(sharesProse.includes('{'), false);
+});
+
+test('no shares template carries a figure of its own: every digit is a slot', () => {
+  const templates = [...SHARES_ARTICLE.map((block) => block.text),
+    ...Object.values(SHARES_NOTES)];
+  for (const template of templates) {
+    const outsideSlots = template.replace(/\{\w+\}/g, '');
+    assert.doesNotMatch(outsideSlots, /\d/, `typed-in figure in: ${template}`);
+  }
+});
+
+test('the shares prose states the fixture numbers and names its own picks', () => {
+  assert.match(sharesProse, /200 ESCO skills behind these 40 occupations/);
+  assert.match(sharesProse, /largest single type is Insulated by physical work/);
+  assert.match(sharesProse, /14 occupations, 35% of the total, 5 points ahead of Augmented at 30%/);
+  assert.match(sharesProse, /59% of all scored skills are the kind this rubric calls “Stays human”/);
+  assert.match(sharesProse, /data typist is the clearest case/);
+  assert.match(sharesProse, /2 occupations, 5% of them, meet the first rule/);
+  assert.match(sharesProse, /stone mason keeps 83% of its skill weight/);
+  assert.match(sharesProse, /youth worker keeps 81%/);
+  assert.match(sharesProse, /Craft workers carry the largest mechanised share .*, 31%/);
+  assert.match(sharesProse, /Technicians carry the largest assisted share at 46%/);
+  assert.match(sharesProse, /1 occupation, 2% of them, come out Mixed/);
+  assert.match(sharesProse, /11 occupations, 28% of them, sit near enough/);
+});
+
+test('the shares prose never uses the words of the other scheme', () => {
+  assert.doesNotMatch(sharesProse, /quadrant|\bbox\b|cut at 6|at risk/i);
+  assert.equal(sharesProse.includes('undefined'), false);
+  assert.equal(sharesProse.includes('NaN'), false);
+});
+
+test('the shares article says what it must about machinery and about proof', () => {
+  assert.match(sharesProse, /Machinery is asked about separately from AI, on purpose/);
+  assert.match(sharesProse, /Read the mechanised share as a floor/);
+  assert.match(sharesProse, /residual class and not a finding that AI will leave those jobs alone/);
+  assert.match(sharesProse, /not a job AI cannot help with/);
+  assert.match(sharesProse, /None of this was measured/);
+  assert.match(sharesProse, /no ground truth/);
+});
+
+test('the shares article links every job and group it names', () => {
+  const hrefs = sharesArticle.flatMap((block) => block.segments)
+    .filter((segment) => segment.href).map((segment) => segment.href);
+  assert.ok(hrefs.includes('job.html#data-typist'));
+  assert.ok(hrefs.includes('job.html#stone-mason'));
+  assert.ok(hrefs.includes('groups.html#g=major:7'));
+  assert.ok(hrefs.includes('method.html'));
+});
+
+test('a quadrant set still gets the quadrant article, unchanged', () => {
+  assert.equal(facts.scheme, 'quadrants');
+  assert.equal(buildArticle(facts).length, ARTICLE.length);
+  assert.match(prose, /The great rebalancing|great rebalancing|Shrink/);
+});
+
+/* --- C7: every printed split adds up to 100 ------------------------------- */
+
+function sumOfPercents(rows) {
+  return rows.reduce((total, row) => total + Number(row.shareText.replace('%', '')), 0);
+}
+
+test('the type table and the class table each sum to 100 (C7)', () => {
+  assert.equal(sumOfPercents(sharesFacts.quadrants), 100);
+  assert.equal(sumOfPercents(sharesFacts.classes), 100);
+  // Naive rounding of this fixture gives 101: 5 + 8 + 30 + 10 + 35 + 10 + 3.
+  const naive = sharesFacts.quadrants
+    .reduce((total, row) => total + Math.round(row.share * 100), 0);
+  assert.notEqual(naive, 100);
+});
+
+test('a quadrant set is rounded the same way (C7)', () => {
+  assert.equal(sumOfPercents(facts.quadrants), 100);
+});
+
+test('a class with something in it never reads "0%" (C7)', () => {
+  const tiny = deriveInsights({
+    stats: {
+      ...SHARES_STATS,
+      occupations: 4000,
+      types: {
+        order: SHARES_STATS.types.order,
+        counts: {
+          AUTOMATION_HEAVY: 1,
+          TRANSFORMING: 1,
+          AUGMENTED: 1999,
+          MECHANISABLE: 0,
+          INSULATED_PHYSICAL: 1999,
+          INSULATED_PEOPLE: 0,
+          MIXED: 0,
+        },
+        shares: {},
+      },
+    },
+    groups: SHARES_GROUPS,
+    index: SHARES_INDEX,
+  });
+  const byCode = Object.fromEntries(tiny.quadrants.map((row) => [row.code, row]));
+  assert.equal(byCode.AUTOMATION_HEAVY.shareText, '<1%');
+  assert.equal(byCode.MECHANISABLE.shareText, '0%');
+  assert.equal(sumOfPercents(tiny.quadrants.filter((row) => row.count > 1)), 100);
+});
+
+test('no count slot in the article can read "1 occupations" (A13)', () => {
+  const one = { ...SHARES_STATS, near_line: { count: 1, share: 0.025 } };
+  const prose = buildArticle(deriveInsights({
+    stats: one, groups: SHARES_GROUPS, index: SHARES_INDEX,
+  })).map(blockText).join(' ');
+  assert.doesNotMatch(prose, /\b1 (?:occupations|jobs|skills)\b/);
+  assert.match(prose, /\b1 occupation\b/);
 });

@@ -193,6 +193,25 @@
 .q-bar[data-quadrant='STABLE'] { background: var(--q-stable); }
 td.q-bar-cell { width: 40%; min-width: 90px; }
 
+/* The same bar under the shares scheme: seven types in the split table, four
+ * skill classes in the class table. The name and the two figures sit in the
+ * cells beside it, so no bar carries its meaning by colour alone. */
+.q-bar[data-type='AUTOMATION_HEAVY'] { background: var(--type-automation-heavy); }
+.q-bar[data-type='TRANSFORMING'] { background: var(--type-transforming); }
+.q-bar[data-type='AUGMENTED'] { background: var(--type-augmented); }
+.q-bar[data-type='MECHANISABLE'] { background: var(--type-mechanisable); }
+.q-bar[data-type='INSULATED_PHYSICAL'] { background: var(--type-insulated-physical); }
+.q-bar[data-type='INSULATED_PEOPLE'] { background: var(--type-insulated-people); }
+.q-bar[data-type='MIXED'] { background: var(--type-mixed); }
+.q-bar[data-class='S'] { background: var(--class-substituted); }
+.q-bar[data-class='A'] { background: var(--class-assisted); }
+.q-bar[data-class='M'] { background: var(--class-mechanised); }
+.q-bar[data-class='I'] { background: var(--class-insulated); }
+
+/* The make-up of the average job in a sector, inside a table cell. */
+td.shares-cell { min-width: 17rem; white-space: normal; }
+td.shares-cell .shares-line { margin-top: var(--space-1); }
+
 .rank-list { margin: 0; padding: 0; list-style: none; counter-reset: rank; }
 .rank-list li {
   display: flex;
@@ -211,6 +230,17 @@ td.q-bar-cell { width: 40%; min-width: 90px; }
   font-variant-numeric: tabular-nums;
 }
 .rank-list .rank-scores { margin-left: auto; color: var(--fg-muted); font-size: 0.8125rem; }
+
+/* A shares row carries the whole make-up under the title, so the bar gets a
+ * line of its own rather than competing with the name for width. */
+.rank-list--shares .rank-figure {
+  margin-left: auto;
+  color: var(--fg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.rank-list--shares .shares { flex: 1 1 100%; margin-top: var(--space-1); }
+.rank-list--shares li { padding: var(--space-3) 0; }
 
 .article { margin-top: var(--space-7); padding-top: var(--space-5); border-top: 3px solid var(--gold); }
 .article-byline { margin-bottom: var(--space-5); color: var(--fg-muted); font-style: italic; }
@@ -255,6 +285,29 @@ td.q-bar-cell { width: 40%; min-width: 90px; }
 }
 .method-figure .figure-note { color: var(--fg-muted); font-size: 0.875rem; }
 
+/* The class and type rule tables carry a whole sentence per row, and the prose
+ * measure is narrower than the page. Let those cells wrap instead of pushing
+ * the two count columns behind a sideways scroll of the box. Scoped to the two
+ * shares tables, so the four-box table keeps the layout it has always had. */
+.rule-table th, .rule-table td { white-space: normal; }
+.rule-table th[scope='row'] { min-width: 7.5rem; }
+.rule-table td:nth-child(2) { min-width: 15rem; line-height: 1.45; }
+.rule-table th.numeric, .rule-table td.numeric { min-width: 4.5rem; }
+
+/* The six questions, as a definition list. */
+.question-list { margin: 0 0 var(--space-4); }
+.question-list dt {
+  margin-top: var(--space-3);
+  font-weight: 600;
+  color: var(--fg);
+}
+.question-list dd {
+  margin: var(--space-1) 0 0;
+  color: var(--fg-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
 .source-list { margin: 0; padding: 0; list-style: none; }
 .source-list li { margin-bottom: var(--space-3); }
 .source-list dt { font-weight: 600; }
@@ -267,6 +320,21 @@ td.q-bar-cell { width: 40%; min-width: 90px; }
 }
 
 /* --- method page: the two-model table ------------------------------------- */
+
+/* The watcher that decides when the comparison's two indexes are worth their
+ * bytes. It needs a box to intersect with, and nothing else. */
+#agreement-sentinel { min-height: 1px; }
+
+/* The section is about the older rubric; under shares that has to be said
+ * before anything else in it is read. */
+.method-scope {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg2);
+  border-left: 3px solid var(--line-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--fg);
+  font-size: 0.9375rem;
+}
 
 #agreement-table caption { caption-side: top; text-align: left; padding-bottom: var(--space-2);
   color: var(--fg-muted); font-size: 0.8125rem; }

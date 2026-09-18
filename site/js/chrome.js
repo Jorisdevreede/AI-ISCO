@@ -14,7 +14,7 @@ export const NAV_ITEMS = [
   { key: 'index', href: 'index.html', label: 'Find a job' },
   { key: 'groups', href: 'groups.html', label: 'Browse sectors' },
   { key: 'tree', href: 'tree.html', label: 'Job tree' },
-  { key: 'skill', href: 'skill.html', label: 'Look up a skill' },
+  { key: 'skill', href: 'skill.html', label: 'Skill scores' },
   { key: 'insights', href: 'insights.html', label: 'What we found' },
   { key: 'method', href: 'method.html', label: 'How sure is this?' },
 ];
@@ -23,13 +23,16 @@ export const NAV_ITEMS = [
 export const NOTICES_URL =
   'https://github.com/Jorisdevreede/AI-ISCO/blob/master/THIRD-PARTY-NOTICES.md';
 
-// Wording copied verbatim from the <footer class="site-attribution"> of
-// site/index.html. ESCO and ILO require these acknowledgements; do not reword.
+// ESCO and the ILO require these acknowledgements: the first sentence, the
+// "modified version" statement and the whole second paragraph must stay as they
+// are. Only the parenthesis saying which models made the additions is ours.
 const FOOTER_TEXT = [
   'This service uses the ESCO classification of the European Commission. What you '
-    + 'see is a modified version of ESCO v1.2.1: the scores, quadrants, rationales and '
-    + 'narratives are AI-generated additions (Google Gemini Flash) and are not part of '
-    + 'ESCO. They are model estimates, meant for exploring, not for predicting.',
+    + 'see is a modified version of ESCO v1.2.1: the scores, classes, rationales and '
+    + 'narratives are AI-generated additions (the scores by TypeSafe’s jev model or by '
+    + 'Google Gemini Flash, as the “Scores from” switch shows; the texts by Google Gemini '
+    + 'Flash) and are not part of ESCO. They are model estimates, meant for exploring, '
+    + 'not for predicting.',
   'Occupation groups follow ISCO-08. ESCO states: “Information and data in ESCO '
     + 'is based on an original work published by the ILO under the title International '
     + 'Standard Classification of Occupations, ISCO-08. Structure, Group Definitions and '

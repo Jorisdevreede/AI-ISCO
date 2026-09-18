@@ -2,9 +2,13 @@
  * cards, tabs, tables and the combobox come from css/app.css.
  *
  * Rules kept here: nothing may scroll the page sideways at 390px (wide things
- * get their own scroll box), every quadrant is named in text as well as
- * coloured, and the two dots of the ranked plot differ in shape, not only in
- * colour.
+ * get their own scroll box), every class is named in text as well as coloured,
+ * and the two dots of the ranked plot differ in shape, not only in colour.
+ *
+ * Two schemes share these rules. A row painted for the four boxes carries
+ * `data-quadrant`, one painted for the seven types carries `data-type`, so the
+ * type rules can be wider — seven full names need a label column the four box
+ * names never did — without moving anything on the quadrant sets.
  */
 
 /* --- header --------------------------------------------------------------- */
@@ -119,6 +123,67 @@
   background: var(--q-shrink);
 }
 
+/* The seven types, in the same shapes. Every one of these rows prints the
+ * type's full name beside the bar, so hue is never the only signal. */
+[data-type='AUTOMATION_HEAVY'] .mix-fill, [data-type='AUTOMATION_HEAVY'] .diverge-fill {
+  background: var(--type-automation-heavy);
+}
+[data-type='TRANSFORMING'] .mix-fill, [data-type='TRANSFORMING'] .diverge-fill {
+  background: var(--type-transforming);
+}
+[data-type='AUGMENTED'] .mix-fill, [data-type='AUGMENTED'] .diverge-fill {
+  background: var(--type-augmented);
+}
+[data-type='MECHANISABLE'] .mix-fill, [data-type='MECHANISABLE'] .diverge-fill {
+  background: var(--type-mechanisable);
+}
+[data-type='INSULATED_PHYSICAL'] .mix-fill, [data-type='INSULATED_PHYSICAL'] .diverge-fill {
+  background: var(--type-insulated-physical);
+}
+[data-type='INSULATED_PEOPLE'] .mix-fill, [data-type='INSULATED_PEOPLE'] .diverge-fill {
+  background: var(--type-insulated-people);
+}
+[data-type='MIXED'] .mix-fill, [data-type='MIXED'] .diverge-fill {
+  background: var(--type-mixed);
+}
+
+/* The four skill classes, for the share comparison's diverging bars. */
+[data-class='S'] .diverge-fill { background: var(--class-substituted); }
+[data-class='A'] .diverge-fill { background: var(--class-assisted); }
+[data-class='M'] .diverge-fill { background: var(--class-mechanised); }
+[data-class='I'] .diverge-fill { background: var(--class-insulated); }
+
+/* Seven full names need more room than four did: give the type rows a wider
+ * label column, never break a name inside a word, and stack the row on a phone
+ * rather than squeezing the name into a column it cannot fit. */
+.mix-bars li[data-type], .diverge li[data-type], .diverge li[data-class] {
+  grid-template-columns: minmax(0, 12.5rem) minmax(0, 1fr);
+}
+.mix-bars li[data-type] .mix-name,
+.diverge li[data-type] .mix-name,
+.diverge li[data-class] .mix-name {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+@media (max-width: 700px) {
+  .mix-bars li[data-type], .diverge li[data-type], .diverge li[data-class] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mix-bars li[data-type] .mix-figure,
+  .diverge li[data-type] .diverge-figure,
+  .diverge li[data-class] .diverge-figure {
+    grid-column: 1;
+  }
+}
+
+/* --- what this group is made of ------------------------------------------ */
+
+.mean-shares { margin-bottom: var(--space-5); }
+.mean-shares .shares-bar { height: 22px; }
+.mean-shares-line { margin: var(--space-3) 0 0; font-size: 0.875rem; }
+
 /* --- views ---------------------------------------------------------------- */
 
 .view-toolbar {
@@ -213,6 +278,30 @@
   border-radius: 2px;
 }
 
+/* Under the shares scheme a row carries its four shares instead of two dots:
+ * the bar, its one-line sentence, and the type's short name at the right. */
+.class-legend { margin: 0 0 var(--space-3); }
+.ranked--shares a { align-items: start; }
+.ranked--shares .shares { min-width: 0; padding-top: 2px; }
+.ranked-type { font-size: 0.8125rem; font-weight: 600; }
+
+/* "Show 50 more" under a list that would otherwise be 114,000 px tall. */
+.ranked-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+.ranked-more p { margin: 0; flex: 1 1 100%; }
+[data-type='AUTOMATION_HEAVY'].ranked-type { color: var(--type-automation-heavy); }
+[data-type='TRANSFORMING'].ranked-type { color: var(--type-transforming); }
+[data-type='AUGMENTED'].ranked-type { color: var(--type-augmented); }
+[data-type='MECHANISABLE'].ranked-type { color: var(--type-mechanisable); }
+[data-type='INSULATED_PHYSICAL'].ranked-type { color: var(--type-insulated-physical); }
+[data-type='INSULATED_PEOPLE'].ranked-type { color: var(--type-insulated-people); }
+[data-type='MIXED'].ranked-type { color: var(--type-mixed); }
+
 /* --- scatter -------------------------------------------------------------- */
 
 .scatter-wrap { max-width: 520px; }
@@ -226,6 +315,32 @@
 }
 .scatter .grid-line { stroke: var(--line); stroke-width: 1; }
 .scatter .cut-line { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 4; }
+/* The type rules, under the dots rather than over them: they are context. */
+.scatter .rule-line { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 5; }
+.scatter .rule-text { fill: #9a9aa8; font-size: 10px; font-family: var(--font); }
+
+/* The two axes settle three of the seven types. The rest of the plot is tinted
+ * and named, so no one reads a region off a line that does not decide it. */
+.scatter .undecided { fill: rgba(255, 255, 255, 0.035); }
+.scatter .region-text {
+  fill: #c9c9d6;
+  font-size: 10px;
+  font-family: var(--font);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  /* a halo, so a name stays readable where it crosses a dot */
+  stroke: var(--bg2);
+  stroke-width: 3;
+  paint-order: stroke;
+}
+.scatter .region-quiet { font-weight: 500; fill: #9a9aa8; }
+
+/* The chart keeps its 420-unit box on a phone, so its lettering shrinks with
+ * it. These two labels are the ones a reader has to take meaning from. */
+@media (max-width: 700px) {
+  .scatter .region-text { font-size: 12px; }
+  .scatter .rule-text { font-size: 11px; }
+}
 .scatter .axis-text { fill: #9a9aa8; font-size: 11px; font-family: var(--font); }
 .scatter .quad-text { fill: #9a9aa8; font-size: 10px; font-family: var(--font); letter-spacing: 0.06em; }
 .scatter .dot-point { fill-opacity: 0.75; }
@@ -234,6 +349,35 @@
 .scatter .dot-point[data-quadrant='EVOLVE'] { fill: #55c077; }
 .scatter .dot-point[data-quadrant='SHRINK'] { fill: #ef6a5e; }
 .scatter .dot-marker { fill: none; stroke: #ffffff; stroke-width: 2; }
+
+/* The seven types differ by outline as well as by hue, and the legend below
+ * the chart repeats both beside the type's name. */
+.scatter .dot-point[data-type='AUTOMATION_HEAVY'] { fill: var(--type-automation-heavy); }
+.scatter .dot-point[data-type='TRANSFORMING'] { fill: var(--type-transforming); }
+.scatter .dot-point[data-type='AUGMENTED'] { fill: var(--type-augmented); }
+.scatter .dot-point[data-type='MECHANISABLE'] { fill: var(--type-mechanisable); }
+.scatter .dot-point[data-type='INSULATED_PHYSICAL'] { fill: var(--type-insulated-physical); }
+.scatter .dot-point[data-type='INSULATED_PEOPLE'] { fill: var(--type-insulated-people); }
+.scatter .dot-point[data-type='MIXED'] { fill: var(--type-mixed); }
+
+.type-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+.type-legend li { display: flex; align-items: center; gap: var(--space-2); }
+.legend-mark { width: 16px; height: 16px; flex: 0 0 16px; }
+[data-type='AUTOMATION_HEAVY'] .legend-mark { fill: var(--type-automation-heavy); }
+[data-type='TRANSFORMING'] .legend-mark { fill: var(--type-transforming); }
+[data-type='AUGMENTED'] .legend-mark { fill: var(--type-augmented); }
+[data-type='MECHANISABLE'] .legend-mark { fill: var(--type-mechanisable); }
+[data-type='INSULATED_PHYSICAL'] .legend-mark { fill: var(--type-insulated-physical); }
+[data-type='INSULATED_PEOPLE'] .legend-mark { fill: var(--type-insulated-people); }
+[data-type='MIXED'] .legend-mark { fill: var(--type-mixed); }
 
 /* --- treemap -------------------------------------------------------------- */
 
@@ -258,6 +402,7 @@
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
+.chart-note { margin: var(--space-3) 0 0; max-width: 62ch; }
 
 /* --- table ---------------------------------------------------------------- */
 
@@ -275,6 +420,19 @@ th .th-sort {
 }
 th .th-sort:hover { color: var(--fg); }
 
+/* Ten columns do not fit a phone, and a table that wraps every heading onto
+ * four lines reads worse than one that scrolls: the shares table keeps its
+ * cells on one line and scrolls inside .table-scroll. */
+.table--wide th, .table--wide td { white-space: nowrap; }
+
+/* WCAG 2.2 target size: a table of 869 job links is 869 targets 17 px tall
+ * unless the link fills the row. The cell padding does the rest. */
+.table-scroll td a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
 /* --- lists ---------------------------------------------------------------- */
 
 .job-list { margin: 0; padding: 0; list-style: none; }
@@ -289,6 +447,10 @@ th .th-sort:hover { color: var(--fg); }
 }
 .job-list a { min-height: var(--tap); display: inline-flex; align-items: center; }
 .job-list .scores { color: var(--fg-muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+
+/* A row that carries a shares bar needs the bar on its own line. */
+.job-list li.job-row { display: block; padding: var(--space-2) 0; }
+.job-list li.job-row .shares { margin-top: var(--space-1); }
 
 .skill-columns {
   display: grid;
@@ -330,6 +492,7 @@ th .th-sort:hover { color: var(--fg); }
 .diverge-figure { grid-column: 2; font-size: 0.8125rem; color: var(--fg-muted); }
 
 .medians { font-size: 0.8125rem; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+.compare-shares { margin-bottom: var(--space-4); }
 
 /* --- states --------------------------------------------------------------- */
 

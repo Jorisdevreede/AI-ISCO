@@ -59115,64 +59115,6 @@
     ]
   },
   {
-    "title": "early years teaching assistant",
-    "slug": "early-years-teaching-assistant",
-    "category": "Personal care workers",
-    "major_group": "Service and sales workers",
-    "sub_major_group": "Personal care workers",
-    "minor_group": "Child care workers and teachers’ aides",
-    "unit_group": "Teachers’ aides",
-    "isco_code": "5312",
-    "automation_risk": 2.8,
-    "amplification_potential": 5.0,
-    "evolution_potential": 1.4,
-    "quadrant": "STABLE",
-    "num_skills": 35,
-    "num_essential_skills": 19,
-    "top_skills": [
-      {
-        "title": "provide lesson materials",
-        "auto": 7.0,
-        "amp": 9.0
-      },
-      {
-        "title": "prepare lesson content",
-        "auto": 7.0,
-        "amp": 10.0
-      },
-      {
-        "title": "workplace sanitation",
-        "auto": 5.0,
-        "amp": null
-      },
-      {
-        "title": "curriculum objectives",
-        "auto": 5.0,
-        "amp": null
-      },
-      {
-        "title": "assess students",
-        "auto": 5.0,
-        "amp": null
-      },
-      {
-        "title": "learning difficulties",
-        "auto": null,
-        "amp": 9.0
-      },
-      {
-        "title": "provide teacher support",
-        "auto": null,
-        "amp": 8.0
-      },
-      {
-        "title": "assist students in their learning",
-        "auto": null,
-        "amp": 8.0
-      }
-    ]
-  },
-  {
     "title": "electronics engineer",
     "slug": "electronics-engineer",
     "category": "Science and engineering professionals",
@@ -71898,69 +71840,6 @@
       },
       {
         "title": "database",
-        "auto": null,
-        "amp": 9.0
-      }
-    ]
-  },
-  {
-    "title": "legal policy officer",
-    "slug": "legal-policy-officer",
-    "category": "Business and administration professionals",
-    "major_group": "Professionals",
-    "sub_major_group": "Business and administration professionals",
-    "minor_group": "Administration professionals",
-    "unit_group": "Policy administration professionals",
-    "isco_code": "2422",
-    "automation_risk": 4.6,
-    "amplification_potential": 8.2,
-    "evolution_potential": 3.8,
-    "quadrant": "EVOLVE",
-    "num_skills": 46,
-    "num_essential_skills": 10,
-    "top_skills": [
-      {
-        "title": "legal research",
-        "auto": 7.0,
-        "amp": 10.0
-      },
-      {
-        "title": "compile legal documents",
-        "auto": 7.0,
-        "amp": null
-      },
-      {
-        "title": "customs law",
-        "auto": 7.0,
-        "amp": null
-      },
-      {
-        "title": "legal case management",
-        "auto": 6.0,
-        "amp": null
-      },
-      {
-        "title": "insurance law",
-        "auto": 6.0,
-        "amp": null
-      },
-      {
-        "title": "perform scientific research",
-        "auto": null,
-        "amp": 10.0
-      },
-      {
-        "title": "analyse legal evidence",
-        "auto": null,
-        "amp": 9.0
-      },
-      {
-        "title": "advise on legal decisions",
-        "auto": null,
-        "amp": 9.0
-      },
-      {
-        "title": "provide legal advice",
         "auto": null,
         "amp": 9.0
       }
@@ -130761,69 +130640,6 @@
     ]
   },
   {
-    "title": "mining, construction and civil engineering machinery distribution manager",
-    "slug": "mining-construction-and-civil-engineering-machinery-distribution-manager",
-    "category": "Production and specialised services managers",
-    "major_group": "Managers",
-    "sub_major_group": "Production and specialised services managers",
-    "minor_group": "Manufacturing, mining, construction, and distribution managers",
-    "unit_group": "Supply, distribution and related managers",
-    "isco_code": "1324",
-    "automation_risk": 6.3,
-    "amplification_potential": 7.9,
-    "evolution_potential": 5.0,
-    "quadrant": "TRANSFORM",
-    "num_skills": 28,
-    "num_essential_skills": 27,
-    "top_skills": [
-      {
-        "title": "track shipments",
-        "auto": 9.0,
-        "amp": null
-      },
-      {
-        "title": "carry out statistical forecasts",
-        "auto": 9.0,
-        "amp": null
-      },
-      {
-        "title": "manage freight payment methods",
-        "auto": 8.0,
-        "amp": null
-      },
-      {
-        "title": "perform multiple tasks at the same time",
-        "auto": 8.0,
-        "amp": 9.0
-      },
-      {
-        "title": "minimise shipping cost",
-        "auto": 8.0,
-        "amp": null
-      },
-      {
-        "title": "freight transport methods",
-        "auto": null,
-        "amp": 9.0
-      },
-      {
-        "title": "supply chain management",
-        "auto": null,
-        "amp": 9.0
-      },
-      {
-        "title": "building information modelling",
-        "auto": null,
-        "amp": 9.0
-      },
-      {
-        "title": "create solutions to problems",
-        "auto": null,
-        "amp": 9.0
-      }
-    ]
-  },
-  {
     "title": "hot foil operator",
     "slug": "hot-foil-operator",
     "category": "Handicraft and printing workers",
@@ -136248,59 +136064,6 @@
         "title": "embargo regulations",
         "auto": null,
         "amp": 8.0
-      }
-    ]
-  },
-  {
-    "title": "food service worker",
-    "slug": "food-service-worker",
-    "category": "Sales workers",
-    "major_group": "Service and sales workers",
-    "sub_major_group": "Sales workers",
-    "minor_group": "Other sales workers",
-    "unit_group": "Food service counter attendants",
-    "isco_code": "5246",
-    "automation_risk": 4.8,
-    "amplification_potential": 6.1,
-    "evolution_potential": 2.9,
-    "quadrant": "EVOLVE",
-    "num_skills": 16,
-    "num_essential_skills": 12,
-    "top_skills": [
-      {
-        "title": "store raw food materials",
-        "auto": 7.0,
-        "amp": null
-      },
-      {
-        "title": "maintain food specifications",
-        "auto": 7.0,
-        "amp": null
-      },
-      {
-        "title": "food legislation",
-        "auto": 6.0,
-        "amp": 8.0
-      },
-      {
-        "title": "food authentication techniques",
-        "auto": 6.0,
-        "amp": 8.0
-      },
-      {
-        "title": "foodborne diseases",
-        "auto": 5.0,
-        "amp": 8.0
-      },
-      {
-        "title": "use different communication channels",
-        "auto": null,
-        "amp": 8.0
-      },
-      {
-        "title": "food allergies",
-        "auto": null,
-        "amp": 7.0
       }
     ]
   },

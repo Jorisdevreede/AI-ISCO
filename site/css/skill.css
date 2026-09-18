@@ -1,0 +1,278 @@
+/* skill.html — what the shares scheme adds to the skill page.
+ *
+ * css/app.css owns the tokens and the shared components and css/pages.css owns
+ * the page furniture this page shares with the method and insights pages; this
+ * file adds only what a skill's class, its three measures and its occupation
+ * rows need on top. Loaded after both, so it may only extend them.
+ *
+ * Rules kept: nothing scrolls the page sideways at 390px, every text colour
+ * reaches 4.5:1, targets are at least 24px, and colour never carries a meaning
+ * on its own — every class colour sits beside the class's name in words.
+ */
+
+/* --- the class of one skill ----------------------------------------------- */
+
+.skill-class {
+  max-width: 62ch;
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* A class is always named. Colour is a second signal, never the only one. */
+.class-chip {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+.skill-class .class-chip {
+  margin-bottom: var(--space-2);
+  padding: 2px var(--space-3);
+  font-size: 0.875rem;
+}
+.class-chip[data-class='S'] { color: var(--class-substituted); background: rgba(239, 106, 94, 0.12); }
+.class-chip[data-class='A'] { color: var(--class-assisted); background: rgba(106, 169, 232, 0.12); }
+.class-chip[data-class='M'] { color: var(--class-mechanised); background: rgba(199, 155, 240, 0.12); }
+.class-chip[data-class='I'] { color: var(--class-insulated); background: rgba(85, 192, 119, 0.12); }
+
+.skill-class-meaning { margin: 0; font-size: 1rem; line-height: 1.6; }
+
+.skill-class-probs {
+  margin: var(--space-3) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+
+/* C12. The same near-the-line marker the job page and the job badge use. */
+.near-chip {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 1px var(--space-2);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--fg-muted);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  cursor: help;
+}
+.skill-class-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); }
+.skill-class-head .near-chip { margin-left: 0; }
+.rationale-lead { margin: 0 0 var(--space-2); font-size: 0.8125rem; color: var(--fg-muted); }
+
+/* --- the three measures --------------------------------------------------- */
+
+/* pages.css colours the two quadrant axes; the shares scheme has three, each
+ * taking the colour of the skill class it is about. */
+.score-fill[data-axis='substituted'] { background: var(--class-substituted); }
+.score-fill[data-axis='assisted'] { background: var(--class-assisted); }
+.score-fill[data-axis='mechanised'] { background: var(--class-mechanised); }
+
+/* --- occupation rows ------------------------------------------------------ */
+
+/* "Augmented · 42% · 31%" is longer than "6.4 / 8.9", so it may wrap rather
+ * than push the row past the viewport. */
+.occ-scores--shares {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: normal;
+  text-align: right;
+}
+
+@media (max-width: 480px) {
+  .occ-scores--shares { text-align: left; }
+}
+
+/* --- touch targets (WCAG 2.2 2.5.8) --------------------------------------- */
+
+/* A row or a cell that happens to be a link is not "inline in a sentence", so
+ * it carries the --tap token in both directions like every other control. */
+.list-table a,
+.occ-list a,
+.examples a,
+.rubric-classes a,
+.skill-class a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+/* --- how the model answered ------------------------------------------------ */
+
+.answers > * + * { margin-top: var(--space-5); }
+.answer h3 { margin-bottom: var(--space-2); font-size: 1rem; }
+
+.answer-bars { margin: 0; padding: 0; list-style: none; }
+
+.answer-bar {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(60px, 120px) 1fr;
+  align-items: start;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.answer-bar:last-child { border-bottom: 0; }
+.answer-value { font-variant-numeric: tabular-nums; color: var(--fg-muted); }
+.answer-bar.is-modal .answer-value { color: var(--fg); font-weight: 650; }
+
+.answer-track {
+  display: block;
+  height: 10px;
+  margin-top: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.answer-fill { display: block; height: 100%; background: var(--fg-muted); }
+.answer-bar.is-modal .answer-fill { background: var(--gold); }
+
+.answer-label { color: var(--fg-muted); min-width: 0; overflow-wrap: anywhere; }
+.answer-bar.is-modal .answer-label { color: var(--fg); }
+.answer-chosen { color: var(--gold); font-weight: 600; }
+
+.answer-confidence { margin: var(--space-2) 0 0; font-size: 0.8125rem; color: var(--fg-muted); }
+
+.answers-kind {
+  margin: 0;
+  padding: var(--space-3);
+  font-size: 0.875rem;
+  background: rgba(106, 169, 232, 0.10);
+  border-left: 3px solid var(--blue);
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 560px) {
+  .answer-bar { grid-template-columns: 3.2rem 1fr; }
+  .answer-label { grid-column: 1 / -1; }
+}
+
+/* --- how a skill is scored ------------------------------------------------- */
+
+.rubric-preamble {
+  max-width: 68ch;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg2);
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+.rubric-preamble p { margin: 0; font-size: 0.9375rem; line-height: 1.6; }
+
+.rubric-question {
+  margin-bottom: var(--space-2);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.rubric-question > summary {
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-3);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+.rubric-body { padding: 0 var(--space-3) var(--space-3); max-width: 78ch; }
+.rubric-instructions {
+  margin: 0 0 var(--space-3);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+}
+.rubric-variant { margin: var(--space-4) 0 var(--space-2); font-weight: 600; font-size: 0.875rem; }
+.rubric-levels { margin: 0; padding-left: 1.4rem; font-size: 0.875rem; }
+.rubric-levels li { margin-bottom: var(--space-2); line-height: 1.55; }
+
+.rubric-classes { margin-top: var(--space-5); }
+.rubric-classes h3 { margin-bottom: var(--space-3); font-size: 1rem; }
+.rubric-class-list { margin: 0 0 var(--space-3); max-width: 72ch; }
+.rubric-class-list dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+.rubric-class-list dd {
+  margin: 0 0 var(--space-3);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+.rubric-rule { font-family: var(--mono); font-size: 0.75rem; color: var(--fg-muted); }
+
+/* --- all skill scores ------------------------------------------------------ */
+
+.list-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.list-field label { font-size: 0.8125rem; color: var(--fg-muted); }
+.list-field input,
+.list-field select {
+  min-height: var(--tap);
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--fg);
+  background: var(--bg2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+.list-field input { min-width: min(240px, 60vw); }
+
+.list-summary {
+  margin: 0 0 var(--space-2);
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Eight columns in one column of the page: the text ones wrap and the numbers
+ * stay on one line, so the table fits without its own sideways scroll on a
+ * desktop and scrolls inside .table-scroll on a phone. */
+.list-table { font-size: 0.8125rem; }
+.list-table th,
+.list-table td { padding: var(--space-2); vertical-align: top; white-space: normal; }
+.list-table th.numeric,
+.list-table td.numeric { white-space: nowrap; }
+.list-table th[scope='row'] { font-weight: 400; background: none; min-width: 11rem; }
+.list-table th[scope='row'] a { overflow-wrap: anywhere; }
+
+/* The header is a button so the column sorts by keyboard as well as by click. */
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--tap);
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.sort-button:hover { color: var(--fg); text-decoration: underline; }
+/* app.css already draws the arrow from th[aria-sort]; the header keeps its own
+ * pointer even though the button inside it is what actually sorts. */
+.list-table th[aria-sort] { cursor: pointer; }
+
+.list-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.list-page { margin: 0; font-size: 0.875rem; color: var(--fg-muted); }
+.list-pager button[disabled] { opacity: 0.45; cursor: default; }

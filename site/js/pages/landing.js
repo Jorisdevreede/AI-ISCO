@@ -11,7 +11,8 @@ import { LoadError, loadJSON, whenSlow } from '../data.js';
 import { groupHref, jobHref, skillHref, withScorer } from '../urlstate.js';
 import {
   POPULAR_CHIPS, loadingText, noMatchText, optionMeta, overflowText, readRecent,
-  recentRows, removeRecent, searchOutcome, sentenceCase, subtitleText,
+  recentRows, removeRecent, rowBySlug, rowTypeLabel, searchOutcome, sentenceCase, subtitleText,
+  suggestionHeading,
 } from './landing-model.js';
 
 /** Show a loading state only once the wait is real. */
@@ -86,11 +87,11 @@ function nearestItem(row) {
 function noMatchHint(outcome) {
   const tail = node('p');
   tail.appendChild(anchor(groupsHref(), 'Browse by sector instead →'));
-  if (!outcome.nearest.length) return [node('p', null, noMatchText(outcome.query)), tail];
+  const lead = node('p', null, noMatchText(outcome.query));
+  if (!outcome.nearest.length) return [lead, tail];
   const list = node('ul', 'nearest-list');
   list.append(...outcome.nearest.map(nearestItem));
-  return [node('p', null, noMatchText(outcome.query)),
-    node('p', null, 'Closest job titles:'), list, tail];
+  return [lead, node('p', null, suggestionHeading(outcome)), list, tail];
 }
 
 const HINTS = { many: manyHint, 'no-match': noMatchHint };
@@ -115,10 +116,22 @@ function onEnter(event) {
 
 // --- chips and recently viewed --------------------------------------------
 
+/**
+ * One chip: the job it opens, and once the index is in, what kind of job the
+ * active score set says it is. The class name sits beside the link rather than
+ * inside it, so the chip never promises a title it does not open.
+ */
+function chipNode(chip) {
+  const target = anchor(link(jobHref(chip.slug)), sentenceCase(chip.label), 'chip');
+  const kind = rowTypeLabel(rowBySlug(state.index, chip.slug));
+  if (!kind) return target;
+  const item = node('span', 'chip-item');
+  item.append(target, node('span', 'chip-meta', kind));
+  return item;
+}
+
 function renderChips() {
-  el('chip-row').replaceChildren(...POPULAR_CHIPS.map(
-    (chip) => anchor(link(jobHref(chip.slug)), sentenceCase(chip.label), 'chip'),
-  ));
+  el('chip-row').replaceChildren(...POPULAR_CHIPS.map(chipNode));
 }
 
 function forget(slug) {
@@ -138,7 +151,10 @@ function removeButton(row) {
 
 function recentItem(row) {
   const item = node('li', 'recent-item');
-  item.append(anchor(link(jobHref(row.s)), sentenceCase(row.t)), removeButton(row));
+  const kind = rowTypeLabel(row);
+  item.append(anchor(link(jobHref(row.s)), sentenceCase(row.t)));
+  if (kind) item.append(node('span', 'recent-meta', kind));
+  item.append(removeButton(row));
   return item;
 }
 
@@ -176,6 +192,7 @@ function showError(error) {
 function indexReady(index) {
   state.index = index;
   el('search-loading').hidden = true;
+  renderChips();
   renderRecent();
   state.combo.refresh();
 }

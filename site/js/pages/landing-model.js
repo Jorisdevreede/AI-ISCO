@@ -20,9 +20,10 @@
 // private mode throws on access, and a hand-edited or corrupted value must never
 // break a page — anything that is not an array of strings reads as an empty list.
 
-import { nearestTitles, rankOccupations } from '../search.js';
-import { formatCount, NOT_SCORED } from '../format.js';
-import { QUADRANT_NAMES } from '../quadrant.js';
+import { rankOccupations, suggestions } from '../search.js';
+import { formatCount } from '../format.js';
+import { SHARES, schemeOf, schemeOfCode, typeLabel, typeShortLabel } from '../scheme.js';
+import { isShares, sharePercents } from '../shares.js';
 
 /** localStorage key holding the recently viewed slugs. */
 export const RECENT_KEY = 'ai-isco-recent';
@@ -72,20 +73,74 @@ export function rowBySlug(index, slug) {
   return (index || []).find((row) => row && row.s === slug) || null;
 }
 
+/** What a result row says beside a job whose type sits near a cut-off. */
+export const NEAR_HINT = 'near a cut-off';
+
+/** True for a row from a shares set: one that carries its four shares. */
+function hasShares(row) {
+  return Boolean(row) && (isShares(row.sh) && schemeOfCode(row.q) === SHARES);
+}
+
 /**
- * The secondary line of a result row: major group and quadrant word.
- * @param {{mg?: string, q?: string}} row
+ * The class of one row, in the shortest words its scheme has: a quadrant name
+ * on the older sets, a type's short name on a shares set. The chips and the
+ * recently viewed list both use this, so a job is named the same way twice.
+ * @param {{q?: string}} row
+ * @returns {string} '' for a row with no class at all
+ */
+export function rowTypeLabel(row) {
+  return row && row.q ? typeShortLabel(row.q) : '';
+}
+
+/**
+ * The secondary line of a result row.
+ *
+ * Under the older sets: the major group and the quadrant. Under a shares set:
+ * the major group, the type's short name, how much of the work AI can take
+ * over, and — when the pipeline flagged it — that the type sits near a cut-off.
+ *
+ * @param {{mg?: string, q?: string, sh?: number[], nl?: boolean}} row
  * @returns {string}
  */
 export function optionMeta(row) {
   const group = (row && row.mg) || 'Unclassified';
-  return `${group} · ${QUADRANT_NAMES[row && row.q] || NOT_SCORED}`;
+  if (!hasShares(row)) return `${group} · ${typeLabel(row && row.q)}`;
+  const parts = [group, typeShortLabel(row.q),
+    `AI can take over ${sharePercents(row.sh)[0].percent}%`];
+  if (row.nl) parts.push(NEAR_HINT);
+  return parts.join(' · ');
 }
 
 function outcome(state, query, extra) {
   return {
-    state, query, results: [], total: 0, hidden: 0, nearest: [], ...extra,
+    state,
+    query,
+    results: [],
+    total: 0,
+    hidden: 0,
+    nearest: [],
+    nearestKind: 'none',
+    nearestWord: null,
+    ...extra,
   };
+}
+
+/**
+ * The line above the suggestions, which says what they are.
+ *
+ * A word search and a typo repair are different offers and must not be dressed
+ * as the same one: "jobs matching nurse" is an answer, "closest job titles" is
+ * a guess. When there is nothing to offer there is no line either.
+ *
+ * @param {{nearestKind?: string, nearestWord?: string|null, nearest?: Array}} found
+ * @returns {string} '' when nothing should be shown
+ */
+export function suggestionHeading(found) {
+  if (!found || !(found.nearest || []).length) return '';
+  if (found.nearestKind === 'word') {
+    return `No exact match. Jobs matching “${found.nearestWord}”:`;
+  }
+  return 'Closest job titles:';
 }
 
 /**
@@ -106,7 +161,10 @@ export function searchOutcome(index, query, limit = RESULT_LIMIT) {
   if (!text) return outcome('empty', '');
   const all = rankOccupations(index, text, Infinity);
   if (!all.length) {
-    return outcome('no-match', text, { nearest: nearestTitles(index, text, NEAREST_COUNT) });
+    const found = suggestions(index, text, NEAREST_COUNT);
+    return outcome('no-match', text, {
+      nearest: found.rows, nearestKind: found.kind, nearestWord: found.word,
+    });
   }
   const results = all.slice(0, limit);
   return outcome(all.length > results.length ? 'many' : 'results', text, {
@@ -114,11 +172,25 @@ export function searchOutcome(index, query, limit = RESULT_LIMIT) {
   });
 }
 
-/** The line under the heading. The count comes from stats.json, never a constant. */
+const ESTIMATE_LINE = 'These are model estimates, not forecasts.';
+
+/**
+ * The line under the heading: what this score set actually shows. The count
+ * comes from stats.json, never a constant, and the wording follows the scheme
+ * that file declares — two scores and four boxes, or four shares and seven
+ * types. Nothing here names a figure the published data does not carry.
+ * @param {Object|null} stats the active set's stats file
+ * @returns {string}
+ */
 export function subtitleText(stats) {
   const count = stats && Number.isFinite(stats.occupations) ? `${formatCount(stats.occupations)} ` : '';
+  if (schemeOf(stats) === SHARES) {
+    return `Search ${count}European occupations. Each one is split into four shares — what AI `
+      + 'can take over, what AI assists with, what machines do and what stays human — and lands '
+      + `in one of seven types. ${ESTIMATE_LINE}`;
+  }
   return `Search ${count}European occupations, scored for how much of the work AI `
-    + 'could automate and how much it could amplify. These are model estimates, not forecasts.';
+    + `could automate and how much it could amplify. ${ESTIMATE_LINE}`;
 }
 
 /** Shown only once a load has taken longer than 200 ms. */

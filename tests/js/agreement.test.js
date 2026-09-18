@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  averageRanks, compareScoreSets, largestMove, pairRows, quadrantMatrix, spearman,
+  averageRanks, compareScoreSets, isQuadrantRows, largestMove, pairRows, quadrantMatrix,
+  slugUniverse, spearman,
 } from '../../site/js/agreement.js';
 
 const row = (s, a, m, q) => ({ s, a, m, q });
@@ -88,4 +89,52 @@ test('the comparison reports agreement, the shift in level and the gap per axis'
 test('two sets that share nothing give null, not a division by zero', () => {
   assert.equal(compareScoreSets([row('a', 1, 1, 'STABLE')], [row('b', 1, 1, 'STABLE')]), null);
   assert.equal(compareScoreSets([], []), null);
+});
+
+/* --- this comparison is about the original rubric, and only that ----------- */
+
+// Rows of a shares set: `q` holds a type code and `sh` the four shares.
+const SHARES_ROWS = [
+  { s: 'nurse', t: 'nurse', a: 4.2, m: 6.1, k: 1.2, q: 'AUGMENTED', sh: [0.1, 0.4, 0.0, 0.5] },
+  { s: 'clerk', t: 'clerk', a: 7.7, m: 6.0, k: 1.1, q: 'TRANSFORMING', sh: [0.4, 0.3, 0.0, 0.3] },
+  { s: 'mason', t: 'mason', a: 2.1, m: 3.3, k: 2.0, q: 'INSULATED_PHYSICAL', sh: [0, 0.1, 0.1, 0.8] },
+  { s: 'packer', t: 'packer', a: 5.0, m: 3.0, k: 7.4, q: 'MECHANISABLE', sh: [0.1, 0.1, 0.5, 0.3] },
+];
+
+test('quadrant rows are recognised, and a type code or a shares array is not', () => {
+  assert.equal(isQuadrantRows(FIRST), true);
+  assert.equal(isQuadrantRows([]), true);
+  assert.equal(isQuadrantRows(SHARES_ROWS), false);
+  assert.equal(isQuadrantRows([row('a', 1, 1, 'STABLE'), SHARES_ROWS[0]]), false);
+  assert.equal(isQuadrantRows([{ s: 'x', a: 1, m: 1, q: 'STABLE', sh: [0.25, 0.25, 0.25, 0.25] }]),
+    false);
+  assert.equal(isQuadrantRows(null), false);
+});
+
+test('the comparison refuses a shares set rather than inventing a matrix', () => {
+  assert.equal(compareScoreSets(SHARES_ROWS, SECOND), null);
+  assert.equal(compareScoreSets(FIRST, SHARES_ROWS), null);
+  assert.equal(compareScoreSets(SHARES_ROWS, SHARES_ROWS), null);
+  assert.equal(compareScoreSets(null, SECOND), null);
+  // The two quadrant sets still compare exactly as they did.
+  assert.equal(compareScoreSets(FIRST, SECOND).n, 4);
+});
+
+/* --- the comparison states its own population (A8) ------------------------ */
+
+test('the universe is every occupation either file knows, scored or not', () => {
+  // FIRST and SECOND share four scored slugs; each also has one the other lacks,
+  // and "unscored" exists in both but carries no score in FIRST.
+  assert.equal(slugUniverse(FIRST, SECOND), 7);
+  assert.equal(slugUniverse(FIRST, FIRST), 6);
+  assert.equal(slugUniverse([], []), 0);
+  assert.equal(slugUniverse(null, undefined), 0);
+  assert.equal(slugUniverse([{ a: 1 }, { s: 'x' }], null), 1);
+});
+
+test('the comparison reports the subset AND the whole, so neither stands alone', () => {
+  const result = compareScoreSets(FIRST, SECOND);
+  assert.equal(result.n, 4);
+  assert.equal(result.total, 7);
+  assert.ok(result.n <= result.total);
 });

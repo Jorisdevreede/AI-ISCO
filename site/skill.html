@@ -3,12 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Look up a skill — AI-ISCO</title>
-<meta name="description" content="Both AI scores for any ESCO skill, the model's reasoning, and the occupations that need it.">
+<title>Skill scores — AI-ISCO</title>
+<meta name="description" content="Every ESCO skill, what AI can do with it, how it was scored, the model's own answers, and the occupations that need it.">
+<meta property="og:site_name" content="AI-ISCO">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Skill scores — AI-ISCO">
+<meta property="og:description" content="Every ESCO skill, what AI can do with it, how it was scored, the model's own answers, and the occupations that need it.">
+<meta property="og:url" content="https://jorisdevreede.github.io/AI-ISCO/skill.html">
+<meta property="og:image" content="https://jorisdevreede.github.io/AI-ISCO/card.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/pages.css">
-<link rel="preload" href="skill_index.json" as="fetch" crossorigin>
+<link rel="stylesheet" href="css/skill.css">
 </head>
 <body>
 
@@ -16,7 +23,7 @@
 <nav id="site-nav"></nav>
 
 <main id="main" class="page">
-  <h1 id="skill-title" tabindex="-1">Which skill do you want to look up?</h1>
+  <h1 id="skill-title" tabindex="-1">Skill scores</h1>
   <p id="skill-meta" class="meta-line" hidden></p>
   <p id="skill-status" class="loading" role="status" aria-live="polite"></p>
   <div id="skill-error"></div>
@@ -24,7 +31,7 @@
   <div id="skill-detail"></div>
 
   <section id="skill-lookup" class="lookup" aria-labelledby="lookup-heading">
-    <h2 id="lookup-heading" class="visually-hidden">Search ESCO skills</h2>
+    <h2 id="lookup-heading">Look up a skill</h2>
     <p id="lookup-intro" class="page-intro">
       Every skill in the ESCO classification was scored on two axes: how much of it AI
       could do, and how much AI could amplify the person doing it. Search by the skill's
@@ -42,6 +49,10 @@
       <div id="skill-examples" class="chip-row"></div>
     </div>
   </section>
+
+  <!-- Both are filled by js/pages/skill.js and only with no skill selected. -->
+  <div id="skill-scoring"></div>
+  <div id="skill-table"></div>
 </main>
 
 <script src="scorer.js" defer></script>

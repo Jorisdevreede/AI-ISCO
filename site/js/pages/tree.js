@@ -5,14 +5,19 @@
 // as the state (#job=<slug> or #g=<level>:<code>, plus &q=<filter>), and fills
 // the detail pane beside the tree.
 //
-// portfolio_data.json is 13 MB and only the skills table needs it, so it is
-// fetched when the browser first goes idle *after* the tree has painted. The
-// tree, the filter and every group detail work without it.
+// No page fetches the 15 MB portfolio file any more. The skills of one job come
+// from its unit group's own shard, `jobs/<unit>`, and the tree already knows the
+// unit code of every job — so nothing is downloaded until a job is selected, and
+// then only that group's slice. The tree, the filter and every group detail work
+// without any of it.
 
-import { renderQuadrantBadge } from '../badge.js';
+import { renderTypeBadge } from '../badge.js';
 import { renderChrome } from '../chrome.js';
 import { loadJSON, whenSlow } from '../data.js';
 import { formatCount, formatScore, isScored } from '../format.js';
+import { SHARES, schemeOf, splitOf, thresholdOf } from '../scheme.js';
+import { renderSharesBar } from '../shares-bar.js';
+import { isShares } from '../shares.js';
 import { groupHref, jobHref, skillHref, withScorer } from '../urlstate.js';
 import * as model from './tree-model.js';
 import { TreeView } from './tree-view.js';
@@ -20,21 +25,36 @@ import { TreeView } from './tree-view.js';
 /** Below this width the detail pane sits under the tree, not beside it. */
 const NARROW = '(max-width: 860px)';
 
-const SCORE_CARDS = [
+// The display scores, which are secondary detail: the shares bar leads.
+const QUADRANT_CARDS = [
   { key: 'a', modifier: 'auto', label: 'Automation risk' },
   { key: 'm', modifier: 'amp', label: 'Amplification' },
 ];
 
+const SHARES_CARDS = [
+  { key: 'a', modifier: 'auto', label: 'AI substitution' },
+  { key: 'm', modifier: 'amp', label: 'AI assistance' },
+  { key: 'k', modifier: 'mech', label: 'Machine automation' },
+];
+
+/** The page's own title, which the static markup already carries. */
+const BASE_TITLE = 'Job tree — AI-ISCO';
+
+/** When a wait is worth a word, and when it is worth an apology. */
+const SLOW_MS = 200;
+const VERY_SLOW_MS = 3000;
+
 const state = {
   model: null,
   stats: null,
+  scheme: null,
+  cut: null,
   expanded: new Set(),
   selection: null,
   query: '',
   filter: null,
-  portfolio: null,
-  portfolioError: null,
-  portfolioPending: false,
+  // One entry per unit group asked for: { rows } once loaded, { error } if not.
+  shards: new Map(),
   skills: null,
   skillSort: { key: 'essential', descending: true },
   skillFilter: 'all',
@@ -93,10 +113,13 @@ function ready(files) {
   const [groups, index, stats] = files;
   state.model = model.buildModel(groups, index);
   state.stats = stats;
+  state.scheme = schemeOf(stats);
+  state.cut = thresholdOf(stats);
+  byId('tree-key').textContent = model.scoreKeyLine(state.scheme);
   show(byId('tree-status'), false);
   show(byId('tree-layout'), true);
   onRoute();
-  schedulePrefetch();
+  renderResults();
 }
 
 function boot() {
@@ -185,11 +208,36 @@ function renderTree() {
   }));
 }
 
+function resultItem(entry) {
+  const also = model.alsoMatches(entry);
+  const href = model.treeHref({ kind: 'job', id: entry.slug }, state.query);
+  return el('li', {}, [
+    el('a', { href: withScorer(href, window.location.search), class: 'result-link' }, [
+      el('span', { class: 'result-title', text: entry.title }),
+      el('span', { class: 'result-group', text: entry.group }),
+      also ? el('span', { class: 'result-also', text: also }) : null,
+    ]),
+  ]);
+}
+
+// With a filter on, the answer is a list of jobs; the hierarchy that holds them
+// waits behind the disclosure, which is closed so the results are what is read.
+function renderResults() {
+  const entries = model.resultRows(state.model, state.filter);
+  const box = byId('tree-results');
+  const hierarchy = byId('tree-hierarchy');
+  byId('tree-results-list').replaceChildren(...entries.map(resultItem));
+  show(box, entries.length > 0);
+  hierarchy.classList.toggle('tree-disclosure--plain', !state.filter);
+  hierarchy.open = !state.filter;
+}
+
 function applyQuery(query) {
   state.query = query;
   state.filter = model.filterMatches(state.model, query);
   byId('tree-q').value = query;
   byId('tree-count').textContent = model.matchMessage(state.filter);
+  renderResults();
 }
 
 function onFilterInput() {
@@ -203,24 +251,32 @@ function onFilterInput() {
 
 function mixRow(segment) {
   const width = segment.count ? Math.max(segment.share * 100, 1.5) : 0;
-  return el('li', { 'data-quadrant': segment.code }, [
+  return el('li', { [segment.attribute]: segment.code }, [
     el('span', { class: 'mix-name', text: segment.label }),
     el('span', { class: 'mix-track' }, [el('span', { class: 'mix-fill', style: `width: ${width}%` })]),
     el('span', { class: 'mix-figure', text: `${segment.text} · ${segment.percent}` }),
   ]);
 }
 
+// Type and class names are whole phrases, so those lists get a wider name
+// column; the four box names fit the narrow one they have always had.
 function mixList(segments) {
-  return el('ul', { class: 'mix-bars' }, segments.map(mixRow));
+  const wide = segments.length > 0 && segments[0].attribute !== 'data-quadrant';
+  return el('ul', { class: wide ? 'mix-bars mix-bars--wide' : 'mix-bars' }, segments.map(mixRow));
+}
+
+function sharesFigure(shares, name) {
+  return el('div', { class: 'shares-block' }, [renderSharesBar(shares, { name })]);
 }
 
 function caveat() {
   return el('p', { class: 'mix-caveat small', text: model.nearLineCaveat(state.stats) });
 }
 
+// The static <title> already names the page, so only a selection adds to it.
 function setTitle(text, documentTitle) {
   byId('detail-title').textContent = text;
-  document.title = `${documentTitle} — Job tree — AI-ISCO`;
+  document.title = documentTitle ? `${documentTitle} — ${BASE_TITLE}` : BASE_TITLE;
 }
 
 function renderDetail() {
@@ -232,15 +288,27 @@ function renderDetail() {
 
 /* --- detail: nothing selected --------------------------------------------- */
 
+function skillSplitBlock() {
+  const segments = model.classSegments(state.stats);
+  if (!segments.length) return [];
+  return [
+    el('h3', { text: `How all ${formatCount(state.stats.skills_scored)} skills split` }),
+    el('p', { class: 'small muted', text: 'Every scored skill falls into exactly one class. '
+      + 'The shares of these four over a job’s own skills decide its type.' }),
+    mixList(segments),
+  ];
+}
+
 function renderEmptyDetail(host) {
-  setTitle('Pick a job in the tree to see its skills', 'Job tree');
-  const counts = (state.stats && state.stats.quadrants && state.stats.quadrants.counts) || {};
+  setTitle('Pick a job in the tree to see its skills', null);
+  const counts = splitOf(state.stats).counts;
   host.replaceChildren(
     el('p', { text: 'Open a group to walk down ISCO-08. Selecting a group shows how its jobs '
       + 'split; selecting a job shows its skills and where each one sits.' }),
     el('h3', { text: `How all ${formatCount(state.stats.occupations)} jobs split` }),
     mixList(model.mixSegments(counts)),
     caveat(),
+    ...skillSplitBlock(),
   );
 }
 
@@ -261,9 +329,18 @@ function renderGroupDetail(host) {
     el('p', { class: 'muted small', text: model.groupSubtitle(group) }),
     el('h3', { text: 'How this group splits' }),
     mixList(model.mixSegments(group.q)),
+    ...groupSharesBlock(group),
     caveat(),
     el('p', {}, [link(groupHref(key), 'Open this sector', { class: 'button button--quiet' })]),
   );
+}
+
+function groupSharesBlock(group) {
+  if (!isShares(group.sh)) return [];
+  return [
+    el('h3', { text: 'What the average job here is made of' }),
+    sharesFigure(group.sh, `the average job in ${group.label}`),
+  ];
 }
 
 /* --- detail: a job -------------------------------------------------------- */
@@ -286,19 +363,27 @@ function unitLine(row) {
   const key = `unit:${String(row.c || '')}`;
   const group = state.model.groups[key];
   if (!group) return el('p', { class: 'muted small', text: `ISCO-08 code ${row.c}` });
-  return el('p', { class: 'muted small' }, [
+  return el('p', { class: 'muted small unit-line' }, [
     'ISCO-08 unit group ',
     link(model.treeHref({ kind: 'group', id: key }, state.query), `${group.label} (${key.slice(5)})`),
   ]);
 }
 
+// Under shares the four-share bar leads and the three display scores follow it;
+// under quadrants the two scores are all there is.
 function jobHeader(row) {
-  const badge = renderQuadrantBadge({ t: row.t, a: row.a, m: row.m, q: row.q },
-    { search: window.location.search });
+  const shares = state.scheme === SHARES;
+  const badge = renderTypeBadge(
+    { t: row.t, a: row.a, m: row.m, q: row.q, sh: row.sh, nl: row.nl },
+    { search: window.location.search },
+  );
+  const cards = shares ? SHARES_CARDS : QUADRANT_CARDS;
   return [
     unitLine(row),
     el('div', { class: 'badge-line' }, [badge]),
-    el('div', { class: 'score-grid' }, SCORE_CARDS.map((spec) => scoreCard(spec, row))),
+    ...(shares ? [sharesFigure(row.sh, row.t)] : []),
+    el('div', { class: 'score-grid' }, cards.map((spec) => scoreCard(spec, row))),
+    ...(shares ? [el('p', { id: 'why-line', class: 'why-line small', hidden: 'hidden' })] : []),
   ];
 }
 
@@ -323,31 +408,36 @@ function renderJobDetail(host) {
   renderSkills(row);
 }
 
-/* --- the big file --------------------------------------------------------- */
+/* --- one unit group's skills ---------------------------------------------- */
 
-function startPortfolio() {
-  if (state.portfolio || state.portfolioPending) return;
-  state.portfolioPending = true;
-  state.portfolioError = null;
-  loadJSON('portfolio_data')
-    .then((data) => { state.portfolio = data; })
-    .catch((error) => { state.portfolioError = error; })
-    .finally(() => {
-      state.portfolioPending = false;
-      state.skills = null;
-      refreshSkills();
-    });
+// Nothing is fetched until a job is selected, and then only the shard of its own
+// unit group. Each shard is kept, so walking a group costs one request.
+
+function unitOf(row) {
+  return String(row.c || '');
 }
 
-function schedulePrefetch() {
-  const start = () => {
-    if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(startPortfolio, { timeout: 4000 });
-    } else {
-      window.setTimeout(startPortfolio, 1200);
-    }
-  };
-  window.requestAnimationFrame(() => window.setTimeout(start, 0));
+function keepShard(unit, entry) {
+  state.shards.set(unit, entry);
+  state.skills = null;
+  refreshSkills();
+}
+
+function requestShard(unit) {
+  if (state.shards.has(unit)) return;
+  state.shards.set(unit, { pending: true });
+  const load = loadJSON(`jobs/${unit}`);
+  // Two thresholds on one request; the first chain's rejection is the second's
+  // to report, so it is swallowed here rather than left unhandled.
+  whenSlow(load, SLOW_MS, () => setLoadingStage('start')).catch(() => {});
+  whenSlow(load, VERY_SLOW_MS, () => setLoadingStage('slow'))
+    .then((data) => keepShard(unit, { data }))
+    .catch((error) => keepShard(unit, { error }));
+}
+
+function retryShard(unit) {
+  state.shards.delete(unit);
+  refreshSkills();
 }
 
 function refreshSkills() {
@@ -356,36 +446,68 @@ function refreshSkills() {
   if (row && byId('skills-block')) renderSkills(row);
 }
 
-function skillsError(host) {
+// Two stages, both true. The first says what is happening; the second admits the
+// wait and offers a way on rather than repeating itself.
+function setLoadingStage(stage) {
+  const host = byId('skills-block');
+  if (!host || !host.querySelector('.loading')) return;
+  if (stage === 'start') {
+    host.replaceChildren(el('p', { class: 'loading', text: 'Loading this job’s skills…' }));
+    return;
+  }
+  host.replaceChildren(el('p', { class: 'loading' }, [
+    'Still loading. The skills of this job come from a separate file, and on a slow '
+      + 'connection that can take a while. ',
+    link(groupHref(`unit:${unitOf(state.model.bySlug.get(state.selection.id))}`),
+      'Browse this sector instead'),
+  ]));
+}
+
+function skillsError(host, unit, error) {
   const retry = el('button', { type: 'button', class: 'button button--quiet', text: 'Retry' });
-  retry.addEventListener('click', startPortfolio);
+  retry.addEventListener('click', () => retryShard(unit));
   host.replaceChildren(el('div', { class: 'error-block' }, [
-    el('p', { text: state.portfolioError.message }),
+    el('p', { text: error.message }),
     el('p', { text: 'The scores above still stand. The full job page has the same skills.' }),
     el('p', {}, [retry]),
   ]));
 }
 
-function currentSkills(row) {
-  if (state.skills && state.skills.slug === row.s) return state.skills.rows;
-  const occupation = model.findOccupation(state.portfolio, row.s);
-  state.skills = { slug: row.s, rows: model.skillRows(state.portfolio, occupation) };
+// `why_insulated` lives in the shard, so the line fills in when that arrives.
+function setWhyLine(occupation) {
+  const slot = byId('why-line');
+  if (!slot) return;
+  const text = model.whyLine(occupation);
+  slot.textContent = text;
+  show(slot, Boolean(text));
+}
+
+function currentSkills(row, shard) {
+  if (!state.skills || state.skills.slug !== row.s) {
+    const occupation = model.findOccupation(shard, row.s);
+    state.skills = {
+      slug: row.s, occupation, rows: model.skillRows(shard, occupation, state.cut),
+    };
+  }
+  setWhyLine(state.skills.occupation);
   return state.skills.rows;
 }
 
 function renderSkills(row) {
   const host = byId('skills-block');
-  if (state.portfolioError) {
-    skillsError(host);
+  const unit = unitOf(row);
+  const entry = state.shards.get(unit);
+  if (!entry) {
+    host.replaceChildren(el('p', { class: 'loading', text: 'Loading this job’s skills…' }));
+    requestShard(unit);
     return;
   }
-  if (!state.portfolio) {
-    startPortfolio();
-    host.replaceChildren(el('p', { class: 'loading', text: 'Loading the skills. They live in one '
-      + 'large file, so this can take a few seconds…' }));
+  if (entry.pending) return;
+  if (entry.error) {
+    skillsError(host, unit, entry.error);
     return;
   }
-  const rows = currentSkills(row);
+  const rows = currentSkills(row, entry.data);
   if (!rows.length) {
     host.replaceChildren(el('p', { class: 'muted', text: 'We have no skill list for this job.' }));
     return;
@@ -394,11 +516,11 @@ function renderSkills(row) {
 }
 
 function skillSections(rows) {
-  const mix = model.skillMix(rows);
+  const mix = model.skillMix(rows, state.scheme);
   const shown = model.filterSkillRows(rows, state.skillFilter);
   return [
     el('p', { class: 'small muted', text: model.skillSummary(mix) }),
-    el('h4', { text: 'Where the skills sit' }),
+    el('h4', { text: state.scheme === SHARES ? 'How these skills split' : 'Where the skills sit' }),
     mixList(mix.bars),
     el('h4', { text: 'Every skill' }),
     filterToggle(),
@@ -458,12 +580,25 @@ function headerCell(column) {
   return cell;
 }
 
+// A skill whose deciding chance sits within five points of the cut carries the
+// same "near the line" marker the job badge uses.
+function classCell(cell, entry) {
+  const td = el('td', { class: 'class-cell', 'data-class': entry.cls || '' },
+    [el('span', { text: cell.text })]);
+  if (!entry.near) return td;
+  td.append(' ', el('span', {
+    class: 'near-chip', text: 'near the line', title: model.SKILL_NEAR_TEXT,
+  }));
+  return td;
+}
+
 function bodyCell(cell, entry) {
   if (cell.key === 'title') return el('td', {}, [link(skillHref(entry.id), cell.text)]);
-  if (cell.key !== 'quadrant') {
-    return el('td', { class: cell.numeric ? 'numeric' : null, text: cell.text });
+  if (cell.key === 'quadrant') {
+    return el('td', { class: 'quad-cell', 'data-quadrant': entry.quadrant || '', text: cell.text });
   }
-  return el('td', { class: 'quad-cell', 'data-quadrant': entry.quadrant || '', text: cell.text });
+  if (cell.key === 'cls') return classCell(cell, entry);
+  return el('td', { class: cell.numeric ? 'numeric' : null, text: cell.text });
 }
 
 function bodyRow(entry) {
@@ -477,10 +612,11 @@ function tableCaption(shown, total) {
 
 function skillTable(rows, total) {
   const sorted = model.sortSkillRows(rows, state.skillSort.key, state.skillSort.descending);
+  const columns = model.skillColumns(state.scheme);
   return el('table', { class: 'skill-table' }, [
     el('caption', { text: tableCaption(rows.length, total) }),
-    el('thead', {}, [el('tr', {}, model.SKILL_COLUMNS.map(headerCell))]),
-    el('tbody', {}, model.skillTableRows(sorted).map(bodyRow)),
+    el('thead', {}, [el('tr', {}, columns.map(headerCell))]),
+    el('tbody', {}, model.skillTableRows(sorted, state.scheme).map(bodyRow)),
   ]);
 }
 

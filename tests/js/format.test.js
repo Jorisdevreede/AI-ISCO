@@ -26,7 +26,7 @@ test('isScored tells a page whether to style a value as absent', () => {
 });
 
 test('counts get thousands separators', () => {
-  assert.equal(formatCount(3043), '3,043');
+  assert.equal(formatCount(3039), '3,039');
   assert.equal(formatCount(13475), '13,475');
   assert.equal(formatCount(7), '7');
   assert.equal(formatCount(null), NOT_SCORED);
@@ -41,6 +41,6 @@ test('shares become percentage strings', () => {
 });
 
 test('formatShare reads as a caption', () => {
-  assert.equal(formatShare(1509, 3043), '1,509 of 3,043 jobs (50%)');
+  assert.equal(formatShare(1509, 3039), '1,509 of 3,039 jobs (50%)');
   assert.equal(formatShare(0, 0, 'skills'), '0 of 0 skills (0%)');
 });

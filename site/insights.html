@@ -4,11 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>What we found — AI-ISCO</title>
-<meta name="description" content="What the scores say about 3,000 European occupations: the quadrant split, the extremes, the sector patterns, and how much of it to trust.">
+<meta name="description" content="What the scores say about European occupations: how they split, the clearest cases at each end, the sector patterns, and how much of it to trust.">
+<meta property="og:site_name" content="AI-ISCO">
+<meta property="og:type" content="website">
+<meta property="og:title" content="What we found — AI-ISCO">
+<meta property="og:description" content="What the scores say about European occupations: how they split, the clearest cases at each end, the sector patterns, and how much of it to trust.">
+<meta property="og:url" content="https://jorisdevreede.github.io/AI-ISCO/insights.html">
+<meta property="og:image" content="https://jorisdevreede.github.io/AI-ISCO/card.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/pages.css">
-<link rel="preload" href="stats.json" as="fetch" crossorigin>
+<!-- No rel=preload for the index files: which set is active is decided by
+     scorer.js at run time, so a static hint can only name the wrong one and
+     doubles the page weight (it fetched both sets: 3.5 MB). -->
 </head>
 <body>
 
@@ -45,7 +54,30 @@
     </div>
   </section>
 
-  <section class="section" aria-labelledby="extremes-heading">
+  <!-- The five sections below belong to the quadrant scheme; the four after
+       them belong to the shares scheme. insights.js shows one set and hides the
+       other, so neither is ever filled with the zeros the other's lookups give. -->
+
+  <section class="section" id="classes-section" aria-labelledby="classes-heading" hidden>
+    <h2 id="classes-heading">How the skills split</h2>
+    <p id="classes-note" class="section-note"></p>
+    <div class="table-scroll">
+      <table id="class-table">
+        <caption>The four classes every scored skill falls into.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Class</th>
+            <th scope="col" class="numeric">Skills</th>
+            <th scope="col" class="numeric">Share</th>
+            <th scope="col"><span class="visually-hidden">Share, drawn</span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" id="extremes-section" aria-labelledby="extremes-heading">
     <h2 id="extremes-heading">Most and least exposed</h2>
     <p id="extremes-note" class="section-note"></p>
     <div class="split">
@@ -60,22 +92,46 @@
     </div>
   </section>
 
-  <section class="section" aria-labelledby="shrink-heading">
+  <section class="section" id="shrink-section" aria-labelledby="shrink-heading">
     <h2 id="shrink-heading">The vanishing jobs</h2>
     <p id="shrink-note" class="section-note"></p>
     <ol id="shrink-list" class="rank-list"></ol>
   </section>
 
-  <section class="section" aria-labelledby="stable-heading">
+  <section class="section" id="stable-section" aria-labelledby="stable-heading">
     <h2 id="stable-heading">The immovable</h2>
     <p id="stable-note" class="section-note"></p>
     <ol id="stable-list" class="rank-list"></ol>
   </section>
 
-  <section class="section" aria-labelledby="transform-heading">
+  <section class="section" id="transform-section" aria-labelledby="transform-heading">
     <h2 id="transform-heading">The metamorphosis</h2>
     <p id="transform-note" class="section-note"></p>
     <ol id="transform-list" class="rank-list"></ol>
+  </section>
+
+  <section class="section" id="substituted-section" aria-labelledby="substituted-heading" hidden>
+    <h2 id="substituted-heading">Most of the work AI can take over</h2>
+    <p id="substituted-note" class="section-note"></p>
+    <ol id="substituted-list" class="rank-list rank-list--shares"></ol>
+  </section>
+
+  <section class="section" id="assisted-section" aria-labelledby="assisted-heading" hidden>
+    <h2 id="assisted-heading">Most assisted</h2>
+    <p id="assisted-note" class="section-note"></p>
+    <ol id="assisted-list" class="rank-list rank-list--shares"></ol>
+  </section>
+
+  <section class="section" id="mechanised-section" aria-labelledby="mechanised-heading" hidden>
+    <h2 id="mechanised-heading">Most mechanisable</h2>
+    <p id="mechanised-note" class="section-note"></p>
+    <ol id="mechanised-list" class="rank-list rank-list--shares"></ol>
+  </section>
+
+  <section class="section" id="insulated-section" aria-labelledby="insulated-heading" hidden>
+    <h2 id="insulated-heading">Most stays human</h2>
+    <p id="insulated-note" class="section-note"></p>
+    <ol id="insulated-list" class="rank-list rank-list--shares"></ol>
   </section>
 
   <section class="section" aria-labelledby="groups-heading">

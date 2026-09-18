@@ -63,6 +63,53 @@
 
 .tree-count-line { margin: 0 0 var(--space-2); min-height: 1.3em; }
 
+/* --- the flat result list ------------------------------------------------- */
+
+/* A filter is a question about jobs, so the answer is a list of jobs. Every row
+ * is a real link and at least one tap target tall. */
+
+.result-list {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  max-height: min(52vh, 30rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.result-list li { border-bottom: 1px solid var(--line); }
+.result-list li:last-child { border-bottom: 0; }
+
+.result-link {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--fg);
+  text-decoration: none;
+}
+.result-link:hover { color: var(--fg); background: rgba(255, 255, 255, 0.06); }
+.result-title { text-decoration: underline; text-underline-offset: 2px; font-size: 0.9375rem; }
+.result-group, .result-also { color: var(--fg-muted); font-size: 0.75rem; }
+
+.tree-disclosure > summary {
+  min-height: var(--tap);
+  padding: var(--space-2) 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.tree-disclosure > summary:hover { color: var(--fg); }
+/* With no filter there is nothing to disclose: the tree is the page. */
+.tree-disclosure--plain > summary { display: none; }
+
+.tree-key { margin: 0 0 var(--space-2); }
+
 /* --- the tree ------------------------------------------------------------- */
 
 .tree-scroll {
@@ -102,11 +149,16 @@
   flex: 1 1 11rem;
   min-width: 0;
 }
+/* "54% AI can take over" is longer than "6.4 / 8.9", so the figures may need a
+ * second line rather than pushing the row into a sideways scroll. */
 .tree-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
-  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-2);
+  flex: 0 1 auto;
+  min-width: 0;
   margin-left: auto;
 }
 
@@ -156,6 +208,8 @@
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
 }
+/* Seven segments in the width four had would round the small types away. */
+.tree-mix--types { flex-basis: 84px; }
 .tree-mix-fill { height: 100%; }
 
 .tree-dot { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--fg-muted); }
@@ -176,6 +230,61 @@
 .tree-quad[data-quadrant='STABLE'], .quad-cell[data-quadrant='STABLE'] { color: var(--q-stable); }
 .tree-quad[data-quadrant='EVOLVE'], .quad-cell[data-quadrant='EVOLVE'] { color: var(--q-evolve); }
 .tree-quad[data-quadrant='SHRINK'], .quad-cell[data-quadrant='SHRINK'] { color: var(--q-shrink); }
+
+/* --- the seven types and the four skill classes --------------------------- */
+
+/* Under the shares scheme the same shapes carry data-type (a job) or data-class
+ * (a skill). Colour is never alone: every dot sits beside the type's short name,
+ * every bar beside its label, count and percentage. */
+
+[data-type='AUTOMATION_HEAVY'].tree-mix-fill, [data-type='AUTOMATION_HEAVY'].tree-dot,
+[data-type='AUTOMATION_HEAVY'] .mix-fill { background: var(--type-automation-heavy); }
+[data-type='TRANSFORMING'].tree-mix-fill, [data-type='TRANSFORMING'].tree-dot,
+[data-type='TRANSFORMING'] .mix-fill { background: var(--type-transforming); }
+[data-type='AUGMENTED'].tree-mix-fill, [data-type='AUGMENTED'].tree-dot,
+[data-type='AUGMENTED'] .mix-fill { background: var(--type-augmented); }
+[data-type='MECHANISABLE'].tree-mix-fill, [data-type='MECHANISABLE'].tree-dot,
+[data-type='MECHANISABLE'] .mix-fill { background: var(--type-mechanisable); }
+[data-type='INSULATED_PHYSICAL'].tree-mix-fill, [data-type='INSULATED_PHYSICAL'].tree-dot,
+[data-type='INSULATED_PHYSICAL'] .mix-fill { background: var(--type-insulated-physical); }
+[data-type='INSULATED_PEOPLE'].tree-mix-fill, [data-type='INSULATED_PEOPLE'].tree-dot,
+[data-type='INSULATED_PEOPLE'] .mix-fill { background: var(--type-insulated-people); }
+[data-type='MIXED'].tree-mix-fill, [data-type='MIXED'].tree-dot,
+[data-type='MIXED'] .mix-fill { background: var(--type-mixed); }
+
+.tree-quad[data-type='AUTOMATION_HEAVY'] { color: var(--type-automation-heavy); }
+.tree-quad[data-type='TRANSFORMING'] { color: var(--type-transforming); }
+.tree-quad[data-type='AUGMENTED'] { color: var(--type-augmented); }
+.tree-quad[data-type='MECHANISABLE'] { color: var(--type-mechanisable); }
+.tree-quad[data-type='INSULATED_PHYSICAL'] { color: var(--type-insulated-physical); }
+.tree-quad[data-type='INSULATED_PEOPLE'] { color: var(--type-insulated-people); }
+.tree-quad[data-type='MIXED'] { color: var(--type-mixed); }
+
+[data-class='S'] .mix-fill { background: var(--class-substituted); }
+[data-class='A'] .mix-fill { background: var(--class-assisted); }
+[data-class='M'] .mix-fill { background: var(--class-mechanised); }
+[data-class='I'] .mix-fill { background: var(--class-insulated); }
+
+.class-cell { font-weight: 600; }
+
+/* The same marker the job badge carries, on a skill whose class was decided by
+ * a chance sitting within five points of the cut. */
+.near-chip {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px var(--space-2);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--fg-muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
+.class-cell[data-class='S'] { color: var(--class-substituted); }
+.class-cell[data-class='A'] { color: var(--class-assisted); }
+.class-cell[data-class='M'] { color: var(--class-mechanised); }
+.class-cell[data-class='I'] { color: var(--class-insulated); }
 
 /* --- the detail pane ------------------------------------------------------ */
 
@@ -215,7 +324,11 @@
   align-items: center;
   margin-bottom: var(--space-2);
 }
-.mix-name { font-size: 0.875rem; font-weight: 600; }
+/* "Transform" fits 5.5rem; "Insulated by physical work" and "Machines can do"
+ * do not, and a name broken mid-word is the one thing these bars cannot do. */
+.mix-bars--wide li { grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr); }
+.mix-bars--wide .mix-name { line-height: 1.35; }
+.mix-name { font-size: 0.875rem; font-weight: 600; overflow-wrap: break-word; }
 .mix-track {
   height: 12px;
   background: rgba(255, 255, 255, 0.07);
@@ -262,6 +375,7 @@
 .score-value.is-missing { font-size: 1rem; color: var(--fg-muted); }
 .score-card--auto .score-value { color: var(--red); }
 .score-card--amp .score-value { color: var(--blue); }
+.score-card--mech .score-value { color: var(--purple); }
 .score-bar {
   display: block;
   height: 6px;
@@ -272,6 +386,19 @@
 .score-fill { display: block; height: 100%; border-radius: 999px; }
 .score-card--auto .score-fill { background: var(--red); }
 .score-card--amp .score-fill { background: var(--blue); }
+.score-card--mech .score-fill { background: var(--purple); }
+
+/* --- the shares figure and the reason a job stays human -------------------- */
+
+.shares-block { margin: 0 0 var(--space-4); }
+.why-line {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg3);
+  border-left: 3px solid var(--class-insulated);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--fg);
+}
 
 /* --- the skills table ----------------------------------------------------- */
 
@@ -305,6 +432,27 @@ th .th-sort {
 }
 th .th-sort:hover { color: var(--fg); }
 
+/* WCAG 2.2 target size: a link in a list or a table row is not "inline in a
+ * sentence", so the inline exception does not cover it. One rule for every
+ * tappable row link on this page. */
+/* `.result-link` is left out on purpose: it is a column flex box with its own
+ * 44 px floor, and centring its children here would centre the text. */
+.skill-table td a,
+.mix-figure a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+/* The unit-group link sits inside a sentence, so the inline exception would
+ * cover it — but it is the one route out of this pane, and 16 px is no target.
+ * inline-block keeps it in the flow of the sentence and still gives it height. */
+.unit-line a {
+  display: inline-block;
+  min-height: var(--tap);
+  line-height: var(--tap);
+}
+
 /* The pane is narrower than a full page, so the headings wrap rather than push
  * the quadrant column out of sight. */
 .skill-table th, .skill-table td { white-space: normal; }
@@ -330,10 +478,13 @@ th .th-sort:hover { color: var(--fg); }
   .mix-bars li { grid-template-columns: minmax(0, 1fr); }
   .mix-figure { grid-column: 1; }
 
-  /* Five columns on a phone: tighter cells and a smaller floor under the skill
-   * name, so the scores stay on screen instead of behind a sideways scroll. */
+  /* Five or six columns on a phone: tighter cells and a smaller floor under the
+   * skill name, so the scores stay on screen instead of behind a sideways
+   * scroll of the page (the box scrolls itself). */
   .skill-table th, .skill-table td { padding: var(--space-2) var(--space-1); }
   .skill-table th:first-child, .skill-table td:first-child { min-width: 7rem; }
   .skill-table td { font-size: 0.75rem; }
   th .th-sort { font-size: 0.75rem; }
+  .mix-bars--wide li { grid-template-columns: minmax(0, 1fr); }
+  .mix-bars--wide .mix-figure { grid-column: 1; }
 }

@@ -7,8 +7,13 @@
 // only place that turns stats.json, groups.json and search_index.json into the
 // strings that fill them. Nothing is written twice, so nothing can disagree.
 
-import { formatCount, formatPercent, formatScore } from '../format.js';
-import { QUADRANT_NAMES } from '../quadrant.js';
+import {
+  formatCount, formatPercent, formatScore, largestRemainder,
+} from '../format.js';
+import {
+  SHARES, SKILL_CLASS_ORDER, skillClassName, splitOf, typeDescription, typeLabel,
+} from '../scheme.js';
+import { isShares, sharePercents, shareSentence } from '../shares.js';
 import { groupHref, jobHref } from '../urlstate.js';
 
 const PLACEHOLDER = /\{(\w+)\}/g;
@@ -18,24 +23,49 @@ export const LIST_LENGTH = 10;
 
 /* --- deriving ------------------------------------------------------------ */
 
-function quadrantRow(code, stats) {
-  const count = stats.quadrants?.counts?.[code] ?? 0;
-  const share = stats.quadrants?.shares?.[code] ?? 0;
+/**
+ * A count with the right noun: "1 occupation", "3,039 occupations".
+ * TODO: format.js should own this; tree-model.js has the same two lines.
+ */
+function countOf(value, noun = 'occupation') {
+  return `${formatCount(value)} ${noun}${value === 1 ? '' : 's'}`;
+}
+
+/** "0%" is a lie about a class that has one occupation in it. */
+function percentText(percent, count) {
+  return count > 0 && percent === 0 ? '<1%' : `${percent}%`;
+}
+
+function quadrantRow(code, split, percent) {
+  const count = split.counts[code] ?? 0;
   return {
     code,
-    name: QUADRANT_NAMES[code] || code,
+    name: typeLabel(code),
     count,
-    share,
+    share: split.shares[code] ?? 0,
     countText: formatCount(count),
-    shareText: formatPercent(share),
+    shareText: percentText(percent, count),
   };
 }
 
-/** The four quadrants, biggest first. */
+/**
+ * The classes of whichever scheme the set uses, biggest first, with whole
+ * percentages that add up to 100 — rounding each on its own made the headline
+ * table read 101%.
+ */
 function quadrantRows(stats) {
-  return Object.keys(QUADRANT_NAMES)
-    .map((code) => quadrantRow(code, stats))
+  const split = splitOf(stats);
+  const percents = largestRemainder(split.order.map((code) => split.counts[code] ?? 0));
+  return split.order
+    .map((code, position) => quadrantRow(code, split, percents[position]))
     .sort((a, b) => b.count - a.count);
+}
+
+/** The class of a counts object that has the most in it, or null. */
+function largestCode(counts) {
+  const entries = Object.entries(counts || {});
+  if (!entries.length) return null;
+  return entries.reduce((top, entry) => (entry[1] > top[1] ? entry : top))[0];
 }
 
 function majorRow(key, group) {
@@ -51,6 +81,8 @@ function majorRow(key, group) {
     counts,
     shrink,
     shrinkShare: group.n ? shrink / group.n : 0,
+    sh: isShares(group.sh) ? group.sh : null,
+    topType: largestCode(counts),
   };
 }
 
@@ -106,31 +138,115 @@ function rankedLists(index) {
   };
 }
 
+/* --- the shares scheme ---------------------------------------------------- */
+
+/** One row per skill class, in the order the shares are stored. */
+function classRows(stats) {
+  const source = (stats && stats.skill_classes) || null;
+  if (!source) return [];
+  const counts = source.counts || {};
+  const shares = source.shares || {};
+  const total = SKILL_CLASS_ORDER.reduce((sum, code) => sum + (counts[code] || 0), 0);
+  const percents = largestRemainder(SKILL_CLASS_ORDER.map((code) => counts[code] || 0));
+  return SKILL_CLASS_ORDER.map((code, position) => {
+    const count = counts[code] ?? 0;
+    return {
+      code,
+      name: skillClassName(code),
+      count,
+      share: shares[code] ?? (total ? count / total : 0),
+      countText: formatCount(count),
+      shareText: percentText(percents[position], count),
+    };
+  });
+}
+
+/** The four ranked lists of a shares set: one per share, longest share first. */
+function sharesLists(index) {
+  const rows = (index || []).filter((row) => isShares(row.sh));
+  return {
+    substituted: ranked(rows, (row) => row.sh[0]),
+    assisted: ranked(rows, (row) => row.sh[1]),
+    mechanised: ranked(rows, (row) => row.sh[2]),
+    insulated: ranked(rows, (row) => row.sh[3]),
+  };
+}
+
+/** The occupation of one type with the most of the share that type is about. */
+function clearestOfType(index, code, at) {
+  const rows = (index || []).filter((row) => row.q === code && isShares(row.sh));
+  if (!rows.length) return null;
+  return rows.reduce((best, row) => (row.sh[at] > best.sh[at] ? row : best));
+}
+
+function sharesExamples(index, lists) {
+  return {
+    substituted: clearestOfType(index, 'AUTOMATION_HEAVY', 0) || lists.substituted[0] || null,
+    physical: clearestOfType(index, 'INSULATED_PHYSICAL', 3) || null,
+    people: clearestOfType(index, 'INSULATED_PEOPLE', 3) || null,
+  };
+}
+
+/** The major group whose mean shares put the most weight on one of the four. */
+function groupWithMostOf(majors, at) {
+  const scored = majors.filter((row) => row.sh);
+  if (!scored.length) return null;
+  return scored.reduce((best, row) => (row.sh[at] > best.sh[at] ? row : best));
+}
+
+function groupShareHighlights(majors) {
+  return {
+    substituted: groupWithMostOf(majors, 0),
+    assisted: groupWithMostOf(majors, 1),
+    mechanised: groupWithMostOf(majors, 2),
+    insulated: groupWithMostOf(majors, 3),
+  };
+}
+
 /**
  * Everything the page and the article quote, derived from the three index files.
  *
  * @param {{stats: Object, groups: Object, index: Array<Object>}} sources
  * @returns {Object} facts; every number in the article comes out of here
  */
-export function deriveInsights({ stats = {}, groups = {}, index = [] } = {}) {
-  const quadrants = quadrantRows(stats);
-  const majors = majorRows(groups);
-  const lists = rankedLists(index);
-  const byCode = Object.fromEntries(quadrants.map((row) => [row.code, row]));
+/** The totals stats.json states outright, with a floor so nothing prints NaN. */
+function totalsOf(stats) {
   return {
     built: stats.built || '',
+    model: stats.model || '',
     threshold: stats.threshold ?? null,
     occupations: stats.occupations ?? 0,
     skills: stats.skills_scored ?? 0,
     nearLine: stats.near_line || { count: 0, share: 0 },
+  };
+}
+
+/** How many Evolve occupations there are per Shrink one, or null. */
+function evolvePerShrink(byCode) {
+  if (!byCode.SHRINK?.count) return null;
+  return Math.round(byCode.EVOLVE.count / byCode.SHRINK.count);
+}
+
+export function deriveInsights({ stats = {}, groups = {}, index = [] } = {}) {
+  const quadrants = quadrantRows(stats);
+  const majors = majorRows(groups);
+  const scheme = splitOf(stats).scheme;
+  const lists = scheme === SHARES ? sharesLists(index) : rankedLists(index);
+  const byCode = Object.fromEntries(quadrants.map((row) => [row.code, row]));
+  const classes = classRows(stats);
+  return {
+    ...totalsOf(stats),
+    scheme,
     quadrants,
     byCode,
+    classes,
+    topClass: [...classes].sort((a, b) => b.count - a.count)[0] || null,
     majors,
     highlights: groupHighlights(majors),
+    groupShares: groupShareHighlights(majors),
     lists,
-    evolvePerShrink: byCode.SHRINK?.count
-      ? Math.round(byCode.EVOLVE.count / byCode.SHRINK.count)
-      : null,
+    examples: scheme === SHARES ? sharesExamples(index, lists) : {},
+    evolvePerShrink: evolvePerShrink(byCode),
   };
 }
 
@@ -168,10 +284,16 @@ function shrinkFreeClause(highlights) {
   ];
 }
 
+/** The head of one ranked list, or null — the two schemes keep different lists. */
+function listHead(facts, key) {
+  const rows = (facts.lists || {})[key];
+  return (rows && rows[0]) || null;
+}
+
 function exampleValues(facts) {
-  const shrink = facts.lists.shrink[0];
-  const transform = facts.lists.transform[0];
-  const evolve = facts.lists.evolve[0];
+  const shrink = listHead(facts, 'shrink');
+  const transform = listHead(facts, 'transform');
+  const evolve = listHead(facts, 'evolve');
   return {
     shrinkExample: jobLink(shrink),
     shrinkExampleAuto: scoresOf(shrink).auto,
@@ -186,8 +308,8 @@ function exampleValues(facts) {
 }
 
 function extremeValues(facts) {
-  const most = facts.lists.mostExposed[0];
-  const least = facts.lists.leastExposed[0];
+  const most = listHead(facts, 'mostExposed');
+  const least = listHead(facts, 'leastExposed');
   return {
     mostExposed: jobLink(most),
     mostExposedAuto: scoresOf(most).auto,
@@ -222,6 +344,75 @@ function quadrantValues(facts) {
   return values;
 }
 
+/* --- prose: the shares scheme --------------------------------------------- */
+
+const NO_JOB = { text: 'no occupation of that type' };
+
+function shareOf(row, at) {
+  const parts = sharePercents(row && row.sh);
+  return parts.length ? `${parts[at].percent}%` : formatPercent(0);
+}
+
+/** "3 points" — how far the largest type leads the next, never a bare number. */
+function gapWords(first, second) {
+  const points = Math.round(((first?.share ?? 0) - (second?.share ?? 0)) * 100);
+  if (points <= 0) return 'level with';
+  return `${formatCount(points)} point${points === 1 ? '' : 's'} ahead of`;
+}
+
+/** The name, count and share of one type, however empty the run left it. */
+function typeSlots(facts, code, stem) {
+  const row = facts.byCode[code] || {};
+  return {
+    [`${stem}Name`]: typeLabel(code),
+    [`${stem}Count`]: row.countText ?? formatCount(0),
+    [`${stem}Jobs`]: countOf(row.count ?? 0),
+    [`${stem}Share`]: row.shareText ?? formatPercent(0),
+  };
+}
+
+function typeValues(facts) {
+  const [first, second] = facts.quadrants;
+  return {
+    topTypeName: typeLabel(first?.code),
+    topTypeCount: first?.countText ?? formatCount(0),
+    topTypeJobs: countOf(first?.count ?? 0),
+    topTypeShare: first?.shareText ?? formatPercent(0),
+    topTypeDescription: typeDescription(first?.code),
+    typeGap: gapWords(first, second),
+    secondTypeName: typeLabel(second?.code),
+    secondTypeShare: second?.shareText ?? formatPercent(0),
+    topClassName: facts.topClass?.name ?? 'not scored',
+    topClassShare: facts.topClass?.shareText ?? formatPercent(0),
+    ...typeSlots(facts, 'AUTOMATION_HEAVY', 'autoHeavy'),
+    ...typeSlots(facts, 'INSULATED_PHYSICAL', 'physical'),
+    ...typeSlots(facts, 'INSULATED_PEOPLE', 'people'),
+    ...typeSlots(facts, 'MIXED', 'mixed'),
+  };
+}
+
+function shareExampleValues(facts) {
+  const { substituted, physical, people } = facts.examples || {};
+  return {
+    substitutedExample: substituted ? jobLink(substituted) : NO_JOB,
+    substitutedExampleShares: shareSentence(substituted?.sh),
+    physicalExample: physical ? jobLink(physical) : NO_JOB,
+    physicalExamplePercent: shareOf(physical, 3),
+    peopleExample: people ? jobLink(people) : NO_JOB,
+    peopleExamplePercent: shareOf(people, 3),
+  };
+}
+
+function shareGroupValues(facts) {
+  const { assisted, mechanised } = facts.groupShares || {};
+  return {
+    topAssistedGroup: groupLink(assisted),
+    topAssistedGroupShare: shareOf(assisted, 1),
+    topMechGroup: groupLink(mechanised),
+    topMechGroupShare: shareOf(mechanised, 2),
+  };
+}
+
 /**
  * Every placeholder the article templates can use, as text or as a link.
  *
@@ -232,8 +423,9 @@ export function articleValues(facts) {
   return {
     occupations: formatCount(facts.occupations),
     skills: formatCount(facts.skills),
-    threshold: String(facts.threshold),
+    threshold: facts.threshold === null ? 'no cut-off' : String(facts.threshold),
     nearLineCount: formatCount(facts.nearLine.count),
+    nearLineJobs: countOf(facts.nearLine.count),
     nearLineShare: formatPercent(facts.nearLine.share),
     evolvePerShrink: formatCount(facts.evolvePerShrink ?? 0),
     methodLink: { text: 'How sure is this?', href: 'method.html' },
@@ -241,6 +433,9 @@ export function articleValues(facts) {
     ...exampleValues(facts),
     ...extremeValues(facts),
     ...groupValues(facts),
+    ...typeValues(facts),
+    ...shareExampleValues(facts),
+    ...shareGroupValues(facts),
   };
 }
 
@@ -347,6 +542,121 @@ export const ARTICLE = [
   },
 ];
 
+/**
+ * The article of a shares set. Same voice, same rule: every figure, job title,
+ * group name and type name is a slot, so a rebuild of the data rewrites the
+ * sentence rather than contradicting it. A test asserts that no digit appears
+ * in any of these templates outside a slot.
+ */
+export const SHARES_ARTICLE = [
+  {
+    type: 'p',
+    className: 'dropcap',
+    text: 'Every one of the {skills} ESCO skills behind these {occupations} occupations was put '
+      + 'to a judgment model as six questions: whether the work leaves something digital behind, '
+      + 'how much of it a system with no body could carry out itself, how much of it physical '
+      + 'equipment already does, how much better the person gets with that system beside them, '
+      + 'how the skill is exercised, and how widely such systems are deployed. The answers put '
+      + 'every skill in one class, and the mix of a job’s own classes makes its four shares '
+      + 'and its type.',
+  },
+  {
+    type: 'p',
+    text: 'The largest single type is {topTypeName}: {topTypeJobs}, {topTypeShare} '
+      + 'of the total, {typeGap} {secondTypeName} at {secondTypeShare}. {topTypeDescription}',
+  },
+  {
+    type: 'pullquote',
+    text: '{topClassShare} of all scored skills are the kind this rubric calls '
+      + '“{topClassName}”. A job’s type is nothing but the mix of its own skills, '
+      + 'so that one figure shapes the whole map.',
+  },
+  {
+    type: 'p',
+    text: 'Where an AI system could take the work over, it shows. {substitutedExample} is the '
+      + 'clearest case in the data: {substitutedExampleShares}. {autoHeavyJobs}, '
+      + '{autoHeavyShare} of them, meet the first rule and come out {autoHeavyName}, which asks '
+      + 'for half or more of the skill weight to be work the system could carry out itself. A '
+      + 'large share there is not a verdict on anybody: it says which part of the day is up for '
+      + 'redesign first.',
+  },
+  {
+    type: 'p',
+    text: 'At the other end are the jobs built from work a system with no hands cannot reach. '
+      + '{physicalExample} keeps {physicalExamplePercent} of its skill weight with the person, '
+      + 'and the reason is in how the work is done: on things, in a place. {peopleExample} keeps '
+      + '{peopleExamplePercent}, for a different reason — the work is done with and for '
+      + 'other people. Those are two separate types, {physicalName} and {peopleName}, because '
+      + 'they are two separate arguments: {physicalJobs} for the first, '
+      + '{peopleCount} for the second.',
+  },
+  {
+    type: 'p',
+    text: 'Machinery is asked about separately from AI, on purpose: a production line and a '
+      + 'language model are not the same claim about a job. Across the ISCO major groups, '
+      + '{topMechGroup} carry the largest mechanised share of their skill weight, '
+      + '{topMechGroupShare}, while {topAssistedGroup} carry the largest assisted share at '
+      + '{topAssistedGroupShare}. Read the mechanised share as a floor: the question behind it '
+      + 'is worded conservatively, so where it is large the real figure is larger still.',
+  },
+  {
+    type: 'p',
+    text: '{mixedJobs}, {mixedShare} of them, come out {mixedName}. That is a '
+      + 'residual class and not a finding that AI will leave those jobs alone: their skills '
+      + 'point in different directions and one label would mislead. For those, the four shares '
+      + 'say more than the badge does.',
+  },
+  {
+    type: 'p',
+    text: 'Two readings are worth keeping. A job whose work mostly stays human is not a job AI '
+      + 'cannot help with: many of those skills still get a clear gain on part of the work, '
+      + 'under the level this rubric counts as assistance. And rules have edges — '
+      + '{nearLineJobs}, {nearLineShare} of them, sit near enough to one that '
+      + 'moving any single share by five points would give them a different type. {methodLink}',
+  },
+  {
+    type: 'p',
+    text: 'None of this was measured. These are one model’s estimates of what a system '
+      + 'could do to a list of skills as ESCO describes it, with no ground truth to check them '
+      + 'against, and they say nothing about how many people will be doing a job or what it '
+      + 'will pay. Read the direction rather than the decimal. And where a large part of a job '
+      + 'is work AI can take over, the useful question is not whether to worry but which of the '
+      + 'other three shares to grow.',
+  },
+];
+
+/**
+ * The section notes of a shares set, keyed by the id of the element they fill.
+ * Same rule as the article: no figure is written down, only slotted.
+ */
+export const SHARES_NOTES = {
+  'hero-sub': 'Every skill in ESCO put to a judgment model as six questions, then rolled up to '
+    + '{occupations} occupations as four shares of the work. {skills} skills, no measurement of '
+    + 'any real workplace. Every number on this page is computed from the published data as the '
+    + 'page loads.',
+  'split-note': 'Each occupation gets one of seven types from the shares of its own skills, on '
+    + 'the first rule that matches — not from a cut-off on two numbers. {nearLineJobs}, '
+    + '{nearLineShare} of them, sit near enough to a cut-off that moving one share '
+    + 'by five points would change their type. {methodLink}',
+  'classes-note': 'Every scored skill falls into exactly one class, on the first rule that '
+    + 'matches. A job’s four shares are these same four classes weighed over its own '
+    + 'skills, with essential skills counting double.',
+  'substituted-note': 'Ranked by the share of the skill weight an AI system could carry out '
+    + 'itself. A large share is not a verdict on the job: it says which part of the work is up '
+    + 'for redesign first.',
+  'assisted-note': 'Ranked by the share of the work that stays with the person and gets a clear '
+    + 'gain across most of it with an AI system beside them.',
+  'mechanised-note': 'Ranked by the share of the work physical equipment does — production '
+    + 'lines, robots, process plant — with AI set aside. Read it as a floor: the question '
+    + 'behind it is worded conservatively.',
+  'insulated-note': 'Ranked by the share of the work that stays with the person. It does not '
+    + 'mean AI is of no help there: many of those skills still get a gain on part of the work, '
+    + 'under the level this rubric counts as assistance.',
+  'groups-note': 'The ISCO major groups, with the average of each share across the occupations '
+    + 'in them. {topAssistedGroup} carry the largest assisted share, {topAssistedGroupShare}; '
+    + '{topMechGroup} the largest mechanised share, {topMechGroupShare}.',
+};
+
 function valueSegments(value, fallback) {
   if (Array.isArray(value)) return value;
   if (value === undefined || value === null) return [{ text: fallback }];
@@ -382,7 +692,8 @@ export function fillTemplate(template, values = {}) {
  */
 export function buildArticle(facts) {
   const values = articleValues(facts);
-  return ARTICLE.map(({ type, className, text }) => ({
+  const blocks = facts.scheme === SHARES ? SHARES_ARTICLE : ARTICLE;
+  return blocks.map(({ type, className, text }) => ({
     type,
     className,
     segments: fillTemplate(text, values),

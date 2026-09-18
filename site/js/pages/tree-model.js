@@ -10,9 +10,17 @@
 // visitor has opened, so a page showing ten major groups builds ten rows, not
 // three thousand.
 
-import { NOT_SCORED, formatCount, formatPercent, formatScore, formatShare, isScored } from '../format.js';
+import {
+  NOT_SCORED, formatCount, formatScore, isScored, largestRemainder,
+} from '../format.js';
 import { QUADRANT_ORDER } from '../groupstats.js';
-import { QUADRANT_NAMES, quadrantOf } from '../quadrant.js';
+import {
+  QUADRANTS, SHARES, SKILL_CLASS_NAMES, SKILL_CLASS_ORDER, SKILL_NEAR_NOTE, isSkillNear,
+  nearLineCaveat as sharedNearLineCaveat, orderForCounts, schemeOfCode, skillClassName,
+  typeLabel, typeShortLabel,
+} from '../scheme.js';
+import { quadrantOf } from '../quadrant.js';
+import { isShares, sharePercents, shareSentence } from '../shares.js';
 import { fold, rankOccupations } from '../search.js';
 import { buildHash, parseHash } from '../urlstate.js';
 
@@ -106,7 +114,10 @@ function jobNode(row) {
     code: row.c,
     a: row.a,
     m: row.m,
+    k: row.k,
     q: row.q,
+    sh: row.sh,
+    nl: row.nl,
   };
 }
 
@@ -191,13 +202,46 @@ export function filterMatches(model, query, limit = FILTER_LIMIT) {
   const ranked = rankOccupations(model.index, query, Infinity);
   const slugs = new Set();
   const keys = new Set();
-  for (const hit of ranked.slice(0, limit)) {
+  const hits = ranked.slice(0, limit);
+  for (const hit of hits) {
     slugs.add(hit.row.s);
     for (const key of unitChain(hit.row.c)) if (model.groups[key]) keys.add(key);
   }
+  // A Set collapses any two rows that share a slug, so its size is not what is
+  // on screen. What is shown is one row per hit, and only the cap shortens it.
   return {
-    slugs, keys, total: ranked.length, shown: slugs.size, capped: ranked.length > slugs.size,
+    slugs, keys, hits, total: ranked.length, shown: hits.length,
+    capped: ranked.length > hits.length,
   };
+}
+
+/**
+ * The matching jobs as a flat list, best match first: what someone who typed a
+ * word actually asked for. The hierarchy that holds them is a second question,
+ * so it goes behind a disclosure rather than around every result.
+ *
+ * @param {Object} model from buildModel
+ * @param {Object|null} filter from filterMatches
+ * @returns {Array<{slug, title, code, group, alt}>} empty without a filter
+ */
+export function resultRows(model, filter) {
+  if (!filter || !filter.hits) return [];
+  return filter.hits.map((hit) => {
+    const key = `unit:${String(hit.row.c || '')}`;
+    const group = model.groups[key];
+    return {
+      slug: hit.row.s,
+      title: hit.row.t,
+      code: hit.row.c,
+      group: group ? group.label : '',
+      alt: hit.alt || null,
+    };
+  });
+}
+
+/** "also matches “programmer”" — why a row without the word in its title is here. */
+export function alsoMatches(row) {
+  return row && row.alt ? `also matches “${row.alt}”` : '';
 }
 
 /** What the live region says while the filter is on. */
@@ -346,46 +390,119 @@ export function typeAheadIndex(rows, from, prefix) {
   return -1;
 }
 
-/* --- the quadrant mix ----------------------------------------------------- */
+/* --- the class mix -------------------------------------------------------- */
+
+// One shape for every labelled bar on this page, whichever thing it counts:
+// the four boxes, the seven types or the four skill classes. `attribute` is the
+// data-* name the view paints the colour from, so the view never has to know
+// which scheme it is drawing.
+/**
+ * A count with the right noun: "1 job", "3,039 jobs". English agrees with the
+ * number beside the noun, so "1 of 1 job" and "1 of 3 jobs" are both right.
+ * @param {number} count
+ * @param {string} noun the singular form
+ * @returns {string}
+ */
+export function plural(count, noun) {
+  return `${formatCount(count)} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+/** "0%" is a lie about a group that has one job in that class. */
+function percentText(percent, count) {
+  return count > 0 && percent === 0 ? '<1%' : `${percent}%`;
+}
+
+function barSegment(part, total) {
+  const share = total ? part.count / total : 0;
+  return {
+    code: part.code,
+    label: part.label,
+    attribute: part.attribute,
+    count: part.count,
+    share,
+    percent: percentText(part.percent, part.count),
+    text: `${formatCount(part.count)} of ${plural(total, part.noun)}`,
+  };
+}
 
 /**
- * The four quadrant shares of a group, always in the same order, each carrying
- * its own label, count and percentage so nothing is said by colour alone.
+ * One labelled bar per class, with whole percentages that add up to 100.
+ * Rounding each share on its own gives 99 or 101 often enough to notice — it
+ * broke 77 of 604 groups — so the remainder is shared out by largestRemainder.
+ *
+ * @param {Array<string>} order the class codes, in display order
+ * @param {Object} counts code -> count
+ * @param {{attribute: string, noun: string, label: Function}} shape
+ * @returns {Array<Object>}
+ */
+function barSegments(order, counts, shape) {
+  const total = order.reduce((sum, code) => sum + (counts[code] || 0), 0);
+  const percents = largestRemainder(order.map((code) => counts[code] || 0));
+  return order.map((code, position) => barSegment({
+    code,
+    label: shape.label(code),
+    count: counts[code] || 0,
+    percent: percents[position],
+    attribute: shape.attribute,
+    noun: shape.noun,
+  }, total));
+}
+
+/**
+ * How a set of jobs splits over the classes of its scheme — the four boxes or
+ * the seven types — each part carrying its own label, count and percentage so
+ * nothing is said by colour alone.
  * @param {Object} counts the `q` map of a groups.json entry
- * @returns {Array<{code, label, count, share, percent, text}>}
+ * @returns {Array<{code, label, attribute, count, share, percent, text}>}
  */
 export function mixSegments(counts) {
   const tally = counts || {};
-  const total = QUADRANT_ORDER.reduce((sum, code) => sum + (tally[code] || 0), 0);
-  return QUADRANT_ORDER.map((code) => {
-    const count = tally[code] || 0;
-    const share = total ? count / total : 0;
-    return {
-      code,
-      label: QUADRANT_NAMES[code],
-      count,
-      share,
-      percent: formatPercent(share),
-      text: `${formatCount(count)} of ${formatCount(total)} jobs`,
-    };
-  });
+  const order = orderForCounts(tally);
+  const attribute = schemeOfCode(order[0]) === SHARES ? 'data-type' : 'data-quadrant';
+  return barSegments(order, tally, { attribute, noun: 'job', label: typeLabel });
+}
+
+/**
+ * How every scored skill splits over the four classes, from stats.skill_classes.
+ * @param {Object} stats the active set's stats file
+ * @returns {Array<Object>} empty under a scheme that has no skill classes
+ */
+export function classSegments(stats) {
+  const counts = (stats && stats.skill_classes && stats.skill_classes.counts) || null;
+  if (!counts) return [];
+  return barSegments(SKILL_CLASS_ORDER, counts,
+    { attribute: 'data-class', noun: 'skill', label: skillClassName });
 }
 
 /** "51% Evolve, 26% Stable, 17% Transform, 6% Shrink" — the bar said out loud. */
 export function mixText(segments) {
   const shown = (segments || []).filter((segment) => segment.count > 0);
   if (!shown.length) return 'no scored jobs';
-  return [...shown]
+  const parts = [...shown]
     .sort((a, b) => b.share - a.share)
     .map((segment) => `${segment.percent} ${segment.label}`)
     .join(', ');
+  return shown[0].attribute === 'data-type' ? `job types: ${parts}` : parts;
 }
 
 /** "Unit group 2512 · ISCO-08 · 10 jobs" — level, code and size in one line. */
 export function groupSubtitle(group) {
   const level = LEVEL_LABELS[group.level] || 'Group';
   const code = group.code ? `${level} ${group.code} · ISCO-08` : level;
-  return `${code} · ${formatCount(group.n)} jobs`;
+  return `${code} · ${plural(group.n, 'job')}`;
+}
+
+/**
+ * The visible key for the figures every job row prints. Sighted visitors had
+ * only the screen-reader label to go on, which is no key at all.
+ * @param {string} [scheme]
+ * @returns {string}
+ */
+export function scoreKeyLine(scheme) {
+  if (scheme === SHARES) {
+    return 'Each job shows its type and how much of its work AI can take over.';
+  }
+  return 'Each job shows automation risk / amplification, both out of 10.';
 }
 
 /**
@@ -393,25 +510,80 @@ export function groupSubtitle(group) {
  * what the published data shows: how many jobs sit near a cut-off.
  */
 export function nearLineCaveat(stats) {
-  const near = stats && stats.near_line;
-  if (!near || !isScored(near.count)) {
-    return 'Jobs sitting near a cut-off can fall either side of it, so read this split '
-      + 'as a band, not a count.';
+  return sharedNearLineCaveat(stats);
+}
+
+/* --- one job, as a leaf --------------------------------------------------- */
+
+function isSharesNode(node) {
+  return schemeOfCode(node && node.q) === SHARES || isShares(node && node.sh);
+}
+
+/**
+ * The figure beside a leaf: how much of the work AI can take over under the
+ * shares scheme, the pair of scores under quadrants.
+ * @param {Object} node a job node
+ * @returns {string}
+ */
+export function leafFigure(node) {
+  if (!isSharesNode(node)) {
+    return `${formatScore(node && node.a)} / ${formatScore(node && node.m)}`;
   }
-  return `${formatShare(near.count, stats.occupations, 'jobs')} sit within 0.5 of a `
-    + 'cut-off, and a small change in the scores moves those into another box: read this '
-    + 'split as a band, not a count.';
+  const parts = sharePercents(node.sh);
+  return parts.length ? `${parts[0].percent}% AI can take over` : NOT_SCORED;
+}
+
+/**
+ * What a leaf paints and what it names: the data-* attribute that carries the
+ * colour, the code, the short class name and the figure beside it.
+ * @param {Object} node a job node
+ * @returns {{attribute: string, code: string, name: string, figure: string}}
+ */
+export function leafParts(node) {
+  const shares = isSharesNode(node);
+  return {
+    attribute: shares ? 'data-type' : 'data-quadrant',
+    code: (node && node.q) || '',
+    name: shares ? typeShortLabel(node.q, SHARES) : typeLabel(node.q, QUADRANTS),
+    figure: leafFigure(node),
+  };
 }
 
 /** "Transform, automation 6.4, amplification 8.9" — a leaf said out loud. */
 export function jobSummary(node) {
-  return `${QUADRANT_NAMES[node.q] || NOT_SCORED}, automation ${formatScore(node.a)}, `
-    + `amplification ${formatScore(node.m)}`;
+  if (!isSharesNode(node)) {
+    return `${typeLabel(node.q)}, automation ${formatScore(node.a)}, `
+      + `amplification ${formatScore(node.m)}`;
+  }
+  const sentence = shareSentence(node.sh);
+  const name = typeShortLabel(node.q, SHARES);
+  return sentence ? `${name}. ${sentence}.` : `${name}. Shares not scored.`;
+}
+
+// What the insulated part of a job is made of, in the words of `why_insulated`.
+const WHY_SENTENCES = {
+  physical: 'The part that stays human here is mostly work done on things, in a place.',
+  people: 'The part that stays human here is mostly work done with and for other people.',
+  other: 'The part that stays human here is mostly desk work, done through software or '
+    + 'on paper.',
+};
+
+/**
+ * The sentence about a job's insulated part, or '' where there is none to
+ * explain: the run records a reason for every occupation, including the ones
+ * whose stays-human share is zero, and explaining an empty part would be noise.
+ *
+ * @param {{why?: string, sh?: number[]}} occupation a portfolio_data occupation
+ * @returns {string}
+ */
+export function whyLine(occupation) {
+  if (!occupation || !isShares(occupation.sh) || occupation.sh[3] <= 0) return '';
+  return WHY_SENTENCES[occupation.why] || '';
 }
 
 /* --- the skills of one job ------------------------------------------------ */
 
-function resolveSkills(skills, ids, essential) {
+function resolveSkills(skills, ids, essential, cut) {
   return (ids || [])
     .map((id) => [id, skills[id]])
     .filter(([, skill]) => Boolean(skill))
@@ -420,6 +592,11 @@ function resolveSkills(skills, ids, essential) {
       title: skill.t,
       auto: isScored(skill.a) ? skill.a : null,
       amp: isScored(skill.m) ? skill.m : null,
+      mech: isScored(skill.k) ? skill.k : null,
+      cls: SKILL_CLASS_NAMES[skill.c] ? skill.c : null,
+      // The job badge says when a job sits near a cut-off; a skill's class is
+      // decided the same way and deserves the same warning.
+      near: isSkillNear(skill, cut),
       essential,
       quadrant: quadrantOf(skill.a, skill.m),
     }));
@@ -433,35 +610,61 @@ export function findOccupation(portfolio, slug) {
 
 /**
  * Every skill of one occupation, essential first, unknown ids dropped.
- * @param {Object} portfolio parsed portfolio_data.json
+ * @param {Object} portfolio a `jobs/<unit>` shard, shaped like portfolio_data
  * @param {{se?: Array<string>, so?: Array<string>}} occupation
- * @returns {Array<{id, title, auto, amp, essential, quadrant}>}
+ * @param {number} [cut] the class cut-off, `thresholdOf(stats)`
+ * @returns {Array<{id, title, auto, amp, mech, cls, near, essential, quadrant}>}
  */
-export function skillRows(portfolio, occupation) {
+export function skillRows(portfolio, occupation, cut) {
   const skills = (portfolio && portfolio.skills) || {};
   return [
-    ...resolveSkills(skills, occupation && occupation.se, true),
-    ...resolveSkills(skills, occupation && occupation.so, false),
+    ...resolveSkills(skills, occupation && occupation.se, true, cut),
+    ...resolveSkills(skills, occupation && occupation.so, false, cut),
   ];
 }
 
+/** What a near-the-line skill says about itself, for the chip's title. */
+export const SKILL_NEAR_TEXT = SKILL_NEAR_NOTE;
+
+function countBy(rows, read) {
+  const counts = {};
+  for (const row of rows) {
+    const code = read(row);
+    if (code) counts[code] = (counts[code] || 0) + 1;
+  }
+  return counts;
+}
+
+// Under shares a skill carries its own class, so the split is the split of the
+// classes — the same four parts the job's shares are built from.
+function classBars(rows) {
+  const counts = countBy(rows, (row) => row.cls);
+  return {
+    scored: SKILL_CLASS_ORDER.reduce((sum, code) => sum + (counts[code] || 0), 0),
+    bars: barSegments(SKILL_CLASS_ORDER, counts,
+      { attribute: 'data-class', noun: 'skill', label: skillClassName }),
+  };
+}
+
+function quadrantBars(rows) {
+  const counts = countBy(rows, (row) => row.quadrant);
+  return {
+    scored: QUADRANT_ORDER.reduce((sum, code) => sum + (counts[code] || 0), 0),
+    bars: barSegments(QUADRANT_ORDER, counts,
+      { attribute: 'data-quadrant', noun: 'skill', label: typeLabel }),
+  };
+}
+
 /**
- * How the job's own skills split across the four boxes, on the same cut-off
- * the occupations use.
+ * How the job's own skills split: by class under the shares scheme, across the
+ * four boxes under quadrants.
  * @param {Array<Object>} rows from skillRows
+ * @param {string} [scheme] 'quadrants' (default) or 'shares'
  * @returns {{total, essential, scored, unscored, bars: Array}}
  */
-export function skillMix(rows) {
+export function skillMix(rows, scheme) {
   const all = rows || [];
-  const counts = {};
-  for (const row of all) {
-    if (row.quadrant) counts[row.quadrant] = (counts[row.quadrant] || 0) + 1;
-  }
-  const scored = QUADRANT_ORDER.reduce((sum, code) => sum + (counts[code] || 0), 0);
-  const bars = mixSegments(counts).map((segment) => ({
-    ...segment,
-    text: `${formatCount(segment.count)} of ${formatCount(scored)} skills`,
-  }));
+  const { scored, bars } = scheme === SHARES ? classBars(all) : quadrantBars(all);
   return {
     total: all.length,
     essential: all.filter((row) => row.essential).length,
@@ -481,7 +684,7 @@ export function skillSummary(mix) {
 
 /* --- the skills table ----------------------------------------------------- */
 
-/** The table's columns, in order. */
+/** The table's columns under the quadrant scheme, in order. */
 export const SKILL_COLUMNS = [
   { key: 'title', label: 'Skill', numeric: false },
   { key: 'essential', label: 'In this job', numeric: false },
@@ -489,6 +692,25 @@ export const SKILL_COLUMNS = [
   { key: 'amp', label: 'Amplification', numeric: true },
   { key: 'quadrant', label: 'Quadrant', numeric: false },
 ];
+
+/** The same table under the shares scheme: the class, then three scores. */
+export const SHARES_SKILL_COLUMNS = [
+  { key: 'title', label: 'Skill', numeric: false },
+  { key: 'essential', label: 'In this job', numeric: false },
+  { key: 'cls', label: 'Class', numeric: false },
+  { key: 'auto', label: 'AI substitution', numeric: true },
+  { key: 'amp', label: 'AI assistance', numeric: true },
+  { key: 'mech', label: 'Machine automation', numeric: true },
+];
+
+/**
+ * The columns of whichever scheme the active set uses.
+ * @param {string} [scheme]
+ * @returns {Array<{key: string, label: string, numeric: boolean}>}
+ */
+export function skillColumns(scheme) {
+  return scheme === SHARES ? SHARES_SKILL_COLUMNS : SKILL_COLUMNS;
+}
 
 /** The three states of the Essential / Optional / All toggle. */
 export const SKILL_FILTERS = [
@@ -502,7 +724,9 @@ const SKILL_VALUES = {
   essential: (row) => (row.essential ? 1 : 0),
   auto: (row) => row.auto,
   amp: (row) => row.amp,
-  quadrant: (row) => QUADRANT_NAMES[row.quadrant] || '',
+  mech: (row) => row.mech,
+  quadrant: (row) => (row.quadrant ? typeLabel(row.quadrant) : ''),
+  cls: (row) => (row.cls ? skillClassName(row.cls) : ''),
 };
 
 function isPresent(value) {
@@ -537,21 +761,34 @@ export function filterSkillRows(rows, mode) {
   return [...(rows || [])];
 }
 
+const SKILL_CELLS = {
+  title: (row) => row.title,
+  essential: (row) => (row.essential ? 'Essential' : 'Optional'),
+  auto: (row) => formatScore(row.auto),
+  amp: (row) => formatScore(row.amp),
+  mech: (row) => formatScore(row.mech),
+  quadrant: (row) => typeLabel(row.quadrant),
+  cls: (row) => (row.cls ? skillClassName(row.cls) : NOT_SCORED),
+};
+
 /**
  * One table row per skill, each cell already formatted, so the page never
  * decides what a missing score looks like.
+ * @param {Array<Object>} rows from skillRows
+ * @param {string} [scheme] picks the column set
  */
-export function skillTableRows(rows) {
+export function skillTableRows(rows, scheme) {
+  const columns = skillColumns(scheme);
   return (rows || []).map((row) => ({
     id: row.id,
     title: row.title,
     quadrant: row.quadrant,
-    cells: [
-      { key: 'title', text: row.title },
-      { key: 'essential', text: row.essential ? 'Essential' : 'Optional' },
-      { key: 'auto', text: formatScore(row.auto), numeric: true },
-      { key: 'amp', text: formatScore(row.amp), numeric: true },
-      { key: 'quadrant', text: QUADRANT_NAMES[row.quadrant] || NOT_SCORED },
-    ],
+    cls: row.cls,
+    near: Boolean(row.near),
+    cells: columns.map((column) => ({
+      key: column.key,
+      text: SKILL_CELLS[column.key](row),
+      numeric: column.numeric,
+    })),
   }));
 }

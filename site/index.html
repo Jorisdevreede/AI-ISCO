@@ -4,10 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Find a job — AI-ISCO</title>
-<meta name="description" content="Search European occupations and see how much of the work AI could automate and how much it could amplify. Model estimates, not forecasts.">
+<meta name="description" content="Search European occupations and see how exposed each one is to AI: what AI could take over, what it could assist with, and what stays human. Model estimates, not forecasts.">
+<meta property="og:site_name" content="AI-ISCO">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Find a job — AI-ISCO">
+<meta property="og:description" content="Search European occupations and see how exposed each one is to AI: what AI could take over, what it could assist with, and what stays human. Model estimates, not forecasts.">
+<meta property="og:url" content="https://jorisdevreede.github.io/AI-ISCO/">
+<meta property="og:image" content="https://jorisdevreede.github.io/AI-ISCO/card.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
-<link rel="preload" href="search_index.json" as="fetch" crossorigin>
+<!-- No <link rel="preload"> for search_index: site/scorer.js decides at run
+     time which set the page reads, so preloading the unsuffixed name downloads
+     half a megabyte the default set never uses. -->
 <style>
 /* Page-specific rules for the landing page only. Shared components and tokens
    live in css/app.css; nothing here may be needed by another page. */
@@ -63,6 +72,29 @@
   text-transform: uppercase;
   color: var(--fg-muted);
 }
+
+/* A chip names the job it opens and, beside it, what kind of job the active
+   score set says it is: the quadrant's name, or the type's short name. The
+   class sits outside the link so the link's text is the job title and nothing
+   else. */
+.chip-item {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.chip-item:hover { background: rgba(255, 255, 255, 0.08); }
+.chip-item .chip { background: none; border: 0; }
+.chip-item .chip:hover { background: none; }
+.chip-meta, .recent-meta {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+.chip-meta { padding-right: var(--space-3); }
+.recent-meta { padding-left: var(--space-1); }
+.chip-meta::before, .recent-meta::before { content: '· '; }
 
 .recent-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .recent-item {
@@ -140,7 +172,7 @@
 
   <nav class="more-links" aria-label="Other ways to explore">
     <a class="button button--quiet" id="browse-link" href="groups.html#g=all">Or browse a whole sector →</a>
-    <a class="button button--quiet" id="skill-link" href="skill.html">Look up a skill →</a>
+    <a class="button button--quiet" id="skill-link" href="skill.html">Skill scores →</a>
   </nav>
 
 </main>

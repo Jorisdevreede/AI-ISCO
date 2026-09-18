@@ -1,31 +1,29 @@
 // "How sure is this?" — audit flow D5, within the brief's restrictions.
 //
-// The page's prose is static; every number in it is computed at load, so a
-// rebuild of the data rewrites the page instead of contradicting it. The counts
-// come from stats.json. Where a second score set is deployed, the agreement
-// between the two sets is computed from both search indexes (site/js/agreement.js);
-// without it that section stays hidden.
+// The page's prose is static and every number in it is computed at load, so a
+// rebuild of the data rewrites the page instead of contradicting it. Two score
+// sets of two different shapes are published, so the prose comes in two
+// versions: elements carrying data-scheme belong to one of them, everything
+// else belongs to both, and applyScheme shows the right half.
+//
+// The counts come from stats.json. Where a second scoring of the ORIGINAL
+// rubric is deployed, the agreement between those two sets is computed from
+// both search indexes (site/js/agreement.js); without it that section stays
+// hidden, and compareScoreSets refuses anything that is not that rubric.
 
 import { renderChrome } from '../chrome.js';
 import { compareScoreSets } from '../agreement.js';
 import { loadBothSets, loadJSON, whenSlow } from '../data.js';
-import { formatCount, formatPercent } from '../format.js';
-import { NEAR_LINE, QUADRANT_NAMES, THRESHOLD } from '../quadrant.js';
-import { agreementTable, agreementValues } from './method-model.js';
+import { NEAR_LINE } from '../quadrant.js';
+import { SHARES, splitOf, typeLabel } from '../scheme.js';
+import {
+  agreementTable, agreementValues, methodValues, quadrantRuleRows, skillClassRows, typeRuleRows,
+} from './method-model.js';
 
 const SLOW_MS = 200;
 
-/** The four boxes, in the order the table lists them. */
-const QUADRANT_RULES = [
-  { code: 'TRANSFORM', rule: 'Both scores at or above the cut-off' },
-  { code: 'EVOLVE', rule: 'Automation below the cut-off, amplification at or above it' },
-  { code: 'STABLE', rule: 'Both scores below the cut-off' },
-  { code: 'SHRINK', rule: 'Automation at or above the cut-off, amplification below it' },
-];
-
 const status = document.getElementById('method-status');
 const errorSlot = document.getElementById('method-error');
-const table = document.getElementById('quadrant-table');
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -39,20 +37,6 @@ function setStatus(text) {
   status.hidden = !text;
 }
 
-/** Every value a [data-stat] slot in the page can ask for. */
-function statValues(stats) {
-  const nearLine = stats.near_line || {};
-  return {
-    skills: formatCount(stats.skills_scored),
-    occupations: formatCount(stats.occupations),
-    threshold: String(stats.threshold ?? THRESHOLD),
-    nearLineCount: formatCount(nearLine.count),
-    nearLineShare: formatPercent(nearLine.share),
-    nearLineDistance: String(NEAR_LINE),
-    built: stats.built || 'not recorded',
-  };
-}
-
 function fillSlots(values) {
   for (const slot of document.querySelectorAll('[data-stat]')) {
     const value = values[slot.dataset.stat];
@@ -60,21 +44,38 @@ function fillSlots(values) {
   }
 }
 
-function quadrantRow(entry, stats) {
-  const counts = stats.quadrants?.counts || {};
-  const shares = stats.quadrants?.shares || {};
+/** Show the half of the prose that belongs to the scheme on screen. */
+function applyScheme(scheme) {
+  for (const node of document.querySelectorAll('[data-scheme]')) {
+    node.hidden = node.dataset.scheme !== scheme;
+  }
+}
+
+/* --- the rule tables ------------------------------------------------------ */
+
+// Every rule table on this page has the same four columns: the class, the rule
+// it matched in plain words, and the two figures the current run gives it.
+function ruleRow(entry) {
   const row = el('tr');
-  const name = el('th', null, QUADRANT_NAMES[entry.code]);
+  const name = el('th', null, entry.name || typeLabel(entry.code));
   name.scope = 'row';
-  row.append(name, el('td', null, entry.rule),
-    el('td', 'numeric', formatCount(counts[entry.code] ?? 0)),
-    el('td', 'numeric', formatPercent(shares[entry.code] ?? 0)));
+  row.append(name, el('td', null, entry.rule), el('td', 'numeric', entry.count),
+    el('td', 'numeric', entry.share));
   return row;
 }
 
-function renderTable(stats) {
-  const body = table.querySelector('tbody');
-  body.replaceChildren(...QUADRANT_RULES.map((entry) => quadrantRow(entry, stats)));
+function fillTable(id, rows) {
+  document.querySelector(`#${id} tbody`).replaceChildren(...rows.map(ruleRow));
+}
+
+function renderTables(stats) {
+  const split = splitOf(stats);
+  if (split.scheme !== SHARES) {
+    fillTable('quadrant-table', quadrantRuleRows(split));
+    return;
+  }
+  fillTable('type-table', typeRuleRows(split));
+  fillTable('class-table', skillClassRows(stats));
 }
 
 function showError(error, retry) {
@@ -88,7 +89,7 @@ function showError(error, retry) {
   errorSlot.replaceChildren(block);
 }
 
-// --- the second model ---------------------------------------------------------
+// --- the second scoring of the original rubric --------------------------------
 
 function fillAgreementSlots(values) {
   for (const slot of document.querySelectorAll('[data-agree]')) {
@@ -119,20 +120,68 @@ function matrixRow(entry) {
   return row;
 }
 
+// The site states one occupation total everywhere; this comparison covers
+// slightly fewer, so it is given that total and says so rather than quietly
+// printing a smaller number the page contradicts two sections above.
+let siteOccupations = null;
+
+const FAILED = 'The comparison did not load, so it is left out. Nothing else on this page '
+  + 'depends on it.';
+
+function setAgreementStatus(text) {
+  const slot = document.getElementById('agreement-status');
+  slot.textContent = text || '';
+  slot.hidden = !text;
+}
+
 function renderAgreement(sets) {
   const result = sets && compareScoreSets(sets.first, sets.second);
-  if (!result) return;
-  fillAgreementSlots(agreementValues(result, sets.labels));
+  if (!result) {
+    setAgreementStatus(FAILED);
+    return;
+  }
+  fillAgreementSlots(agreementValues(result, sets.labels, siteOccupations));
   const matrix = agreementTable(result);
   const grid = document.getElementById('agreement-table');
   grid.querySelector('thead').replaceChildren(headerRow(matrix.columns));
   grid.querySelector('tbody').replaceChildren(...matrix.rows.map(matrixRow));
-  document.getElementById('agreement').hidden = false;
+  setAgreementStatus('');
+  document.getElementById('agreement-body').hidden = false;
 }
 
-/** The section is a bonus: if its files fail to load it stays hidden, the page stands. */
+/** The section is a bonus: if its files fail to load it says so and the page stands. */
+function fetchAgreement() {
+  const sets = loadBothSets('search_index');
+  whenSlow(sets, SLOW_MS, () => setAgreementStatus('Loading both score files…')).catch(() => {});
+  sets.then(renderAgreement).catch(() => setAgreementStatus(FAILED));
+}
+
+// Two whole search indexes, and the largest download on this page. Nobody pays
+// for them until the section they belong to is about to be read.
+function watchAgreement() {
+  const sentinel = document.getElementById('agreement-sentinel');
+  if (!sentinel || typeof window.IntersectionObserver !== 'function') {
+    fetchAgreement();
+    return;
+  }
+  const observer = new window.IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return;
+    observer.disconnect();
+    fetchAgreement();
+  }, { rootMargin: '300px' });
+  observer.observe(sentinel);
+}
+
+// The heading and the note saying which rubric this compares cost nothing, so
+// they stand as soon as we know a second run of it is deployed here at all.
 function loadAgreement() {
-  loadBothSets('search_index').then(renderAgreement).catch(() => {});
+  Promise.resolve(typeof window !== 'undefined' && window.scorerAlternative)
+    .then((alternative) => {
+      if (!alternative) return;
+      document.getElementById('agreement').hidden = false;
+      watchAgreement();
+    })
+    .catch(() => {});
 }
 
 function load() {
@@ -140,16 +189,19 @@ function load() {
   whenSlow(loadJSON('stats'), SLOW_MS, () => setStatus('Loading the current counts…'))
     .then((stats) => {
       setStatus('');
-      fillSlots(statValues(stats));
-      renderTable(stats);
+      siteOccupations = stats.occupations ?? null;
+      applyScheme(splitOf(stats).scheme);
+      fillSlots(methodValues(stats, NEAR_LINE));
+      renderTables(stats);
     })
     .catch((error) => {
       setStatus('');
       showError(error, load);
-    });
+    })
+    // Either way the comparison runs; it only ever needed the total for wording.
+    .finally(loadAgreement);
 }
 
 renderChrome({ active: 'method' });
 setStatus('');
 load();
-loadAgreement();

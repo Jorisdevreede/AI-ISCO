@@ -4,12 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Browse sectors — AI-ISCO</title>
-<meta name="description" content="How exposure to AI differs between groups of occupations: the quadrant mix, a ranked list, a scatter, a treemap and a sortable table for every ISCO group.">
+<meta name="description" content="How exposure to AI differs between groups of occupations: the mix of job types, a ranked list, a scatter, a treemap and a sortable table for every ISCO group.">
+<meta property="og:site_name" content="AI-ISCO">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Browse sectors — AI-ISCO">
+<meta property="og:description" content="How exposure to AI differs between groups of occupations: the mix of job types, a ranked list, a scatter, a treemap and a sortable table for every ISCO group.">
+<meta property="og:url" content="https://jorisdevreede.github.io/AI-ISCO/groups.html">
+<meta property="og:image" content="https://jorisdevreede.github.io/AI-ISCO/card.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/groups.css">
-<link rel="preload" href="groups.json" as="fetch" crossorigin>
-<link rel="preload" href="search_index.json" as="fetch" crossorigin>
+<!-- No <link rel="preload"> for the two index files: which set they come from
+     is decided by site/scorer.js at run time, so a preload of the unsuffixed
+     name downloads a megabyte the default set never reads. -->
 </head>
 <body>
 
@@ -59,6 +67,7 @@
 
     <section class="card" aria-labelledby="mix-heading">
       <h2 id="mix-heading">How this group splits</h2>
+      <div class="mean-shares" id="mean-shares" hidden></div>
       <div class="mix-layout">
         <ul class="mix-bars" id="mix-bars"></ul>
         <p class="mix-caveat small" id="mix-caveat"></p>
@@ -75,17 +84,18 @@
     <section class="card-grid" aria-labelledby="exposure-heading">
       <h2 id="exposure-heading" class="visually-hidden">Most and least exposed jobs</h2>
       <div class="card">
-        <h3>Most exposed to automation</h3>
-        <ul class="job-list" id="top-list"></ul>
+        <h3 id="top-heading">Most exposed to automation</h3>
+        <ul class="job-list" id="top-list" aria-labelledby="top-heading"></ul>
       </div>
       <div class="card">
-        <h3>Least exposed</h3>
-        <ul class="job-list" id="bottom-list"></ul>
+        <h3 id="bottom-heading">Least exposed</h3>
+        <ul class="job-list" id="bottom-list" aria-labelledby="bottom-heading"></ul>
       </div>
     </section>
 
-    <section class="card" aria-labelledby="skills-heading">
+    <section class="card" id="skills-section" aria-labelledby="skills-heading">
       <h2 id="skills-heading">Skills driving this group</h2>
+      <p class="small muted" id="skills-note" hidden></p>
       <div class="skill-columns" id="skill-columns"></div>
     </section>
 

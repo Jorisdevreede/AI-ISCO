@@ -4,32 +4,47 @@
 // canvas lives in treemap-view.js. This file listens, builds nodes and pushes
 // history entries, so the URL stays the state: #g=<level>:<code>&view=<view>,
 // or #a=<key>&b=<key> for a comparison.
+//
+// The scheme of the active score set is read once, from its stats file, and
+// handed to the model with every call; nothing here decides what a class is
+// called, which order the classes go in or which colour belongs to which code.
 
 import { renderChrome } from '../chrome.js';
 import { createCombobox } from '../combobox.js';
 import { loadJSON, whenSlow } from '../data.js';
 import { formatCount, formatScore } from '../format.js';
-import { SORTS, TABLE_COLUMNS, occupationsInGroup, tableRows } from '../groupstats.js';
+import { occupationsInGroup } from '../groupstats.js';
+import { SHARES, schemeOf } from '../scheme.js';
+import { renderSharesBar } from '../shares-bar.js';
 import { groupHref, jobHref, skillHref, withScorer } from '../urlstate.js';
 import * as model from './groups-model.js';
 import { createTreemapView } from './treemap-view.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const SCATTER_BOX = { width: 420, height: 420, pad: 44 };
+const DOT_RADIUS = 3.6;
+const LEGEND_RADIUS = 6;
 
 const state = {
   groups: null,
   index: null,
   stats: null,
+  scheme: undefined,
   bySlug: null,
   skills: null,
   skillsPending: false,
-  colour: 'quadrant',
+  skillsWatch: null,
+  colour: null,
+  colourChosen: false,
   rankedSort: 'automation',
-  tableSort: { key: 'a', descending: true },
+  rankedShown: model.RANKED_PAGE,
+  rankedFor: null,
   teardown: null,
   focusChart: false,
+  focusSort: null,
 };
+
+const shares = () => state.scheme === SHARES;
 
 /* --- tiny DOM helpers ----------------------------------------------------- */
 
@@ -66,6 +81,11 @@ function show(node, visible) {
   node.hidden = !visible;
 }
 
+/** A class code goes on the attribute its own scheme's CSS paints. */
+function codeAttr(code) {
+  return shares() ? { 'data-type': code } : { 'data-quadrant': code };
+}
+
 function go(href) {
   window.history.pushState(null, '', withScorer(href, window.location.search));
   render();
@@ -77,9 +97,15 @@ function openJob(slug, groupKey) {
 
 /* --- boot ----------------------------------------------------------------- */
 
+function adoptScheme(stats) {
+  state.scheme = schemeOf(stats);
+  state.rankedSort = model.defaultSort(state.scheme);
+}
+
 function ready(files) {
   const [groups, index, stats] = files;
   Object.assign(state, { groups, index, stats, bySlug: model.indexBySlug(index) });
+  adoptScheme(stats);
   show(byId('page-status'), false);
   wirePickers();
   render();
@@ -129,6 +155,17 @@ function render() {
   else renderGroup(here);
 }
 
+/** Everything one render of a group needs, including the table's sort. */
+function groupView(here, group) {
+  return {
+    key: here.key,
+    view: here.view,
+    group,
+    rows: occupationsInGroup(state.index, here.key),
+    sort: model.tableSortOf(here, state.scheme),
+  };
+}
+
 function renderGroup(here) {
   const group = model.resolveGroup(state.groups, here.key);
   show(byId('compare-body'), false);
@@ -139,7 +176,8 @@ function renderGroup(here) {
     renderUnknown(here.key);
     return;
   }
-  const view = { key: here.key, view: here.view, group, rows: occupationsInGroup(state.index, here.key) };
+  if (!state.colourChosen) state.colour = model.defaultColour(state.scheme, group);
+  const view = groupView(here, group);
   renderHead(view);
   renderMix(view);
   renderTabs(view);
@@ -228,16 +266,35 @@ function wirePickers() {
 
 function mixRow(bar) {
   const width = bar.count ? Math.max(bar.share * 100, 1.5) : 0;
-  return el('li', { 'data-quadrant': bar.code }, [
+  return el('li', codeAttr(bar.code), [
     el('span', { class: 'mix-name', text: bar.label }),
     el('span', { class: 'mix-track' }, [el('span', { class: 'mix-fill', style: `width: ${width}%` })]),
     el('span', { class: 'mix-figure', text: `${bar.text} · ${bar.percent}` }),
   ]);
 }
 
+/** The group's mean shares, above the split: one big bar and its sentence. */
+function renderMeanShares(group) {
+  const block = byId('mean-shares');
+  const sentence = model.meanShareSentence(group);
+  show(block, Boolean(sentence));
+  if (!sentence) return;
+  block.replaceChildren(
+    el('h3', { class: 'section-heading', text: 'What this group is made of' }),
+    renderSharesBar(group.sh, { name: group.label }),
+    el('p', { class: 'mean-shares-line', text: sentence }),
+  );
+}
+
 function renderMix(view) {
-  byId('mix-bars').replaceChildren(...model.quadrantBars(view.group).map(mixRow));
-  byId('mix-caveat').textContent = model.nearLineCaveat(state.stats);
+  byId('mix-bars').replaceChildren(...model.mixBars(view.group, state.scheme).map(mixRow));
+  // The site-wide near-the-line figure reads as a fact about this group, and it
+  // is the wrong one; without a per-group count there is no sentence to say.
+  const caveat = model.groupNearSentence(view.group, state.scheme);
+  byId('mix-caveat').textContent = caveat;
+  show(byId('mix-caveat'), Boolean(caveat));
+  byId('mix-heading').textContent = shares() ? 'How this group splits by type' : 'How this group splits';
+  renderMeanShares(view.group);
 }
 
 /* --- tabs ----------------------------------------------------------------- */
@@ -282,7 +339,10 @@ function onTabKey(event) {
 /* --- the four views ------------------------------------------------------- */
 
 function summaryLine(kind, view) {
-  return el('p', { class: 'view-summary', text: model.visualSummary(kind, view.group, view.rows) });
+  return el('p', {
+    class: 'view-summary',
+    text: model.visualSummary(kind, view.group, view.rows, state.scheme),
+  });
 }
 
 function tableButton(view) {
@@ -309,7 +369,8 @@ function renderPanel(view) {
 /* Ranked ------------------------------------------------------------------- */
 
 function sortSelect(view) {
-  const options = Object.entries(SORTS).map(([key, sort]) => el('option', { value: key, text: sort.label }));
+  const options = model.rankedSorts(state.scheme)
+    .map((sort) => el('option', { value: sort.key, text: sort.label }));
   const select = el('select', { id: 'ranked-sort' }, options);
   select.value = state.rankedSort;
   select.addEventListener('change', () => {
@@ -324,11 +385,20 @@ function legendItem(className, text) {
   return el('span', {}, [el('span', { class: `dot ${className}` }), text]);
 }
 
+function classLegendItem(entry) {
+  const key = el('span', { class: 'shares-key', 'data-class': entry.code, 'aria-hidden': 'true', text: entry.code });
+  return el('li', {}, [key, el('span', { class: 'shares-label', text: entry.label })]);
+}
+
 function rankedLegend() {
+  if (shares()) {
+    return el('ul', { class: 'shares-legend class-legend' },
+      model.shareClassLegend().map(classLegendItem));
+  }
   return el('p', { class: 'dot-legend' }, [
     legendItem('dot--auto', ' automation'),
     legendItem('dot--amp', ' amplification'),
-    el('span', { text: `The line on each row is the cut-off of 6 on a 1 to 10 axis.` }),
+    el('span', { text: 'The line on each row is the cut-off of 6 on a 1 to 10 axis.' }),
   ]);
 }
 
@@ -342,29 +412,99 @@ function dotTrack(row) {
   return el('span', { class: 'dot-track', 'aria-hidden': 'true' }, dots);
 }
 
+/**
+ * The shares bar of one row, hidden from the accessibility tree: the row's own
+ * visually-hidden summary says the same four numbers, and saying them twice in
+ * one link is worse than not drawing the bar at all.
+ */
+function rowSharesBar(row) {
+  const bar = renderSharesBar(row.shares, { name: row.title, compact: true });
+  bar.setAttribute('aria-hidden', 'true');
+  return bar;
+}
+
+/** The middle and right of a row: the four shares, or the two dots and scores. */
+function rankedFigure(row) {
+  if (shares()) {
+    return [
+      row.shares
+        ? rowSharesBar(row)
+        : el('span', { class: 'muted small', text: 'Shares not scored' }),
+      el('span', { class: 'ranked-type', ...codeAttr(row.quadrant), 'aria-hidden': 'true', text: row.typeShort }),
+    ];
+  }
+  return [
+    dotTrack(row),
+    el('span', {
+      class: 'ranked-scores',
+      'aria-hidden': 'true',
+      text: `${row.automation.text} / ${row.amplification.text} · ${row.quadrantLabel}`,
+    }),
+  ];
+}
+
 function rankedItem(row, groupKey) {
-  const scores = `${row.automation.text} / ${row.amplification.text} · ${row.quadrantLabel}`;
   const anchor = link(jobHref(row.slug, { from: groupKey }), null);
   anchor.append(
     el('span', { class: 'ranked-title' }, [row.title, ' ', el('span', { class: 'ranked-code', text: row.code })]),
-    dotTrack(row),
-    el('span', { class: 'ranked-scores', 'aria-hidden': 'true', text: scores }),
-    el('span', {
-      class: 'visually-hidden',
-      text: `automation ${row.automation.text}, amplification ${row.amplification.text}, ${row.quadrantLabel}`,
-    }),
+    ...rankedFigure(row),
+    el('span', { class: 'visually-hidden', text: model.rankedRowSummary(row, state.scheme) }),
   );
   return el('li', {}, [anchor]);
 }
 
+/** A new group or a new sort starts the list at its first page again. */
+function rankedReset(view) {
+  const token = `${view.key}:${state.rankedSort}`;
+  if (state.rankedFor === token) return;
+  state.rankedFor = token;
+  state.rankedShown = model.RANKED_PAGE;
+}
+
+function focusAfterMore(panel) {
+  const button = panel.querySelector('.ranked-more button');
+  const last = panel.querySelector('.ranked li:last-child a');
+  if (button) button.focus();
+  else if (last) last.focus();
+}
+
+function moreButton(step, view) {
+  const button = el('button', { type: 'button', class: 'button button--quiet', text: step.label });
+  button.addEventListener('click', () => {
+    state.rankedShown += step.step;
+    renderPanel(view);
+    byId('chart-live').textContent = model.rankedCountText(rankedSlice(view));
+    focusAfterMore(byId('panel'));
+  });
+  return button;
+}
+
+function rankedSlice(view) {
+  const rows = model.rankedRows(view.rows, state.rankedSort, state.scheme);
+  return model.rankedPage(rows, state.rankedShown);
+}
+
+function rankedFooter(page, view) {
+  const buttons = model.rankedMoreButtons(page);
+  if (!buttons.length) return null;
+  return el('div', { class: 'ranked-more' }, [
+    el('p', { class: 'small muted', text: model.rankedCountText(page) }),
+    ...buttons.map((step) => moreButton(step, view)),
+  ]);
+}
+
 function renderRanked(panel, view) {
-  const rows = model.rankedRows(view.rows, state.rankedSort);
+  rankedReset(view);
+  const page = rankedSlice(view);
+  const footer = rankedFooter(page, view);
   panel.append(
     sortSelect(view),
     summaryLine('ranked', view),
     rankedLegend(),
-    el('ol', { class: 'ranked' }, rows.map((row) => rankedItem(row, view.key))),
+    el('ol', { class: shares() ? 'ranked ranked--shares' : 'ranked' },
+      page.rows.map((row) => rankedItem(row, view.key))),
   );
+  if (footer) panel.append(footer);
 }
 
 /* Scatter ------------------------------------------------------------------ */
@@ -377,33 +517,88 @@ function svgText(at, value, className, extra = {}) {
   return svgEl('text', { ...at, class: className, ...extra }, [value]);
 }
 
-function scatterFrame(cut) {
+function axisFrame() {
   const { width, height, pad } = SCATTER_BOX;
   return [
     svgLine({ x1: pad, y1: pad, x2: pad, y2: height - pad }, 'grid-line'),
     svgLine({ x1: pad, y1: height - pad, x2: width - pad, y2: height - pad }, 'grid-line'),
+  ];
+}
+
+function cutLines(cut) {
+  const { width, height, pad } = SCATTER_BOX;
+  return [
     svgLine({ x1: cut.x, y1: pad, x2: cut.x, y2: height - pad }, 'cut-line'),
     svgLine({ x1: pad, y1: cut.y, x2: width - pad, y2: cut.y }, 'cut-line'),
   ];
 }
 
-function scatterTicks(cut) {
+/** The ends of both axes, and what each axis measures. */
+function endTicks(names, ticks) {
   const { width, height, pad } = SCATTER_BOX;
   const middle = height / 2 + 34;
   return [
-    svgText({ x: pad - 4, y: height - pad + 16 }, '1', 'axis-text'),
-    svgText({ x: cut.x - 3, y: height - pad + 16 }, '6', 'axis-text'),
-    svgText({ x: width - pad - 8, y: height - pad + 16 }, '10', 'axis-text'),
-    svgText({ x: width / 2 - 30, y: height - 8 }, 'Automation', 'axis-text'),
-    svgText({ x: pad - 24, y: height - pad + 4 }, '1', 'axis-text'),
-    svgText({ x: pad - 24, y: cut.y + 4 }, '6', 'axis-text'),
-    svgText({ x: pad - 30, y: pad + 4 }, '10', 'axis-text'),
-    svgText({ x: 14, y: middle }, 'Amplification', 'axis-text', { transform: `rotate(-90 14 ${middle})` }),
+    svgText({ x: pad - 4, y: height - pad + 16 }, ticks.low, 'axis-text'),
+    svgText({ x: width - pad - 8, y: height - pad + 16 }, ticks.high, 'axis-text'),
+    svgText({ x: width / 2 - 30, y: height - 8 }, names.x, 'axis-text'),
+    svgText({ x: pad - 24, y: height - pad + 4 }, ticks.low, 'axis-text'),
+    svgText({ x: pad - 30, y: pad + 4 }, ticks.high, 'axis-text'),
+    svgText({ x: 14, y: middle }, names.y, 'axis-text', { transform: `rotate(-90 14 ${middle})` }),
   ];
 }
 
-function scatterQuadrants(cut) {
-  const { width, height, pad } = SCATTER_BOX;
+/** The same ticks with the cut-off marked between them, in the old order. */
+function quadrantTicks(cut, names, ticks) {
+  const marks = endTicks(names, ticks);
+  const { height, pad } = SCATTER_BOX;
+  marks.splice(1, 0, svgText({ x: cut.x - 3, y: height - pad + 16 }, '6', 'axis-text'));
+  marks.splice(5, 0, svgText({ x: pad - 24, y: cut.y + 4 }, '6', 'axis-text'));
+  return marks;
+}
+
+const at = (value) => value.toFixed(1);
+
+/** The type rules, drawn lightly across the plot and labelled with their cut. */
+function ruleMarks() {
+  return model.ruleLines(SCATTER_BOX, state.scheme).flatMap((rule) => [
+    svgLine({ x1: at(rule.x1), y1: at(rule.y1), x2: at(rule.x2), y2: at(rule.y2) }, 'rule-line'),
+    svgText({ x: at(rule.textX), y: at(rule.textY) }, rule.label, 'rule-text',
+      { 'text-anchor': rule.anchor }),
+  ]);
+}
+
+/** The part of the plot these two axes cannot settle, tinted under the dots. */
+function shadedArea() {
+  const area = model.undecidedArea(SCATTER_BOX, state.scheme);
+  if (!area) return [];
+  return area.rects.map((rect) => svgEl('rect', {
+    class: 'undecided',
+    x: at(rect.x),
+    y: at(rect.y),
+    width: at(rect.width),
+    height: at(rect.height),
+  }));
+}
+
+/**
+ * The names of the three regions the lines really do decide, and one for the
+ * rest. Drawn last so they sit above the dots; the CSS gives them a halo.
+ */
+function regionLabels() {
+  const area = model.undecidedArea(SCATTER_BOX, state.scheme);
+  const labels = model.namedRegions(SCATTER_BOX, state.scheme).map((region) => svgText(
+    { x: at(region.textX), y: at(region.textY) }, region.label, 'region-text',
+    { 'text-anchor': 'middle' },
+  ));
+  if (area) {
+    labels.push(svgText({ x: at(area.textX), y: at(area.textY) }, area.label,
+      'region-text region-quiet'));
+  }
+  return labels;
+}
+
+function cornerLabels(cut) {
+  const { height, pad } = SCATTER_BOX;
   return [
     svgText({ x: pad + 6, y: pad + 14 }, 'EVOLVE', 'quad-text'),
     svgText({ x: cut.x + 6, y: pad + 14 }, 'TRANSFORM', 'quad-text'),
@@ -412,19 +607,50 @@ function scatterQuadrants(cut) {
   ];
 }
 
+/** Under quadrants the two axes are class boundaries; under shares they are not. */
+function scatterFrame() {
+  const names = model.axisNames(state.scheme);
+  const ticks = model.axisTicks(state.scheme);
+  if (shares()) return [...axisFrame(), ...ruleMarks(), ...endTicks(names, ticks)];
+  const cut = model.thresholdPoint(SCATTER_BOX);
+  return [...axisFrame(), ...cutLines(cut), ...quadrantTicks(cut, names, ticks),
+    ...cornerLabels(cut)];
+}
+
+const markerIds = new Set(model.markerShapes(DOT_RADIUS).map((shape) => shape.code));
+
+/** The four skill classes colour the diverging bars of a share comparison. */
+const CLASS_CODES = new Set(model.shareClassLegend().map((entry) => entry.code));
+
+function markerDefs() {
+  const shapes = model.markerShapes(DOT_RADIUS)
+    .map((shape) => svgEl('path', { id: `marker-${shape.code}`, d: shape.d }));
+  shapes.push(svgEl('circle', { id: 'marker-unscored', r: DOT_RADIUS }));
+  return svgEl('defs', {}, shapes);
+}
+
 function scatterDot(point, index) {
-  return svgEl('circle', {
+  if (!shares()) {
+    return svgEl('circle', {
+      class: 'dot-point',
+      'data-quadrant': point.quadrant || '',
+      'data-index': String(index),
+      cx: point.x.toFixed(2),
+      cy: point.y.toFixed(2),
+      r: 3.4,
+    });
+  }
+  return svgEl('use', {
     class: 'dot-point',
-    'data-quadrant': point.quadrant || '',
+    'data-type': point.quadrant || '',
     'data-index': String(index),
-    cx: point.x.toFixed(2),
-    cy: point.y.toFixed(2),
-    r: 3.4,
+    href: `#marker-${markerIds.has(point.quadrant) ? point.quadrant : 'unscored'}`,
+    x: point.x.toFixed(2),
+    y: point.y.toFixed(2),
   });
 }
 
 function buildScatter(points, summary) {
-  const cut = model.thresholdPoint(SCATTER_BOX);
   return svgEl('svg', {
     class: 'scatter',
     viewBox: `0 0 ${SCATTER_BOX.width} ${SCATTER_BOX.height}`,
@@ -433,10 +659,30 @@ function buildScatter(points, summary) {
     'aria-label': summary,
     'aria-describedby': 'chart-caption',
   }, [
-    ...scatterFrame(cut), ...scatterTicks(cut), ...scatterQuadrants(cut),
+    shares() ? markerDefs() : null,
+    ...shadedArea(),
+    ...scatterFrame(),
     ...points.map(scatterDot),
+    ...regionLabels(),
     svgEl('circle', { class: 'dot-marker', r: 7, cx: -30, cy: -30 }),
   ]);
+}
+
+function legendMark(shape) {
+  return svgEl('svg', {
+    class: 'legend-mark', viewBox: '-8 -8 16 16', 'aria-hidden': 'true', 'data-type': shape.code,
+  }, [svgEl('path', { d: shape.d })]);
+}
+
+/** Which types the dots on screen stand for, by shape as well as by colour. */
+function scatterLegend(view) {
+  const entries = model.typeLegend(view.rows, state.scheme);
+  if (!entries.length) return null;
+  const shapes = new Map(model.markerShapes(LEGEND_RADIUS).map((shape) => [shape.code, shape]));
+  return el('ul', { class: 'type-legend' }, entries.map((entry) => el('li', codeAttr(entry.code), [
+    legendMark(shapes.get(entry.code)),
+    el('span', { text: entry.label }),
+  ])));
 }
 
 /** Roving focus over the dots: one tab stop, arrow keys, Enter opens. */
@@ -481,14 +727,18 @@ function chartCaption(text) {
 }
 
 function renderScatter(panel, view) {
-  const points = model.scatterPoints(view.rows, SCATTER_BOX);
-  const svg = buildScatter(points, model.visualSummary('scatter', view.group, view.rows));
+  const points = model.scatterPoints(view.rows, SCATTER_BOX, state.scheme);
+  const svg = buildScatter(points, model.visualSummary('scatter', view.group, view.rows, state.scheme));
+  const legend = scatterLegend(view);
+  const note = model.scatterCaption(state.scheme);
   panel.append(
     summaryLine('scatter', view),
     el('div', { class: 'scatter-wrap' }, [svg,
       chartCaption('Hover a dot, or focus the chart and use the arrow keys, to name a job.')]),
-    el('div', { class: 'chart-actions' }, [tableButton(view)]),
   );
+  if (note) panel.append(el('p', { class: 'chart-note small muted', text: note }));
+  if (legend) panel.append(legend);
+  panel.append(el('div', { class: 'chart-actions' }, [tableButton(view)]));
   wireScatter(svg, points, view.key);
 }
 
@@ -503,6 +753,7 @@ function colourButton(mode, view) {
   });
   button.addEventListener('click', () => {
     state.colour = mode.key;
+    state.colourChosen = true;
     renderPanel(view);
     const again = [...byId('panel').querySelectorAll('[aria-pressed]')]
       .find((node) => node.textContent === mode.label);
@@ -515,7 +766,7 @@ function colourToolbar(view) {
   return el('div', { class: 'view-toolbar' }, [
     el('span', { class: 'section-heading', id: 'colour-label', text: 'Colour by' }),
     el('div', { class: 'chip-row', role: 'group', 'aria-labelledby': 'colour-label' },
-      model.COLOUR_MODES.map((mode) => colourButton(mode, view))),
+      model.colourModes(state.scheme).map((mode) => colourButton(mode, view))),
   ]);
 }
 
@@ -524,7 +775,7 @@ function renderTreemap(panel, view) {
     id: 'treemap-canvas',
     role: 'img',
     tabindex: '0',
-    'aria-label': model.visualSummary('treemap', view.group, view.rows),
+    'aria-label': model.visualSummary('treemap', view.group, view.rows, state.scheme),
     'aria-describedby': 'chart-caption',
   });
   const caption = chartCaption('Click a tile to drill into a group or open a job. By keyboard: '
@@ -546,7 +797,7 @@ function startTreemap({ canvas, caption, view }) {
     onUp: () => goUp(view.key),
   });
   treemap.setMode(state.colour);
-  treemap.setTiles(model.treemapTiles(state.groups, state.index, view.key));
+  treemap.setTiles(model.treemapTiles(state.groups, state.index, view.key, state.scheme));
   state.teardown = treemap.destroy;
   if (state.focusChart) canvas.focus();
   state.focusChart = false;
@@ -570,20 +821,20 @@ function goUp(groupKey) {
 
 /* Table -------------------------------------------------------------------- */
 
+/** The sorted table is in the URL, so the Copy link button really copies it. */
 function sortTable(column, view) {
-  const same = state.tableSort.key === column.key;
-  state.tableSort = {
+  const same = view.sort.key === column.key;
+  const sort = {
     key: column.key,
-    descending: same ? !state.tableSort.descending : Boolean(column.numeric),
+    descending: same ? !view.sort.descending : Boolean(column.numeric),
   };
-  renderPanel(view);
-  const header = byId('panel').querySelector(`th[data-key="${column.key}"] button`);
-  if (header) header.focus();
+  state.focusSort = column.key;
+  go(model.groupViewHref(view.key, 'table', sort, state.scheme));
 }
 
 function headerCell(column, view) {
-  const sorted = state.tableSort.key === column.key;
-  const direction = state.tableSort.descending ? 'descending' : 'ascending';
+  const sorted = view.sort.key === column.key;
+  const direction = view.sort.descending ? 'descending' : 'ascending';
   const cell = el('th', {
     scope: 'col',
     'data-key': column.key,
@@ -602,25 +853,42 @@ function bodyRow(entry, groupKey) {
     : el('td', { class: cell.numeric ? 'numeric' : null, text: cell.text }))));
 }
 
+function restoreSortFocus(panel) {
+  if (!state.focusSort) return;
+  const header = panel.querySelector(`th[data-key="${state.focusSort}"] button`);
+  state.focusSort = null;
+  if (header) header.focus();
+}
+
 function renderTable(panel, view) {
-  const sorted = model.sortByColumn(view.rows, state.tableSort.key, state.tableSort.descending);
-  const table = el('table', {}, [
+  const sorted = model.sortByColumn(view.rows, view.sort.key, view.sort.descending);
+  const table = el('table', { class: shares() ? 'table--wide' : null }, [
     el('caption', { text: `${formatCount(sorted.length)} jobs in ${view.group.label}. Every column sorts.` }),
-    el('thead', {}, [el('tr', {}, TABLE_COLUMNS.map((column) => headerCell(column, view)))]),
-    el('tbody', {}, tableRows(sorted).map((entry) => bodyRow(entry, view.key))),
+    el('thead', {}, [el('tr', {}, model.columnsFor(state.scheme).map((column) => headerCell(column, view)))]),
+    el('tbody', {}, model.tableBody(sorted, state.scheme).map((entry) => bodyRow(entry, view.key))),
   ]);
   panel.append(summaryLine('table', view), el('div', { class: 'table-scroll' }, [table]));
+  restoreSortFocus(panel);
 }
 
 /* --- lists ---------------------------------------------------------------- */
 
+function jobFigure(job) {
+  if (shares() && job.shares) {
+    return renderSharesBar(job.shares, { name: job.title, compact: true });
+  }
+  return el('span', {
+    class: 'scores',
+    text: shares()
+      ? 'Shares not scored'
+      : `automation ${formatScore(job.automation)} · amplification ${formatScore(job.amplification)}`,
+  });
+}
+
 function jobItem(job, groupKey) {
-  return el('li', {}, [
+  return el('li', shares() ? { class: 'job-row' } : {}, [
     link(jobHref(job.slug, { from: groupKey }), job.title),
-    el('span', {
-      class: 'scores',
-      text: `automation ${formatScore(job.automation)} · amplification ${formatScore(job.amplification)}`,
-    }),
+    jobFigure(job),
   ]);
 }
 
@@ -640,37 +908,64 @@ function skillItem(entry) {
   ]);
 }
 
-function skillColumn(heading, entries) {
-  const items = entries.length
-    ? entries.map(skillItem)
-    : [el('li', { class: 'empty-note', text: 'No skills listed for this group.' })];
-  return el('div', {}, [el('h3', { text: heading }), el('ul', { class: 'job-list' }, items)]);
+function skillColumn(column, pending) {
+  const items = column.entries.length
+    ? column.entries.map(skillItem)
+    : [el('li', { class: 'empty-note', text: pending ? 'Loading skills…' : column.empty })];
+  return el('div', {}, [el('h3', { text: column.heading }), el('ul', { class: 'job-list' }, items)]);
 }
 
-function ensureSkillTitles(view) {
-  const skills = model.drivingSkills(view.group, null);
-  const wanted = skills.automation.length + skills.amplification.length;
-  if (!wanted || state.skills || state.skillsPending) return;
+function loadSkillTitles(view) {
+  if (state.skills || state.skillsPending) return;
   state.skillsPending = true;
   loadJSON('skill_index')
     .then((rows) => {
-      state.skills = new Map(rows.map((row) => [row.id, row.t]));
+      state.skills = new Map(rows.map((row) => [row.id, row]));
       renderSkills(view);
     })
     .catch(() => { state.skillsPending = false; });
 }
 
+/**
+ * skill_index.json is a megabyte spent on two lists of five names, so it is
+ * only fetched once the section that needs it is actually on screen. Without
+ * IntersectionObserver the load simply starts at once.
+ */
+function watchSkills(view) {
+  if (state.skillsWatch) state.skillsWatch.disconnect();
+  state.skillsWatch = null;
+  if (!model.skillIdsOf(view.group).length || state.skills || state.skillsPending) return;
+  if (typeof IntersectionObserver !== 'function') {
+    loadSkillTitles(view);
+    return;
+  }
+  state.skillsWatch = new IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return;
+    state.skillsWatch.disconnect();
+    state.skillsWatch = null;
+    loadSkillTitles(view);
+  }, { rootMargin: '200px' });
+  state.skillsWatch.observe(byId('skills-section'));
+}
+
 function renderSkills(view) {
-  const skills = model.drivingSkills(view.group, state.skills);
+  const skills = model.drivingSkills(view.group, state.skills, state.scheme);
+  const note = model.skillsNote(state.scheme);
+  byId('skills-note').textContent = note;
+  show(byId('skills-note'), Boolean(note));
   byId('skill-columns').replaceChildren(
-    skillColumn('Most automatable', skills.automation),
-    skillColumn('Most amplified', skills.amplification),
+    ...skills.columns.map((column) => skillColumn(column, skills.pending)),
   );
-  ensureSkillTitles(view);
+  watchSkills(view);
 }
 
 function renderLists(view) {
-  const lists = model.exposureLists(view.group, state.bySlug);
+  const headings = model.exposureHeadings(state.scheme);
+  byId('top-heading').textContent = headings.top;
+  byId('bottom-heading').textContent = headings.bottom;
+  const lists = model.exposureLists({
+    scheme: state.scheme, group: view.group, rows: view.rows, bySlug: state.bySlug,
+  });
   fillList('top-list', lists.top, view.key);
   fillList('bottom-list', lists.bottom, view.key);
   renderSkills(view);
@@ -678,46 +973,66 @@ function renderLists(view) {
 
 /* --- comparison ----------------------------------------------------------- */
 
+function compareShares(side) {
+  if (!side.shares) return null;
+  return el('div', { class: 'compare-shares' }, [
+    renderSharesBar(side.shares, { name: side.label, compact: true }),
+  ]);
+}
+
 function compareCard(side) {
   return el('section', { class: 'card' }, [
     el('h2', {}, [link(groupHref(side.key), side.label)]),
     el('p', { class: 'muted small', text: side.subtitle }),
+    compareShares(side),
     el('ul', { class: 'mix-bars' }, side.bars.map(mixRow)),
-    el('p', {
-      class: 'medians',
-      text: `Median automation ${formatScore(side.medians.automation)} · `
-        + `median amplification ${formatScore(side.medians.amplification)}`,
-    }),
+    el('p', { class: 'medians', text: model.medianSentence(side, state.scheme) }),
   ]);
 }
 
 function divergeRow(row) {
   const size = Math.abs(row.delta) * 50;
   const style = row.delta >= 0 ? `left: 50%; width: ${size}%;` : `right: 50%; width: ${size}%;`;
-  return el('li', { 'data-quadrant': row.code }, [
+  const attr = CLASS_CODES.has(row.code) ? { 'data-class': row.code } : codeAttr(row.code);
+  return el('li', attr, [
     el('span', { class: 'mix-name', text: row.label }),
     el('span', { class: 'diverge-track' }, [el('span', { class: 'diverge-fill', style })]),
     el('span', { class: 'diverge-figure', text: `${row.text} · ${row.deltaText}` }),
   ]);
 }
 
+function divergeSection(heading, lead, rows) {
+  return el('section', { class: 'card' }, [
+    el('h2', { text: heading }),
+    el('p', { class: 'small muted', text: lead }),
+    el('ul', { class: 'diverge' }, rows.map(divergeRow)),
+  ]);
+}
+
+/** The caveat belongs to the comparison, not to each half of it. */
+function caveatLine() {
+  return el('p', { class: 'mix-caveat small', text: model.nearLineCaveat(state.stats) });
+}
+
 function compareSections(comparison) {
-  return [
+  const names = `${comparison.a.label} minus the share in ${comparison.b.label}`;
+  const sections = [
     el('div', { class: 'compare-columns' }, [compareCard(comparison.a), compareCard(comparison.b)]),
-    el('section', { class: 'card' }, [
-      el('h2', { text: 'Where they differ' }),
-      el('p', {
-        class: 'small muted',
-        text: `Each bar is the share in ${comparison.a.label} minus the share in ${comparison.b.label}.`,
-      }),
-      el('ul', { class: 'diverge' }, comparison.differences.map(divergeRow)),
-      el('p', { class: 'mix-caveat small', text: model.nearLineCaveat(state.stats) }),
-    ]),
   ];
+  if (comparison.shareDifferences.length) {
+    sections.push(divergeSection('Where the work differs',
+      `Each bar is the mean share of the skills in ${names}.`, comparison.shareDifferences));
+  }
+  const mix = divergeSection(shares() ? 'Where the types differ' : 'Where they differ',
+    shares() ? `Each bar is the share of jobs in ${names}.` : `Each bar is the share in ${names}.`,
+    comparison.differences);
+  mix.append(caveatLine());
+  sections.push(mix);
+  return sections;
 }
 
 function renderCompare(compare) {
-  const comparison = model.compareGroups(state.groups, compare.a, compare.b);
+  const comparison = model.compareGroups(state.groups, compare.a, compare.b, state.scheme);
   show(byId('group-body'), false);
   show(byId('crumbs-nav'), false);
   show(byId('children-block'), false);

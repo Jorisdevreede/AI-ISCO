@@ -3,17 +3,21 @@ import assert from 'node:assert/strict';
 
 import {
   FILTER_LIMIT,
+  SHARES_SKILL_COLUMNS,
   SKILL_COLUMNS,
   SKILL_FILTERS,
   ancestorKeys,
   buildModel,
   childrenOf,
+  classSegments,
   filterMatches,
   filterSkillRows,
   findOccupation,
   groupSubtitle,
   horizontalMove,
   jobSummary,
+  leafFigure,
+  leafParts,
   matchMessage,
   mixSegments,
   mixText,
@@ -23,6 +27,7 @@ import {
   rowIndexOf,
   selectionId,
   selectionOf,
+  skillColumns,
   skillMix,
   skillRows,
   skillSummary,
@@ -33,6 +38,12 @@ import {
   typeAheadIndex,
   unitChain,
   visibleRows,
+  whyLine,
+  alsoMatches,
+  plural,
+  resultRows,
+  scoreKeyLine,
+  SKILL_NEAR_TEXT,
 } from '../../site/js/pages/tree-model.js';
 import { INDEX } from './fixture.js';
 
@@ -382,13 +393,14 @@ test('the quadrant mix names every box, with counts and percentages', () => {
   assert.deepEqual(segments.map((segment) => segment.label),
     ['Transform', 'Stable', 'Evolve', 'Shrink']);
   assert.equal(segments[1].count, 1);
-  assert.equal(segments[1].percent, '33%');
+  assert.equal(segments[1].percent, '34%'); // 1/3 each: the remainder lands here
   assert.equal(segments[1].text, '1 of 3 jobs');
   assert.equal(segments[0].count, 0);
 });
 
 test('the compact mix reads largest first and skips empty boxes', () => {
-  assert.equal(mixText(mixSegments(GROUPS.all.q)), '44% Evolve, 22% Transform, 22% Stable, 11% Shrink');
+  assert.equal(mixText(mixSegments(GROUPS.all.q)),
+    '45% Evolve, 22% Transform, 22% Stable, 11% Shrink');
   assert.equal(mixText(mixSegments({})), 'no scored jobs');
 });
 
@@ -489,4 +501,356 @@ test('a missing score reads "Not scored", never a bare question mark', () => {
   assert.equal(rows[0].quadrant, 'TRANSFORM');
   assert.deepEqual(rows[0].cells.map((cell) => cell.text),
     ['writing code', 'Essential', '7.2', '9.1', 'Transform']);
+});
+
+/* --- the shares scheme ---------------------------------------------------- */
+
+// Synthetic stands-in for a `_v2` set: seven type codes in `q`, four shares in
+// `sh`, a class on every skill and a third score. Numbers chosen so no rounding
+// is accidental.
+const SHARES_STATS = {
+  scheme: 'shares',
+  occupations: 8,
+  skills_scored: 40,
+  types: {
+    order: ['AUTOMATION_HEAVY', 'TRANSFORMING', 'AUGMENTED', 'MECHANISABLE',
+      'INSULATED_PHYSICAL', 'INSULATED_PEOPLE', 'MIXED'],
+    counts: {
+      AUTOMATION_HEAVY: 1,
+      TRANSFORMING: 1,
+      AUGMENTED: 2,
+      MECHANISABLE: 0,
+      INSULATED_PHYSICAL: 3,
+      INSULATED_PEOPLE: 1,
+      MIXED: 0,
+    },
+  },
+  skill_classes: { counts: { S: 5, A: 8, M: 3, I: 24 } },
+  near_line: { count: 2, share: 0.25 },
+};
+
+const SHARES_GROUP_COUNTS = {
+  AUTOMATION_HEAVY: 1,
+  TRANSFORMING: 0,
+  AUGMENTED: 2,
+  MECHANISABLE: 0,
+  INSULATED_PHYSICAL: 1,
+  INSULATED_PEOPLE: 0,
+  MIXED: 0,
+};
+
+const SHARES_PORTFOLIO = {
+  skills: {
+    aaaa1111: { t: 'writing code', a: 7.2, m: 9.1, k: 1.4, c: 'S', r: 'why' },
+    bbbb2222: { t: 'talking to people', a: 2.4, m: 6.5, k: 1.1, c: 'A', r: 'why' },
+    cccc3333: { t: 'tending a press', a: 5.1, m: 3.2, k: 8.3, c: 'M', r: 'why' },
+    dddd4444: { t: 'calming a patient', a: 1.9, m: 3.0, k: 1.0, c: 'I', r: 'why' },
+    eeee5555: { t: 'unscored craft', a: null, m: null, k: null, c: null, r: null },
+  },
+  occupations: [{
+    s: 'shift-supervisor',
+    why: 'people',
+    se: ['aaaa1111', 'bbbb2222'],
+    so: ['cccc3333', 'dddd4444', 'eeee5555'],
+  }],
+};
+
+const SHARES_SKILLS = skillRows(SHARES_PORTFOLIO,
+  findOccupation(SHARES_PORTFOLIO, 'shift-supervisor'));
+
+test('the mix follows the seven types, and marks itself as a type bar', () => {
+  const segments = mixSegments(SHARES_GROUP_COUNTS);
+  assert.equal(segments.length, 7);
+  assert.deepEqual(segments.map((segment) => segment.label), [
+    'Automation-heavy', 'Transforming', 'Augmented', 'Mechanisable',
+    'Insulated by physical work', 'Insulated by work with people', 'Mixed',
+  ]);
+  assert.equal(segments.every((segment) => segment.attribute === 'data-type'), true);
+  assert.equal(segments[2].count, 2);
+  assert.equal(segments[2].percent, '50%');
+  assert.equal(segments[2].text, '2 of 4 jobs');
+});
+
+test('the spoken mix names the types and says they are types', () => {
+  const text = mixText(mixSegments(SHARES_GROUP_COUNTS));
+  assert.equal(text, 'job types: 50% Augmented, 25% Automation-heavy, '
+    + '25% Insulated by physical work');
+  assert.doesNotMatch(text, /quadrant|box/i);
+});
+
+test('a quadrant mix keeps the wording it always had', () => {
+  const segments = mixSegments(GROUPS.all.q);
+  assert.equal(segments.every((segment) => segment.attribute === 'data-quadrant'), true);
+  assert.equal(mixText(segments), '45% Evolve, 22% Transform, 22% Stable, 11% Shrink');
+});
+
+test('the skill-class split comes from stats, and is empty without one', () => {
+  const segments = classSegments(SHARES_STATS);
+  assert.deepEqual(segments.map((segment) => segment.code), ['S', 'A', 'M', 'I']);
+  assert.deepEqual(segments.map((segment) => segment.label),
+    ['AI can take over', 'AI assists', 'Machines can do', 'Stays human']);
+  assert.equal(segments.every((segment) => segment.attribute === 'data-class'), true);
+  assert.equal(segments[3].count, 24);
+  assert.equal(segments[3].percent, '60%');
+  assert.equal(segments[3].text, '24 of 40 skills');
+  assert.deepEqual(classSegments(STATS), []);
+  assert.deepEqual(classSegments(null), []);
+});
+
+test('a leaf paints data-type and leads with the substituted share', () => {
+  const node = { q: 'TRANSFORMING', a: 6.9, m: 7.2, k: 2.2, sh: [0.54, 0.31, 0, 0.15] };
+  assert.deepEqual(leafParts(node), {
+    attribute: 'data-type',
+    code: 'TRANSFORMING',
+    name: 'Transforming',
+    figure: '54% AI can take over',
+  });
+  assert.equal(leafParts({ q: 'INSULATED_PHYSICAL', sh: [0.1, 0.2, 0.2, 0.5] }).name,
+    'Physical work');
+});
+
+test('a quadrant leaf is painted and worded exactly as before', () => {
+  assert.deepEqual(leafParts({ q: 'TRANSFORM', a: 6.4, m: 8.9 }), {
+    attribute: 'data-quadrant', code: 'TRANSFORM', name: 'Transform', figure: '6.4 / 8.9',
+  });
+  assert.deepEqual(leafParts({ q: null, a: null, m: null }), {
+    attribute: 'data-quadrant', code: '', name: 'Not scored', figure: 'Not scored / Not scored',
+  });
+});
+
+test('a leaf with a type but no usable shares says so rather than NaN', () => {
+  assert.equal(leafFigure({ q: 'MIXED', sh: null }), 'Not scored');
+  assert.equal(leafFigure({ q: 'MIXED', sh: [0.5, 0.5] }), 'Not scored');
+});
+
+test('a shares leaf is said out loud as its type and its four shares', () => {
+  const spoken = jobSummary({ q: 'AUGMENTED', a: 5, m: 7, sh: [0.12, 0.44, 0.04, 0.4] });
+  assert.equal(spoken, 'Augmented. AI can take over 12% · AI assists 44% · machines 4% '
+    + '· stays human 40%.');
+  assert.doesNotMatch(spoken, /automation|amplification|quadrant/i);
+  // A type code without usable shares says so; it never falls back to the two
+  // quadrant scores, which mean something else under this scheme.
+  assert.equal(jobSummary({ q: 'MIXED', sh: null, a: 4, m: 4 }), 'Mixed. Shares not scored.');
+  assert.equal(jobSummary({ q: 'TRANSFORM', a: 4, m: 4 }),
+    'Transform, automation 4.0, amplification 4.0');
+});
+
+test('the caveat under a shares set names the rule that scheme uses', () => {
+  const text = nearLineCaveat(SHARES_STATS);
+  assert.match(text, /2 of 8 jobs \(25%\) sit near a cut-off/);
+  assert.match(text, /moving any one of their four shares by 5/);
+  assert.doesNotMatch(text, /within 0\.5|box/i);
+});
+
+test('the reason a job stays human is worded, never printed as a code', () => {
+  const some = [0.2, 0.2, 0.2, 0.4];
+  assert.match(whyLine({ why: 'people', sh: some }), /with and for other people/);
+  assert.match(whyLine({ why: 'physical', sh: some }), /on things, in a place/);
+  assert.match(whyLine({ why: 'other', sh: some }), /desk work/);
+  assert.equal(whyLine({ why: 'nonsense', sh: some }), '');
+  assert.equal(whyLine(null), '');
+});
+
+test('a job with nothing staying human is not told what stays human', () => {
+  assert.equal(whyLine({ why: 'other', sh: [0.85, 0.15, 0, 0] }), '');
+  assert.equal(whyLine({ why: 'people', sh: null }), '');
+});
+
+test('a skill carries its class and its third score', () => {
+  assert.equal(SHARES_SKILLS.length, 5);
+  assert.equal(SHARES_SKILLS[0].cls, 'S');
+  assert.equal(SHARES_SKILLS[0].mech, 1.4);
+  assert.equal(SHARES_SKILLS[4].cls, null);
+  assert.equal(SHARES_SKILLS[4].mech, null);
+  assert.equal(skillRows(PORTFOLIO, findOccupation(PORTFOLIO, 'software-developer'))[0].cls, null);
+});
+
+test('under shares the skills split by class, not by box', () => {
+  const mix = skillMix(SHARES_SKILLS, 'shares');
+  assert.equal(mix.total, 5);
+  assert.equal(mix.essential, 2);
+  assert.equal(mix.scored, 4);
+  assert.equal(mix.unscored, 1);
+  assert.deepEqual(mix.bars.map((bar) => [bar.label, bar.count]), [
+    ['AI can take over', 1], ['AI assists', 1], ['Machines can do', 1], ['Stays human', 1],
+  ]);
+  assert.equal(mix.bars[0].text, '1 of 4 skills');
+  assert.equal(mix.bars[0].attribute, 'data-class');
+});
+
+test('without a scheme the skills split exactly as they always have', () => {
+  const mix = skillMix(SKILLS);
+  assert.deepEqual(Object.fromEntries(mix.bars.map((bar) => [bar.label, bar.count])),
+    { Transform: 1, Stable: 0, Evolve: 1, Shrink: 1 });
+});
+
+test('the shares table names the class and the three scores', () => {
+  assert.deepEqual(skillColumns('shares').map((column) => column.label),
+    ['Skill', 'In this job', 'Class', 'AI substitution', 'AI assistance', 'Machine automation']);
+  assert.deepEqual(skillColumns(), SKILL_COLUMNS);
+  assert.deepEqual(skillColumns('quadrants'), SKILL_COLUMNS);
+  assert.equal(SHARES_SKILL_COLUMNS.some((column) => /quadrant|risk|amplification/i
+    .test(column.label)), false);
+});
+
+test('a shares row prints the class in words and Not scored for a missing one', () => {
+  const rows = skillTableRows(SHARES_SKILLS, 'shares');
+  assert.deepEqual(rows[0].cells.map((cell) => cell.text),
+    ['writing code', 'Essential', 'AI can take over', '7.2', '9.1', '1.4']);
+  assert.deepEqual(rows[4].cells.map((cell) => cell.text),
+    ['unscored craft', 'Optional', 'Not scored', 'Not scored', 'Not scored', 'Not scored']);
+  assert.equal(rows[0].cls, 'S');
+  assert.equal(rows[4].cls, null);
+});
+
+test('the class column sorts by the name shown, and missing classes go last', () => {
+  // Sorted on what the cell says: "AI assists", "AI can take over", "Machines
+  // can do", "Stays human" — never on the letter, which is never printed.
+  const sorted = sortSkillRows(SHARES_SKILLS, 'cls', false);
+  assert.deepEqual(sorted.map((row) => row.cls), ['A', 'S', 'M', 'I', null]);
+  assert.equal(sortSkillRows(SHARES_SKILLS, 'cls', true)[4].cls, null);
+  assert.equal(sortSkillRows(SHARES_SKILLS, 'mech', true)[0].title, 'tending a press');
+});
+
+/* --- the audit pass: plurals, a flat result list, a visible key ------------ */
+
+test('a count of one takes the singular noun (A13)', () => {
+  assert.equal(plural(1, 'job'), '1 job');
+  assert.equal(plural(0, 'job'), '0 jobs');
+  assert.equal(plural(2, 'job'), '2 jobs');
+  assert.equal(plural(3039, 'skill'), '3,039 skills');
+});
+
+test('no bar, subtitle or leaf can print "1 jobs" any more (A13)', () => {
+  assert.equal(groupSubtitle({ level: 'unit', code: '5132', n: 1 }),
+    'Unit group 5132 · ISCO-08 · 1 job');
+  assert.equal(mixSegments({ EVOLVE: 1 })[2].text, '1 of 1 job');
+  assert.equal(mixSegments(GROUPS['major:3'].q)[1].text, '1 of 3 jobs');
+});
+
+// The order is search.js's to decide and its own tests to pin; what belongs
+// here is that every hit becomes a row, in the order it arrived, carrying the
+// group that holds it.
+test('the filter answers with the matching jobs, each under its group (A16)', () => {
+  const filter = filterMatches(model, 'programmer');
+  const rows = resultRows(model, filter);
+  assert.deepEqual(rows.map((row) => row.slug), filter.hits.map((hit) => hit.row.s));
+  assert.deepEqual([...rows].map((row) => row.slug).sort(),
+    ['software-developer', 'venue-programmer']);
+  const bySlug = Object.fromEntries(rows.map((row) => [row.slug, row]));
+  assert.equal(bySlug['software-developer'].group, 'Software developers');
+  assert.equal(bySlug['venue-programmer'].group, 'Film and stage directors');
+  assert.deepEqual(resultRows(model, null), []);
+});
+
+test('a row that matched on a synonym says which one (A16)', () => {
+  const rows = resultRows(model, filterMatches(model, 'programmer'));
+  const bySlug = Object.fromEntries(rows.map((row) => [row.slug, row]));
+  // "programmer" is an alternative label of software developer, not its title.
+  assert.equal(alsoMatches(bySlug['software-developer']),
+    'also matches “programmer”');
+  assert.equal(alsoMatches(bySlug['venue-programmer']), '');
+  assert.equal(alsoMatches(null), '');
+});
+
+test('a job whose group is missing still gets a row, with no subtitle', () => {
+  const orphan = buildModel({}, INDEX);
+  const rows = resultRows(orphan, filterMatches(orphan, 'bookkeeper'));
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].group, '');
+  assert.equal(rows[0].title, 'bookkeeper');
+});
+
+test('the result list is capped with the tree, and never outruns it', () => {
+  const filter = filterMatches(model, 'nurse', 2);
+  assert.equal(resultRows(model, filter).length, 2);
+  assert.equal(filter.total, 4);
+  assert.match(matchMessage(filter), /^4 jobs match\. Showing the first 2/);
+});
+
+test('the figures every row prints get a key, in the words of the scheme (A19)', () => {
+  assert.equal(scoreKeyLine('quadrants'),
+    'Each job shows automation risk / amplification, both out of 10.');
+  assert.equal(scoreKeyLine(),
+    'Each job shows automation risk / amplification, both out of 10.');
+  assert.match(scoreKeyLine('shares'), /type and how much of its work AI can take over/);
+  assert.doesNotMatch(scoreKeyLine('shares'), /automation risk|amplification/i);
+});
+
+test('the count says what is on screen, twinned slugs and all (A16)', () => {
+  // Two occupations may share a slug, so the set of slugs is smaller than the
+  // list of rows. The message must describe the rows, which is what is drawn.
+  const twins = [
+    ...INDEX,
+    { t: 'nurse assistant', s: 'nurse-assistant', c: '3221', mg: 'Technicians', a: 5.5, m: 5.9, q: 'STABLE', alt: [] },
+  ];
+  const twinModel = buildModel(GROUPS, twins);
+  const filter = filterMatches(twinModel, 'nurse assistant');
+  assert.equal(filter.slugs.size < filter.hits.length, true);
+  assert.equal(filter.shown, filter.hits.length);
+  assert.equal(filter.capped, false);
+  assert.equal(matchMessage(filter), `${filter.total} jobs match.`);
+  assert.equal(resultRows(twinModel, filter).length, filter.hits.length);
+});
+
+/* --- C12: a skill can sit near the line too -------------------------------- */
+
+// `p` is [substitution, assistance, machinery]; the class in `c` is what the
+// pipeline settled on, and is never recomputed here.
+const NEAR_PORTFOLIO = {
+  skills: {
+    n1: { t: 'technical drawings', a: 6.2, m: 5.0, k: 1.0, c: 'I', p: [0.48, 0.30, 0.10] },
+    n2: { t: 'writing code', a: 7.2, m: 9.1, k: 1.4, c: 'S', p: [0.91, 0.80, 0.02] },
+    n3: { t: 'tending a press', a: 5.1, m: 3.2, k: 8.3, c: 'M', p: [0.10, 0.20, 0.52] },
+    n4: { t: 'unscored craft', a: null, m: null, k: null, c: null, p: null },
+  },
+  occupations: [{ s: 'draughtsman', se: ['n1', 'n2'], so: ['n3', 'n4'] }],
+};
+
+const NEAR_SKILLS = skillRows(NEAR_PORTFOLIO,
+  findOccupation(NEAR_PORTFOLIO, 'draughtsman'), 0.5);
+
+test('a skill whose deciding chance is within five points is flagged (C12)', () => {
+  const byTitle = Object.fromEntries(NEAR_SKILLS.map((row) => [row.title, row]));
+  // 0.48 decided "not substituted", and it is two points from the cut.
+  assert.equal(byTitle['technical drawings'].near, true);
+  // 0.91 is nowhere near the cut.
+  assert.equal(byTitle['writing code'].near, false);
+  // 0.52 settled "machines can do", two points the other side.
+  assert.equal(byTitle['tending a press'].near, true);
+  assert.equal(byTitle['unscored craft'].near, false);
+});
+
+test('the flag travels to the table row, and the chip has words (C12)', () => {
+  const rows = skillTableRows(NEAR_SKILLS, 'shares');
+  const byTitle = Object.fromEntries(rows.map((row) => [row.title, row]));
+  assert.equal(byTitle['technical drawings'].near, true);
+  assert.equal(byTitle['writing code'].near, false);
+  assert.match(SKILL_NEAR_TEXT, /within 5 points/);
+  assert.doesNotMatch(SKILL_NEAR_TEXT, /at risk/i);
+});
+
+test('a quadrant set has no classes, so no skill is ever near the line (C12)', () => {
+  const rows = skillRows(PORTFOLIO, findOccupation(PORTFOLIO, 'software-developer'));
+  assert.equal(rows.every((row) => row.near === false), true);
+  assert.equal(skillTableRows(rows).every((row) => row.near === false), true);
+});
+
+/* --- C7: the tree's own bars add up to 100 --------------------------------- */
+
+test('a mix bar and a class bar each sum to 100 (C7)', () => {
+  const sum = (segments) => segments
+    .reduce((total, s) => total + Number(s.percent.replace('%', '')), 0);
+  assert.equal(sum(mixSegments(GROUPS.all.q)), 100);
+  assert.equal(sum(mixSegments(GROUPS['major:3'].q)), 100);
+  assert.equal(sum(classSegments(SHARES_STATS)), 100);
+  assert.equal(sum(skillMix(SHARES_SKILLS, 'shares').bars), 100);
+});
+
+test('a class holding one job out of many never reads "0%" (C7)', () => {
+  const lopsided = mixSegments({ EVOLVE: 999, TRANSFORM: 1 });
+  const byLabel = Object.fromEntries(lopsided.map((s) => [s.label, s.percent]));
+  assert.equal(byLabel.Transform, '<1%');
+  assert.equal(byLabel.Evolve, '100%');
+  assert.equal(byLabel.Shrink, '0%');
 });

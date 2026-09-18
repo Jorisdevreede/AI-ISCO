@@ -1,24 +1,24 @@
 {
-  "built": "2026-06-10",
+  "built": "2026-09-18",
   "threshold": 6,
-  "occupations": 3043,
+  "occupations": 3039,
   "skills_scored": 13475,
   "quadrants": {
     "counts": {
-      "EVOLVE": 1561,
+      "EVOLVE": 1559,
       "SHRINK": 184,
-      "STABLE": 790,
-      "TRANSFORM": 508
+      "STABLE": 789,
+      "TRANSFORM": 507
     },
     "shares": {
       "EVOLVE": 0.513,
       "SHRINK": 0.0605,
       "STABLE": 0.2596,
-      "TRANSFORM": 0.1669
+      "TRANSFORM": 0.1668
     }
   },
   "near_line": {
-    "count": 1509,
+    "count": 1507,
     "share": 0.4959
   }
 }

@@ -8,11 +8,9 @@
 // whole tree, arrow keys to move, and no focusable element inside a row. The
 // real links out of this page live in the detail pane beside it.
 
-import { formatCount, formatScore } from '../format.js';
-import { QUADRANT_NAMES } from '../quadrant.js';
 import {
-  TYPE_AHEAD_MS, horizontalMove, jobSummary, mixSegments, mixText, moveIndex, rowIndexOf,
-  typeAheadIndex,
+  TYPE_AHEAD_MS, horizontalMove, jobSummary, leafParts, mixSegments, mixText, moveIndex,
+  plural, rowIndexOf, typeAheadIndex,
 } from './tree-model.js';
 
 function apply(node, props) {
@@ -35,13 +33,17 @@ function twisty(kind) {
   return el('span', { class: `tree-twisty tree-twisty--${kind}`, 'aria-hidden': 'true' });
 }
 
+// Seven segments need more room than four, or the small types round to nothing.
 function mixBar(segments) {
+  const types = segments.length > 0 && segments[0].attribute === 'data-type';
   const fills = segments.map((segment) => el('span', {
     class: 'tree-mix-fill',
-    'data-quadrant': segment.code,
+    [segment.attribute]: segment.code,
     style: `width: ${(segment.share * 100).toFixed(2)}%`,
   }));
-  return el('span', { class: 'tree-mix', 'aria-hidden': 'true' }, fills);
+  return el('span', {
+    class: types ? 'tree-mix tree-mix--types' : 'tree-mix', 'aria-hidden': 'true',
+  }, fills);
 }
 
 // A row is two blocks — the name, then the figures — so that on a narrow screen
@@ -59,7 +61,7 @@ function groupRow(node) {
   return row(
     [twisty('group'), el('span', { class: 'tree-label', text: node.label })],
     [
-      el('span', { class: 'tree-count numeric', text: `${formatCount(node.n)} jobs` }),
+      el('span', { class: 'tree-count numeric', text: plural(node.n, 'job') }),
       mixBar(segments),
     ],
     mixText(segments),
@@ -67,20 +69,16 @@ function groupRow(node) {
 }
 
 function jobRow(node) {
-  const name = QUADRANT_NAMES[node.q] || 'Not scored';
+  const leaf = leafParts(node);
   return row(
     [
       twisty('leaf'),
-      el('span', { class: 'tree-dot', 'data-quadrant': node.q || '', 'aria-hidden': 'true' }),
+      el('span', { class: 'tree-dot', [leaf.attribute]: leaf.code, 'aria-hidden': 'true' }),
       el('span', { class: 'tree-label', text: node.label }),
     ],
     [
-      el('span', { class: 'tree-quad', 'data-quadrant': node.q || '', text: name }),
-      el('span', {
-        class: 'tree-scores numeric',
-        'aria-hidden': 'true',
-        text: `${formatScore(node.a)} / ${formatScore(node.m)}`,
-      }),
+      el('span', { class: 'tree-quad', [leaf.attribute]: leaf.code, text: leaf.name }),
+      el('span', { class: 'tree-scores numeric', 'aria-hidden': 'true', text: leaf.figure }),
     ],
     jobSummary(node),
   );

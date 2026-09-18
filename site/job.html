@@ -3,8 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Job details — AI-ISCO</title>
-<meta name="description" content="How AI could change one occupation: two scores, the skills behind them, what changes in the work, and where to go next.">
+<title>Will AI change this job? — AI-ISCO</title>
+<meta name="description" content="How AI could change one occupation: what its skills are made of, the scores behind that, what changes in the work, and where to go next.">
+<meta property="og:site_name" content="AI-ISCO">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Will AI change this job? — AI-ISCO">
+<meta property="og:description" content="How AI could change one occupation: what its skills are made of, the scores behind that, what changes in the work, and where to go next.">
+<meta property="og:url" content="https://jorisdevreede.github.io/AI-ISCO/job.html">
+<meta property="og:image" content="https://jorisdevreede.github.io/AI-ISCO/card.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/job.css">
@@ -28,7 +35,7 @@
     </div>
   </div>
 
-  <p id="job-loading" class="loading" hidden>Loading the job data. It is one large file, so this can take a few seconds…</p>
+  <p id="job-loading" class="loading" role="status" aria-live="polite" hidden></p>
   <div id="job-error"></div>
 
   <header class="job-head">
@@ -49,8 +56,12 @@
     <section class="card">
       <h2 id="scores-heading"></h2>
       <p id="scores-intro" class="small muted"></p>
+      <div id="job-shares" class="job-shares" hidden></div>
       <div id="score-list" class="score-grid"></div>
-      <p id="exposure-line" class="small muted"></p>
+      <details id="job-numbers" class="job-numbers" hidden>
+        <summary>The numbers behind this</summary>
+        <div id="job-numbers-body"></div>
+      </details>
     </section>
 
     <div id="advice-top"></div>
@@ -62,6 +73,7 @@
         <canvas id="scatter" role="img" aria-label="Skill scatter plot"></canvas>
         <div id="scatter-tip" class="scatter-tip" hidden aria-hidden="true"></div>
       </div>
+      <p id="scatter-classes" class="scatter-legend scatter-classes" hidden></p>
       <p class="scatter-legend">
         <span><span class="legend-dot legend-dot--essential"></span>Essential to the job</span>
         <span><span class="legend-dot"></span>Optional</span>
@@ -73,34 +85,20 @@
         <table>
           <caption id="scatter-caption"></caption>
           <thead>
-            <tr>
-              <th scope="col">Skill</th>
-              <th scope="col" class="numeric">Automation risk (out of 10)</th>
-              <th scope="col" class="numeric">Amplification (out of 10)</th>
-              <th scope="col">In this job</th>
-            </tr>
+            <tr id="scatter-head"></tr>
           </thead>
           <tbody id="scatter-rows"></tbody>
         </table>
       </div>
     </section>
 
-    <div class="skill-columns">
-      <section class="card">
-        <h2 id="dep-heading"></h2>
-        <p id="dep-count" class="small muted"></p>
-        <ul id="dep-list" class="skill-list"></ul>
-      </section>
-      <section class="card">
-        <h2 id="app-heading"></h2>
-        <p id="app-count" class="small muted"></p>
-        <ul id="app-list" class="skill-list"></ul>
-      </section>
-    </div>
+    <div id="skill-columns" class="skill-columns"></div>
+
+    <p id="stays-human" class="stays-human small muted" hidden></p>
 
     <section class="card">
       <h2 id="cards-heading"></h2>
-      <p class="small muted"><span id="cards-writer">Each rationale is what the model wrote while it scored that skill.</span> Open one to read it. The red number is automation risk, the blue one amplification, each out of 10.</p>
+      <p class="small muted"><span id="cards-writer">Each rationale is what the model wrote while it scored that skill.</span> <span id="cards-key"></span></p>
       <div id="cards-list"></div>
     </section>
 
@@ -130,6 +128,7 @@
       <h3 id="sideways-heading"></h3>
       <p id="sideways-note" class="small muted"></p>
       <div id="sideways-grid" class="path-grid"></div>
+      <div id="paths-needle" class="paths-needle" hidden></div>
     </section>
 
     <section class="card">

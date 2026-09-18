@@ -1,11 +1,17 @@
 // How far two score sets agree about the same occupations. Pure: no DOM.
 //
-// Both inputs are search_index rows ({ s: slug, a, m, q }). Only occupations
-// that carry both scores in both sets are compared. Nothing here says which set
-// is right: there is no ground truth, so agreement is the only thing to measure.
+// Both inputs are search_index rows ({ s: slug, a, m, q }) of the ORIGINAL
+// rubric: two 1-10 scores cut at 6, four quadrants. Only occupations that carry
+// both scores in both sets are compared. Nothing here says which set is right:
+// there is no ground truth, so agreement is the only thing to measure.
+//
+// A shares set has no boxes to compare, and its `a` and `m` are three different
+// display scores rather than the two this rubric cut. Feeding one in would
+// produce a confident matrix of nonsense, so compareScoreSets refuses it.
 
 import { QUADRANT_ORDER } from './groupstats.js';
 import { isScored } from './format.js';
+import { SHARES, schemeOfCode } from './scheme.js';
 
 function scoredBySlug(rows) {
   const map = new Map();
@@ -103,19 +109,52 @@ function axisAgreement(pairs, key) {
 }
 
 /**
- * Everything the method page says about two score sets.
- * @param {Array<Object>} first search_index rows of the default set
- * @param {Array<Object>} second search_index rows of the other set
- * @returns {null | {n, same, share, matrix, move, automation, amplification}}
- *   null when the sets share no scored occupation
+ * True for rows of the quadrant scheme: no shares array, and no `q` holding one
+ * of the seven type codes. An empty or missing list is not a shares set, so it
+ * falls through to the "nothing in common" answer below.
+ * @param {Array<Object>} rows
+ * @returns {boolean}
+ */
+export function isQuadrantRows(rows) {
+  if (!Array.isArray(rows)) return false;
+  return !rows.some((row) => row
+    && (Array.isArray(row.sh) || schemeOfCode(row.q) === SHARES));
+}
+
+/**
+ * Every occupation either file knows about, scored or not: the population the
+ * comparison is a subset of. Quoting the subset alone invites the reader to
+ * wonder where the missing rows went, so the page states both.
+ * @param {Array<Object>} first
+ * @param {Array<Object>} second
+ * @returns {number}
+ */
+export function slugUniverse(first, second) {
+  const slugs = new Set();
+  for (const rows of [first, second]) {
+    for (const row of rows || []) if (row && row.s) slugs.add(row.s);
+  }
+  return slugs.size;
+}
+
+/**
+ * Everything the method page says about two score sets of the ORIGINAL rubric.
+ * @param {Array<Object>} first search_index rows of one quadrant-scheme set
+ * @param {Array<Object>} second search_index rows of the other
+ * @returns {null | {n, total, same, share, matrix, move, automation, amplification}}
+ *   `n` is how many occupations both runs scored, `total` how many exist at all;
+ *   null when the sets share no scored occupation, and null when either set is
+ *   not a quadrant-scheme set — there is nothing here for a shares set to mean
  */
 export function compareScoreSets(first, second) {
+  if (!isQuadrantRows(first) || !isQuadrantRows(second)) return null;
   const pairs = pairRows(first, second);
   if (!pairs.length) return null;
   const matrix = quadrantMatrix(pairs);
   const same = QUADRANT_ORDER.reduce((sum, quadrant) => sum + matrix[quadrant][quadrant], 0);
   return {
     n: pairs.length,
+    total: slugUniverse(first, second),
     same,
     share: same / pairs.length,
     matrix,

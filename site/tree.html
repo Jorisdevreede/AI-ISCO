@@ -4,12 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Job tree — AI-ISCO</title>
-<meta name="description" content="The whole ISCO-08 hierarchy as an expandable tree, from the ten major groups down to every job, with the skills and quadrant of whichever job you pick.">
+<meta name="description" content="The whole ISCO-08 hierarchy as an expandable tree, from the ten major groups down to every job, with the skills of whichever job you pick.">
+<meta property="og:site_name" content="AI-ISCO">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Job tree — AI-ISCO">
+<meta property="og:description" content="The whole ISCO-08 hierarchy as an expandable tree, from the ten major groups down to every job, with the skills of whichever job you pick.">
+<meta property="og:url" content="https://jorisdevreede.github.io/AI-ISCO/tree.html">
+<meta property="og:image" content="https://jorisdevreede.github.io/AI-ISCO/card.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/tree.css">
-<link rel="preload" href="groups.json" as="fetch" crossorigin>
-<link rel="preload" href="search_index.json" as="fetch" crossorigin>
+<!-- No rel=preload for the index files: which set is active is decided by
+     scorer.js at run time, so a static hint can only name the wrong one and
+     doubles the page weight (it fetched both sets: 3.5 MB). -->
 </head>
 <body>
 
@@ -41,9 +49,20 @@
 
       <p class="small muted tree-count-line" id="tree-count" role="status" aria-live="polite"></p>
 
-      <div class="tree-scroll">
-        <ul id="tree" class="tree" role="tree" aria-label="ISCO-08 occupations"></ul>
+      <!-- A filter is a question about jobs, so it is answered with jobs. The
+           hierarchy that holds them is the second question, and waits behind the
+           disclosure below. -->
+      <div id="tree-results" hidden>
+        <ul id="tree-results-list" class="result-list" aria-labelledby="tree-count"></ul>
       </div>
+
+      <details id="tree-hierarchy" class="tree-disclosure" open>
+        <summary id="tree-hierarchy-summary">Show in the hierarchy</summary>
+        <p class="small muted tree-key" id="tree-key"></p>
+        <div class="tree-scroll">
+          <ul id="tree" class="tree" role="tree" aria-label="ISCO-08 occupations"></ul>
+        </div>
+      </details>
     </section>
 
     <section class="tree-detail card" id="detail" tabindex="-1" aria-labelledby="detail-title">
