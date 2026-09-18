@@ -16,4 +16,14 @@ jobs:
         # Offline by design: no API keys, no network, synthetic fixtures only.
         run: uv run pytest --ignore=tests/e2e --cov --cov-branch --cov-fail-under=95
       - name: Lint
-        run: uvx ruff check aiisco tests aggregate_scores.py build_portfolio_data.py compare_skill_scores.py generate_narratives.py ingest_esco.py merge_narrative_shards.py score_skills.py score_skills_typesafe.py
+        run: uvx ruff check aiisco tests aggregate_scores.py build_portfolio_data.py compare_skill_scores.py generate_narratives.py ingest_esco.py merge_narrative_shards.py score_skills.py score_skills_typesafe.py build_site_indexes.py
+
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Unit tests for the site's pure modules
+        run: npm test

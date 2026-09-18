@@ -1,0 +1,36 @@
+{
+  "skills": {
+    "aa000001": {"t": "write software", "a": 8.0, "m": 7.0, "r": "Model rationale."},
+    "aa000002": {"t": "debug software", "a": 7.0, "m": 8.0, "r": "Model rationale."},
+    "aa000003": {"t": "gather user requirements", "a": 3.0, "m": 9.0, "r": "Model rationale."},
+    "aa000004": {"t": "administer medication", "a": 2.0, "m": 5.0, "r": "Model rationale."},
+    "aa000005": {"t": "comfort a patient", "a": 1.0, "m": 3.0, "r": "Model rationale."},
+    "aa000006": {"t": "record patient notes", "a": 9.0, "m": 6.0, "r": "Model rationale."},
+    "aa000007": {"t": "reconcile ledgers", "a": 9.0, "m": 4.0, "r": "Model rationale."},
+    "aa000008": {"t": "file tax returns", "a": 8.0, "m": 6.0, "r": "Model rationale."},
+    "aa000009": {"t": "operate a lathe", "a": 5.0, "m": 2.0, "r": "Model rationale."},
+    "aa00000a": {"t": "read a technical drawing", "a": 6.0, "m": 6.0, "r": "Model rationale."},
+    "aa00000b": {"t": "sharpen tooling", "a": 4.0, "m": 2.0, "r": "Model rationale."},
+    "aa00000c": {"t": "brief a stakeholder", "a": 3.0, "m": 8.0, "r": "Model rationale."}
+  },
+  "occupations": [
+    {"t": "software developer", "s": "software-developer", "c": "2512",
+     "q": "TRANSFORM", "ar": 6.9, "ap": 7.0, "e": 4.8,
+     "se": ["aa000001", "aa000002", "aa00000a", "aa000001"], "so": ["aa000003", "aa00000c"]},
+    {"t": "systems analyst", "s": "systems-analyst", "c": "2511",
+     "q": "TRANSFORM", "ar": 6.0, "ap": 7.5, "e": 4.5,
+     "se": ["aa000002", "aa000003"], "so": ["aa00000c"]},
+    {"t": "nurse responsible for general care", "s": "nurse-responsible-for-general-care",
+     "c": "2221", "q": "EVOLVE", "ar": 4.5, "ap": 6.0, "e": 2.7,
+     "se": ["aa000004", "aa000005", "aa000006"], "so": ["aa00000c"]},
+    {"t": "nurse assistant", "s": "nurse-assistant", "c": "3221",
+     "q": "STABLE", "ar": 5.5, "ap": 5.9, "e": 3.2,
+     "se": ["aa000005", "aa000006"], "so": []},
+    {"t": "bookkeeper", "s": "bookkeeper", "c": "3313",
+     "q": "SHRINK", "ar": 8.6, "ap": 5.2, "e": 4.5,
+     "se": ["aa000007", "aa000008", "aa000006"], "so": ["aa00000c"]},
+    {"t": "lathe operator", "s": "lathe-operator", "c": "7223",
+     "q": "SHRINK", "ar": 7.2, "ap": 3.1, "e": 2.2,
+     "se": ["aa000009", "aa00000a", "aa00000b"], "so": []}
+  ]
+}

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI-ISCO shared modules — self-test</title>
+<!--
+  A living example of the shared foundation. Every module under site/js/ is
+  imported here and exercised against the real site/search_index.json, so a
+  broken import or a renamed export fails visibly instead of silently.
+
+  Page builders: copy the markup below, not this file. The minimal skeleton and
+  the script order are written out in site/js/README.md.
+
+  This file sits in site/js/ but the real pages sit in site/, so <base href="../">
+  makes every path below read exactly as it would on a real page: "css/app.css",
+  "scorer.js", "js/chrome.js", loadJSON("search_index").
+-->
+<base href="../">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<nav id="site-nav"></nav>
+
+<main id="main" class="page">
+  <h1>Shared modules, self-test</h1>
+  <p class="muted">
+    Every module under <code>site/js/</code> is loaded here and run against the real
+    search index. Nothing on this page is part of the site.
+  </p>
+
+  <section class="card">
+    <h2>Combobox over <code>search_index.json</code></h2>
+    <p><label for="job-search">Find a job</label></p>
+    <div class="combobox">
+      <input id="job-search" type="text" placeholder="Type a job title, for example programmer">
+      <ul id="job-listbox"></ul>
+    </div>
+    <p id="job-loading" class="loading" hidden>Loading job titles…</p>
+    <div id="job-error"></div>
+    <p id="job-status" class="visually-hidden" role="status" aria-live="polite"></p>
+    <p id="job-picked" class="small muted"></p>
+  </section>
+
+  <section class="card">
+    <h2>Quadrant badge</h2>
+    <p class="small muted">Both a clear case and one near the line.</p>
+    <p id="badge-slot"></p>
+  </section>
+
+  <section class="card">
+    <h2>Module checks</h2>
+    <ul id="checks" class="small"></ul>
+  </section>
+
+  <section class="card">
+    <h2>Table alternative</h2>
+    <div class="table-scroll">
+      <table id="demo-table">
+        <caption>The first rows of the index, as the accessible alternative renders them.</caption>
+        <thead><tr id="demo-head"></tr></thead>
+        <tbody id="demo-body"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<!-- Script order, exactly as a real page must have it. -->
+<script src="scorer.js" defer></script>
+<script type="module">
+import { renderChrome, NAV_ITEMS } from './js/chrome.js';
+import { createCombobox } from './js/combobox.js';
+import { renderQuadrantBadge } from './js/badge.js';
+import { loadJSON, whenSlow, LoadError } from './js/data.js';
+import { rankOccupations, nearestTitles, fold } from './js/search.js';
+import { quadrantOf, isNearLine, explainQuadrant, exposureWord, THRESHOLD } from './js/quadrant.js';
+import { parseHash, buildHash, withScorer, jobHref, groupHref, skillHref } from './js/urlstate.js';
+import { occupationsInGroup, sortOccupations, tableRows, quadrantMix, TABLE_COLUMNS } from './js/groupstats.js';
+import { formatScore, formatCount, formatPercent, formatShare, isScored, NOT_SCORED } from './js/format.js';
+
+const results = [];
+const check = (name, condition) => results.push({ name, ok: Boolean(condition) });
+
+renderChrome({ active: 'index' });
+check('chrome renders the five nav links', document.querySelectorAll('#site-nav .nav-links a').length === NAV_ITEMS.length);
+check('chrome leaves <nav id="site-nav"> in the DOM for scorer.js', Boolean(document.getElementById('site-nav')));
+check('chrome renders the attribution footer', /ESCO classification/.test(document.querySelector('footer.site-attribution').textContent));
+
+check('quadrant cuts hard at 6', quadrantOf(5.9, 7) === 'EVOLVE' && quadrantOf(6, 7) === 'TRANSFORM' && THRESHOLD === 6);
+check('near the line is inclusive at 0.5', isNearLine(5.5, 1) && !isNearLine(5.4, 1));
+check('exposure words band correctly', exposureWord(3.9) === 'low' && exposureWord(7) === 'high');
+check('explainQuadrant returns sentences', explainQuadrant({ t: 'x', a: 6.9, m: 7, q: 'TRANSFORM' }).sentences.length >= 3);
+check('url state round-trips', parseHash(buildHash('a-slug', { from: 'unit:2149' })).params.from === 'unit:2149');
+check('withScorer carries the switch', withScorer('job.html#s', '?scorer=typesafe') === 'job.html?scorer=typesafe#s');
+check('href helpers build the brief\'s links', jobHref('s') === 'job.html#s' && groupHref('major:2') === 'groups.html#g=major:2' && skillHref('59b27e7b') === 'skill.html#59b27e7b');
+check('formatting handles a missing score', formatScore(null) === NOT_SCORED && formatScore(6) === '6.0' && formatCount(3043) === '3,043' && formatPercent(0.513) === '51%' && !isScored(null));
+check('fold strips diacritics', fold('Sommelière') === 'sommeliere');
+
+const badges = document.getElementById('badge-slot');
+badges.append(
+  renderQuadrantBadge({ t: 'bookkeeper', a: 8.6, m: 5.2, q: 'SHRINK' }),
+  document.createTextNode(' '),
+  renderQuadrantBadge({ t: 'nurse assistant', a: 5.5, m: 5.9, q: 'STABLE' }),
+);
+check('badge is a real button with a popover', badges.querySelector('button.quadrant-badge[aria-controls]') !== null);
+check('badge marks a job near the line', badges.querySelectorAll('.quadrant-badge-near').length === 1);
+
+const input = document.getElementById('job-search');
+const listbox = document.getElementById('job-listbox');
+const status = document.getElementById('job-status');
+const loading = document.getElementById('job-loading');
+const picked = document.getElementById('job-picked');
+
+function renderOption(result, node) {
+  const title = document.createElement('span');
+  title.textContent = result.row.t;
+  const code = document.createElement('span');
+  code.className = 'code';
+  code.textContent = result.row.c;
+  node.append(code, title);
+  if (result.alt) {
+    const also = document.createElement('span');
+    also.className = 'also';
+    also.textContent = `also matches "${result.alt}"`;
+    node.appendChild(also);
+  }
+}
+
+function showError(error) {
+  const block = document.createElement('div');
+  block.className = 'error-block';
+  block.innerHTML = '<h2>Couldn’t load the job data</h2>';
+  const message = document.createElement('p');
+  message.textContent = error instanceof LoadError ? error.message : String(error);
+  block.appendChild(message);
+  document.getElementById('job-error').appendChild(block);
+}
+
+whenSlow(loadJSON('search_index'), 200, () => { loading.hidden = false; })
+  .then((index) => {
+    loading.hidden = true;
+    createCombobox({
+      input,
+      listbox,
+      status,
+      getResults: (query) => {
+        const hits = rankOccupations(index, query, 12);
+        return hits.length ? hits : nearestTitles(index, query, 3).map((row) => ({ row, alt: null }));
+      },
+      renderOption,
+      onSelect: (result) => { picked.textContent = `Would open ${jobHref(result.row.s)}`; },
+    });
+    check('search index loaded', Array.isArray(index) && index.length > 3000);
+    check('"programmer" reaches software developer', rankOccupations(index, 'programmer', 12).some((r) => r.row.s === 'software-developer'));
+    check('"nurse" puts a nurse above nursery school head teacher', (() => {
+      const found = rankOccupations(index, 'nurse', 12).map((r) => r.row.s);
+      const nursery = found.indexOf('nursery-school-head-teacher');
+      return nursery === -1 || found.findIndex((s) => s.startsWith('nurse-')) < nursery;
+    })());
+
+    const group = occupationsInGroup(index, 'unit:2512');
+    check('group slice works on the real index', group.length > 0);
+    check('quadrant mix adds up', Math.abs(Object.values(quadrantMix(group).shares).reduce((a, b) => a + b, 0) - 1) < 1e-9);
+    check('formatShare reads as a caption', formatShare(group.length, index.length).includes('of'));
+
+    const head = document.getElementById('demo-head');
+    for (const column of TABLE_COLUMNS) {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = column.label;
+      if (column.numeric) th.className = 'numeric';
+      head.appendChild(th);
+    }
+    const body = document.getElementById('demo-body');
+    for (const row of tableRows(sortOccupations(group).slice(0, 5))) {
+      const tr = document.createElement('tr');
+      for (const cell of row.cells) {
+        const td = document.createElement('td');
+        if (cell.numeric) td.className = 'numeric';
+        if (cell.key === 't') {
+          const anchor = document.createElement('a');
+          anchor.href = jobHref(row.slug);
+          anchor.textContent = cell.text;
+          td.appendChild(anchor);
+        } else {
+          td.textContent = cell.text;
+        }
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+    }
+    check('table alternative rendered', body.querySelectorAll('tr').length === Math.min(5, group.length));
+  })
+  .catch((error) => {
+    loading.hidden = true;
+    showError(error);
+    check('search index loaded', false);
+  })
+  .finally(() => {
+    const list = document.getElementById('checks');
+    for (const result of results) {
+      const item = document.createElement('li');
+      item.textContent = `${result.ok ? 'PASS' : 'FAIL'} — ${result.name}`;
+      item.style.color = result.ok ? 'var(--green)' : 'var(--red)';
+      list.appendChild(item);
+    }
+    window.__selftest = { ok: results.every((r) => r.ok), results };
+    document.body.dataset.selftest = window.__selftest.ok ? 'pass' : 'fail';
+  });
+</script>
+</body>
+</html>

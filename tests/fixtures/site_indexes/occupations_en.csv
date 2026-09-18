@@ -1,0 +1,17 @@
+conceptType,conceptUri,iscoGroup,preferredLabel,altLabels,hiddenLabels,status
+Occupation,http://data.europa.eu/esco/occupation/fixture-0,2512,software developer,"programmer
+software engineer
+programmer
+Software Developer
+software developers
+coder",,released
+Occupation,http://data.europa.eu/esco/occupation/fixture-1,2511,systems analyst,,,released
+Occupation,http://data.europa.eu/esco/occupation/fixture-2,2221,nurse responsible for general care,"ward nurse
+adult nurse
+registered nurse",,released
+Occupation,http://data.europa.eu/esco/occupation/fixture-3,3221,nurse assistant,"nursing auxiliary
+sen",,released
+Occupation,http://data.europa.eu/esco/occupation/fixture-4,4311,bookkeeper,"accounts assistant
+finance clerk",,released
+Occupation,http://data.europa.eu/esco/occupation/fixture-5,3313,bookkeeper,"ledger clerk
+book keeper",,released
